@@ -65,7 +65,7 @@ export default function TypingPage() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
-                <ArrowLeft className="h-5 w-5 text-gray-600" />
+                <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
               <h1 className="ml-4 text-xl font-semibold italic">Typemaxxing</h1>
             </div>
@@ -76,7 +76,7 @@ export default function TypingPage() {
       <main className="max-w-4xl mx-auto px-4 py-16">
         <div className="text-center mb-8">
           <h2 className="text-3xl font-light italic mb-2">Typing Practice</h2>
-          <p className="text-gray-600">Improve your typing speed and accuracy</p>
+          <p className="text-gray-800">Improve your typing speed and accuracy</p>
         </div>
 
         {/* Stats */}
@@ -84,15 +84,15 @@ export default function TypingPage() {
           <div className="bg-white rounded-lg p-4 text-center">
             <Timer className="h-6 w-6 text-gray-400 mx-auto mb-2" />
             <p className="text-2xl font-semibold">{isComplete ? calculateWPM() : "0"}</p>
-            <p className="text-sm text-gray-600">WPM</p>
+            <p className="text-sm text-gray-800 font-medium">WPM</p>
           </div>
           <div className="bg-white rounded-lg p-4 text-center">
             <p className="text-2xl font-semibold">{accuracy}%</p>
-            <p className="text-sm text-gray-600">Accuracy</p>
+            <p className="text-sm text-gray-800 font-medium">Accuracy</p>
           </div>
           <div className="bg-white rounded-lg p-4 text-center">
             <p className="text-2xl font-semibold">{errors}</p>
-            <p className="text-sm text-gray-600">Errors</p>
+            <p className="text-sm text-gray-800 font-medium">Errors</p>
           </div>
         </div>
 
@@ -101,7 +101,7 @@ export default function TypingPage() {
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-lg leading-relaxed font-mono">
               {text.split("").map((char, index) => {
-                let className = "text-gray-600";
+                let className = "text-gray-800";
                 if (index < userInput.length) {
                   className = userInput[index] === char ? "text-green-600" : "text-red-600 bg-red-100";
                 } else if (index === userInput.length) {
@@ -121,7 +121,7 @@ export default function TypingPage() {
             onChange={(e) => handleInputChange(e.target.value)}
             placeholder="Start typing..."
             disabled={isComplete}
-            className="w-full h-32 p-4 border-2 border-gray-200 rounded-lg font-mono resize-none focus:border-blue-500 focus:outline-none"
+            className="w-full h-32 p-4 border-2 border-gray-200 rounded-lg font-mono resize-none focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-600"
           />
 
           {isComplete && (

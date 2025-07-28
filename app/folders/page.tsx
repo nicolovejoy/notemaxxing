@@ -2,244 +2,221 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Menu, Search, Grid3X3, User, Plus, Folder, FileText, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-interface Note {
+interface Notebook {
   id: string;
-  title: string;
-  content: string;
+  name: string;
   folderId: string;
+  color: string;
   createdAt: Date;
 }
 
 interface FolderType {
   id: string;
   name: string;
-  noteCount: number;
+  color: string;
 }
 
 export default function FoldersPage() {
+  const router = useRouter();
   const [folders] = useState<FolderType[]>([
-    { id: "q1", name: "Q1", noteCount: 0 },
-    { id: "q2", name: "Q2", noteCount: 0 },
-    { id: "q3", name: "Q3", noteCount: 0 },
-    { id: "q4", name: "Q4", noteCount: 0 },
+    { id: "q1", name: "Q1 2025", color: "bg-red-500" },
+    { id: "q2", name: "Q2 2025", color: "bg-blue-500" },
+    { id: "q3", name: "Q3 2025", color: "bg-purple-500" },
+    { id: "q4", name: "Q4 2025", color: "bg-green-500" },
   ]);
 
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [notes, setNotes] = useState<Note[]>(() => {
+  const [notebooks, setNotebooks] = useState<Notebook[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("notemaxxing-notes");
+      const saved = localStorage.getItem("notemaxxing-notebooks");
       return saved ? JSON.parse(saved) : [];
     }
     return [];
   });
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [isCreatingNote, setIsCreatingNote] = useState(false);
-  const [noteTitle, setNoteTitle] = useState("");
-  const [noteContent, setNoteContent] = useState("");
+
+  const [isCreatingNotebook, setIsCreatingNotebook] = useState<string | null>(null);
+  const [newNotebookName, setNewNotebookName] = useState("");
 
   useEffect(() => {
-    localStorage.setItem("notemaxxing-notes", JSON.stringify(notes));
-  }, [notes]);
+    localStorage.setItem("notemaxxing-notebooks", JSON.stringify(notebooks));
+  }, [notebooks]);
 
-  const handleCreateNote = () => {
-    if (!selectedFolder || !noteTitle.trim()) return;
+  const handleCreateNotebook = (folderId: string) => {
+    if (!newNotebookName.trim()) return;
 
-    const newNote: Note = {
+    const colors = ["bg-indigo-200", "bg-pink-200", "bg-yellow-200", "bg-emerald-200", "bg-cyan-200"];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    const newNotebook: Notebook = {
       id: Date.now().toString(),
-      title: noteTitle,
-      content: noteContent,
-      folderId: selectedFolder,
+      name: newNotebookName,
+      folderId: folderId,
+      color: randomColor,
       createdAt: new Date(),
     };
 
-    setNotes([...notes, newNote]);
-    setSelectedNote(newNote);
-    setIsCreatingNote(false);
-    setNoteTitle("");
-    setNoteContent("");
+    setNotebooks([...notebooks, newNotebook]);
+    setIsCreatingNotebook(null);
+    setNewNotebookName("");
   };
 
-  const handleUpdateNote = (content: string) => {
-    if (!selectedNote) return;
-
-    const updatedNotes = notes.map((note) =>
-      note.id === selectedNote.id ? { ...note, content } : note
-    );
-    setNotes(updatedNotes);
-    setSelectedNote({ ...selectedNote, content });
+  const handleDeleteNotebook = (notebookId: string) => {
+    setNotebooks(notebooks.filter(n => n.id !== notebookId));
+    
+    // Also delete all notes in this notebook
+    if (typeof window !== "undefined") {
+      const savedNotes = localStorage.getItem("notemaxxing-notes");
+      if (savedNotes) {
+        const notes = JSON.parse(savedNotes);
+        const filteredNotes = notes.filter((n: any) => n.notebookId !== notebookId);
+        localStorage.setItem("notemaxxing-notes", JSON.stringify(filteredNotes));
+      }
+    }
   };
 
-  const folderNotes = notes.filter((note) => note.folderId === selectedFolder);
+  const getNotebooksByFolder = (folderId: string) => 
+    notebooks.filter(notebook => notebook.folderId === folderId);
+
+  const getNotesCount = (notebookId: string) => {
+    if (typeof window !== "undefined") {
+      const savedNotes = localStorage.getItem("notemaxxing-notes");
+      if (savedNotes) {
+        const notes = JSON.parse(savedNotes);
+        return notes.filter((n: any) => n.notebookId === notebookId).length;
+      }
+    }
+    return 0;
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
-                <ArrowLeft className="h-5 w-5 text-gray-600" />
+                <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
               <h1 className="ml-4 text-xl font-semibold italic">Notemaxxing</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-md hover:bg-gray-100">
-                <Search className="h-5 w-5 text-gray-600" />
-              </button>
-              <button className="p-2 rounded-md hover:bg-gray-100">
-                <Grid3X3 className="h-5 w-5 text-gray-600" />
-              </button>
-              <button className="p-2 rounded-md hover:bg-gray-100">
-                <User className="h-5 w-5 text-gray-600" />
-              </button>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-4rem)]">
-        {/* Sidebar - Folders */}
-        <div className="w-64 bg-white border-r border-gray-200 p-4">
-          <h2 className="text-lg font-medium mb-4 italic">Folders</h2>
-          <div className="space-y-2">
-            {folders.map((folder) => (
-              <button
-                key={folder.id}
-                onClick={() => setSelectedFolder(folder.id)}
-                className={`w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-100 transition-colors ${
-                  selectedFolder === folder.id ? "bg-gray-100" : ""
-                }`}
-              >
-                <div className="flex items-center">
-                  <Folder className="h-5 w-5 text-gray-500 mr-3" />
-                  <span className="font-medium">{folder.name}</span>
-                </div>
-                <span className="text-sm text-gray-500">
-                  {folderNotes.length}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Notes List */}
-        {selectedFolder && (
-          <div className="w-80 bg-gray-50 border-r border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium">
-                {folders.find((f) => f.id === selectedFolder)?.name} Notes
-              </h3>
-              <button
-                onClick={() => setIsCreatingNote(true)}
-                className="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
-              >
-                <Plus className="h-5 w-5" />
-              </button>
-            </div>
-
-            {isCreatingNote && (
-              <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200">
-                <input
-                  type="text"
-                  placeholder="Note title..."
-                  value={noteTitle}
-                  onChange={(e) => setNoteTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2"
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleCreateNote}
-                    className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600"
-                  >
-                    Create
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsCreatingNote(false);
-                      setNoteTitle("");
-                    }}
-                    className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-2">
-              {folderNotes.map((note) => (
-                <button
-                  key={note.id}
-                  onClick={() => setSelectedNote(note)}
-                  className={`w-full text-left p-3 rounded-lg hover:bg-white transition-colors ${
-                    selectedNote?.id === note.id ? "bg-white shadow-sm" : ""
-                  }`}
-                >
-                  <div className="flex items-start">
-                    <FileText className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{note.title}</h4>
-                      <p className="text-sm text-gray-500 line-clamp-2 mt-1">
-                        {note.content || "No content yet..."}
-                      </p>
+      {/* Folders Grid */}
+      <main className="p-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">Your Folders</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {folders.map((folder) => {
+              const folderNotebooks = getNotebooksByFolder(folder.id);
+              
+              return (
+                <div key={folder.id} className="space-y-4">
+                  {/* Folder Header */}
+                  <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden`}>
+                    <h3 className="text-2xl font-bold">{folder.name}</h3>
+                    <div className="absolute bottom-4 right-4">
+                      <FolderOpen className="h-16 w-16 text-white/30" />
                     </div>
                   </div>
-                </button>
-              ))}
-              {folderNotes.length === 0 && !isCreatingNote && (
-                <p className="text-center text-gray-500 py-8">
-                  No notes yet. Create your first note!
-                </p>
-              )}
-            </div>
-          </div>
-        )}
 
-        {/* Note Editor */}
-        {selectedNote && (
-          <div className="flex-1 bg-white p-8">
-            <input
-              type="text"
-              value={selectedNote.title}
-              onChange={(e) => {
-                const updatedNotes = notes.map((note) =>
-                  note.id === selectedNote.id
-                    ? { ...note, title: e.target.value }
-                    : note
-                );
-                setNotes(updatedNotes);
-                setSelectedNote({ ...selectedNote, title: e.target.value });
-              }}
-              className="text-2xl font-semibold mb-4 w-full outline-none"
-            />
-            <textarea
-              value={selectedNote.content}
-              onChange={(e) => handleUpdateNote(e.target.value)}
-              placeholder="Start typing your note..."
-              className="w-full h-[calc(100vh-16rem)] p-4 text-gray-700 outline-none resize-none"
-            />
-          </div>
-        )}
+                  {/* Notebooks in Folder */}
+                  <div className="bg-white rounded-b-lg shadow-sm border border-gray-200 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-base font-semibold text-gray-800">Notebooks</h4>
+                      <button
+                        onClick={() => setIsCreatingNotebook(folder.id)}
+                        className="text-blue-500 hover:text-blue-600"
+                      >
+                        <Plus className="h-5 w-5" />
+                      </button>
+                    </div>
 
-        {/* Empty State */}
-        {!selectedFolder && (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <Folder className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Select a folder to get started
-              </h3>
-              <p className="text-gray-500">
-                Choose a quarter folder to view and create notes
-              </p>
-            </div>
+                    {isCreatingNotebook === folder.id && (
+                      <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                        <input
+                          type="text"
+                          placeholder="Notebook name..."
+                          value={newNotebookName}
+                          onChange={(e) => setNewNotebookName(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2 text-sm text-gray-900 placeholder-gray-600"
+                          autoFocus
+                          onKeyPress={(e) => {
+                            if (e.key === 'Enter') {
+                              handleCreateNotebook(folder.id);
+                            }
+                          }}
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleCreateNotebook(folder.id)}
+                            className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm"
+                          >
+                            Create
+                          </button>
+                          <button
+                            onClick={() => {
+                              setIsCreatingNotebook(null);
+                              setNewNotebookName("");
+                            }}
+                            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      {folderNotebooks.map((notebook) => {
+                        const noteCount = getNotesCount(notebook.id);
+                        
+                        return (
+                          <div
+                            key={notebook.id}
+                            className={`${notebook.color} rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow group`}
+                            onClick={() => router.push(`/notebooks/${notebook.id}`)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center">
+                                <BookOpen className="h-4 w-4 text-gray-700 mr-2" />
+                                <span className="font-semibold text-gray-900">{notebook.name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteNotebook(notebook.id);
+                                  }}
+                                  className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-500 transition-opacity"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      
+                      {folderNotebooks.length === 0 && isCreatingNotebook !== folder.id && (
+                        <p className="text-center text-gray-600 py-4 text-sm font-medium">
+                          No notebooks yet
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
