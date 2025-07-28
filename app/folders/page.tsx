@@ -2,46 +2,88 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen, Edit2, Check, X, Archive, ArchiveRestore } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-interface Notebook {
-  id: string;
-  name: string;
-  folderId: string;
-  color: string;
-  createdAt: Date;
-}
-
-interface FolderType {
-  id: string;
-  name: string;
-  color: string;
-}
+import { 
+  getFolders, 
+  saveFolders, 
+  createFolder, 
+  updateFolder, 
+  deleteFolder,
+  getNotebooks,
+  saveNotebooks,
+  createNotebook,
+  updateNotebook,
+  archiveNotebook,
+  restoreNotebook,
+  deleteNotebook,
+  getNotes,
+  type Folder,
+  type Notebook 
+} from "@/lib/storage";
 
 export default function FoldersPage() {
   const router = useRouter();
-  const [folders] = useState<FolderType[]>([
-    { id: "q1", name: "Q1 2025", color: "bg-red-500" },
-    { id: "q2", name: "Q2 2025", color: "bg-blue-500" },
-    { id: "q3", name: "Q3 2025", color: "bg-purple-500" },
-    { id: "q4", name: "Q4 2025", color: "bg-green-500" },
-  ]);
-
-  const [notebooks, setNotebooks] = useState<Notebook[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("notemaxxing-notebooks");
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
-
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [notebooks, setNotebooks] = useState<Notebook[]>([]);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderColor, setNewFolderColor] = useState("bg-indigo-500");
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editFolderName, setEditFolderName] = useState("");
   const [isCreatingNotebook, setIsCreatingNotebook] = useState<string | null>(null);
   const [newNotebookName, setNewNotebookName] = useState("");
+  const [editingNotebookId, setEditingNotebookId] = useState<string | null>(null);
+  const [editNotebookName, setEditNotebookName] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+
+  const folderColors = [
+    "bg-red-500",
+    "bg-blue-500",
+    "bg-purple-500",
+    "bg-green-500",
+    "bg-indigo-500",
+    "bg-pink-500",
+    "bg-yellow-500",
+    "bg-orange-500",
+  ];
 
   useEffect(() => {
-    localStorage.setItem("notemaxxing-notebooks", JSON.stringify(notebooks));
-  }, [notebooks]);
+    setFolders(getFolders());
+    setNotebooks(getNotebooks(showArchived));
+  }, [showArchived]);
+
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) return;
+
+    const newFolder = createFolder(newFolderName, newFolderColor);
+    setFolders([...folders, newFolder]);
+    setIsCreatingFolder(false);
+    setNewFolderName("");
+    setNewFolderColor("bg-indigo-500");
+  };
+
+  const handleUpdateFolder = (id: string) => {
+    if (!editFolderName.trim()) return;
+
+    updateFolder(id, { name: editFolderName });
+    setFolders(folders.map(f => 
+      f.id === id ? { ...f, name: editFolderName } : f
+    ));
+    setEditingFolderId(null);
+    setEditFolderName("");
+  };
+
+  const handleDeleteFolder = (id: string) => {
+    if (!confirm("Are you sure you want to delete this folder? All notebooks and notes inside will be deleted.")) {
+      return;
+    }
+
+    deleteFolder(id);
+    setFolders(folders.filter(f => f.id !== id));
+    // Refresh notebooks to reflect deletions
+    setNotebooks(getNotebooks());
+  };
 
   const handleCreateNotebook = (folderId: string) => {
     if (!newNotebookName.trim()) return;
@@ -49,45 +91,46 @@ export default function FoldersPage() {
     const colors = ["bg-indigo-200", "bg-pink-200", "bg-yellow-200", "bg-emerald-200", "bg-cyan-200"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-    const newNotebook: Notebook = {
-      id: Date.now().toString(),
-      name: newNotebookName,
-      folderId: folderId,
-      color: randomColor,
-      createdAt: new Date(),
-    };
-
-    setNotebooks([...notebooks, newNotebook]);
+    createNotebook(newNotebookName, folderId, randomColor);
+    setNotebooks(getNotebooks(showArchived));
     setIsCreatingNotebook(null);
     setNewNotebookName("");
   };
 
+  const handleUpdateNotebook = (id: string) => {
+    if (!editNotebookName.trim()) return;
+
+    updateNotebook(id, { name: editNotebookName });
+    setNotebooks(getNotebooks(showArchived));
+    setEditingNotebookId(null);
+    setEditNotebookName("");
+  };
+
+  const handleArchiveNotebook = (notebookId: string) => {
+    archiveNotebook(notebookId);
+    setNotebooks(getNotebooks(showArchived));
+  };
+
+  const handleRestoreNotebook = (notebookId: string) => {
+    restoreNotebook(notebookId);
+    setNotebooks(getNotebooks(showArchived));
+  };
+
   const handleDeleteNotebook = (notebookId: string) => {
-    setNotebooks(notebooks.filter(n => n.id !== notebookId));
-    
-    // Also delete all notes in this notebook
-    if (typeof window !== "undefined") {
-      const savedNotes = localStorage.getItem("notemaxxing-notes");
-      if (savedNotes) {
-        const notes = JSON.parse(savedNotes);
-        const filteredNotes = notes.filter((n: any) => n.notebookId !== notebookId);
-        localStorage.setItem("notemaxxing-notes", JSON.stringify(filteredNotes));
-      }
+    if (!confirm("Are you sure you want to permanently delete this notebook? All notes inside will be deleted. Consider archiving instead.")) {
+      return;
     }
+
+    deleteNotebook(notebookId);
+    setNotebooks(getNotebooks(showArchived));
   };
 
   const getNotebooksByFolder = (folderId: string) => 
     notebooks.filter(notebook => notebook.folderId === folderId);
 
   const getNotesCount = (notebookId: string) => {
-    if (typeof window !== "undefined") {
-      const savedNotes = localStorage.getItem("notemaxxing-notes");
-      if (savedNotes) {
-        const notes = JSON.parse(savedNotes);
-        return notes.filter((n: any) => n.notebookId === notebookId).length;
-      }
-    }
-    return 0;
+    const notes = getNotes();
+    return notes.filter((n) => n.notebookId === notebookId).length;
   };
 
   return (
@@ -102,9 +145,78 @@ export default function FoldersPage() {
               </Link>
               <h1 className="ml-4 text-xl font-semibold italic">Notemaxxing</h1>
             </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                  showArchived 
+                    ? "bg-gray-200 text-gray-700 hover:bg-gray-300" 
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <Archive className="h-4 w-4" />
+                {showArchived ? "Hide Archived" : "Show Archived"}
+              </button>
+              <button
+                onClick={() => setIsCreatingFolder(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                <Plus className="h-4 w-4" />
+                New Folder
+              </button>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Create Folder Modal */}
+      {isCreatingFolder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold mb-4">Create New Folder</h3>
+            <input
+              type="text"
+              placeholder="Folder name..."
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4 text-gray-900 placeholder-gray-600"
+              autoFocus
+            />
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+              <div className="grid grid-cols-4 gap-2">
+                {folderColors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setNewFolderColor(color)}
+                    className={`${color} h-10 rounded-md hover:opacity-80 ${
+                      newFolderColor === color ? 'ring-2 ring-offset-2 ring-gray-800' : ''
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCreateFolder}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              >
+                Create
+              </button>
+              <button
+                onClick={() => {
+                  setIsCreatingFolder(false);
+                  setNewFolderName("");
+                  setNewFolderColor("bg-indigo-500");
+                }}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Folders Grid */}
       <main className="p-6">
@@ -118,11 +230,57 @@ export default function FoldersPage() {
               return (
                 <div key={folder.id} className="space-y-4">
                   {/* Folder Header */}
-                  <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden`}>
-                    <h3 className="text-2xl font-bold">{folder.name}</h3>
-                    <div className="absolute bottom-4 right-4">
-                      <FolderOpen className="h-16 w-16 text-white/30" />
-                    </div>
+                  <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
+                    {editingFolderId === folder.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editFolderName}
+                          onChange={(e) => setEditFolderName(e.target.value)}
+                          className="bg-white/20 text-white placeholder-white/70 px-2 py-1 rounded"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleUpdateFolder(folder.id)}
+                          className="p-1 hover:bg-white/20 rounded"
+                        >
+                          <Check className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingFolderId(null);
+                            setEditFolderName("");
+                          }}
+                          className="p-1 hover:bg-white/20 rounded"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="text-2xl font-bold">{folder.name}</h3>
+                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingFolderId(folder.id);
+                              setEditFolderName(folder.name);
+                            }}
+                            className="p-1 hover:bg-white/20 rounded"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteFolder(folder.id)}
+                            className="p-1 hover:bg-white/20 rounded"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <div className="absolute bottom-4 right-4">
+                          <FolderOpen className="h-16 w-16 text-white/30" />
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Notebooks in Folder */}
@@ -179,27 +337,101 @@ export default function FoldersPage() {
                         return (
                           <div
                             key={notebook.id}
-                            className={`${notebook.color} rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow group`}
-                            onClick={() => router.push(`/notebooks/${notebook.id}`)}
+                            className={`${notebook.color} ${notebook.archived ? 'opacity-60' : ''} rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow group relative`}
                           >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <BookOpen className="h-4 w-4 text-gray-700 mr-2" />
-                                <span className="font-semibold text-gray-900">{notebook.name}</span>
-                              </div>
+                            {editingNotebookId === notebook.id ? (
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
+                                <input
+                                  type="text"
+                                  value={editNotebookName}
+                                  onChange={(e) => setEditNotebookName(e.target.value)}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-gray-900"
+                                  autoFocus
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleUpdateNotebook(notebook.id);
+                                    }
+                                  }}
+                                />
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDeleteNotebook(notebook.id);
+                                    handleUpdateNotebook(notebook.id);
                                   }}
-                                  className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-500 transition-opacity"
+                                  className="p-1 hover:bg-gray-200 rounded"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Check className="h-4 w-4 text-gray-700" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingNotebookId(null);
+                                    setEditNotebookName("");
+                                  }}
+                                  className="p-1 hover:bg-gray-200 rounded"
+                                >
+                                  <X className="h-4 w-4 text-gray-700" />
                                 </button>
                               </div>
-                            </div>
+                            ) : (
+                              <div 
+                                onClick={() => !notebook.archived && router.push(`/notebooks/${notebook.id}`)}
+                                className="flex items-center justify-between"
+                              >
+                                <div className="flex items-center">
+                                  <BookOpen className="h-4 w-4 text-gray-700 mr-2" />
+                                  <span className="font-semibold text-gray-900">
+                                    {notebook.name}
+                                    {notebook.archived && " (Archived)"}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
+                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setEditingNotebookId(notebook.id);
+                                        setEditNotebookName(notebook.name);
+                                      }}
+                                      className="p-1 hover:bg-gray-200 rounded"
+                                    >
+                                      <Edit2 className="h-4 w-4 text-gray-600" />
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (notebook.archived) {
+                                          handleRestoreNotebook(notebook.id);
+                                        } else {
+                                          handleArchiveNotebook(notebook.id);
+                                        }
+                                      }}
+                                      className="p-1 hover:bg-gray-200 rounded"
+                                      title={notebook.archived ? "Restore notebook" : "Archive notebook"}
+                                    >
+                                      {notebook.archived ? (
+                                        <ArchiveRestore className="h-4 w-4 text-gray-600" />
+                                      ) : (
+                                        <Archive className="h-4 w-4 text-gray-600" />
+                                      )}
+                                    </button>
+                                    {notebook.archived && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteNotebook(notebook.id);
+                                        }}
+                                        className="p-1 hover:bg-gray-200 rounded"
+                                      >
+                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         );
                       })}

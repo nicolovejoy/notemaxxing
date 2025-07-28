@@ -2,28 +2,26 @@
 
 ## High Priority Issues
 
-### 1. ❗ Folders are Hardcoded
-**Problem**: Folders (Q1-Q4) are hardcoded in multiple files
-**Files affected**:
-- `/app/folders/page.tsx` - Lines 24-29
-- `/app/page.tsx` - Lines 25-30
-- Folders cannot be created, edited, or deleted by users
+### ✅ COMPLETED: Dynamic Folders & Full CRUD Operations
 
-**Solution**: 
-- Store folders in localStorage like notebooks
-- Add folder management UI (create, edit, delete)
-- Migrate existing hardcoded folders to localStorage on first load
+**Folders** - FULLY DYNAMIC:
+- ✅ Create: New folders with custom names and colors
+- ✅ Read: Stored in localStorage, no longer hardcoded
+- ✅ Update: Inline rename functionality
+- ✅ Delete: With confirmation and cascade delete
 
-### 2. ❗ Complete CRUD Operations
-**Current Status**:
-- **Notebooks**: ✅ Create, ✅ Read, ❌ Update (rename), ✅ Delete
-- **Notes**: ✅ Create, ✅ Read, ✅ Update, ✅ Delete (in notebook page)
-- **Folders**: ❌ Create, ✅ Read, ❌ Update, ❌ Delete (hardcoded)
+**Notebooks** - FULL CRUD + ARCHIVE:
+- ✅ Create: Within any folder
+- ✅ Read: Navigate to individual notebook pages
+- ✅ Update: Inline rename functionality
+- ✅ Archive: Soft delete with restore option
+- ✅ Delete: Permanent delete (only for archived)
 
-**Missing Operations**:
-- Cannot rename notebooks (only delete)
-- Cannot rename/edit folders
-- Need better organization of CRUD operations
+**Notes** - FULL CRUD:
+- ✅ Create: Within notebooks
+- ✅ Read: View and navigate notes
+- ✅ Update: Edit title and content
+- ✅ Delete: Remove individual notes
 
 ## Features to Implement
 

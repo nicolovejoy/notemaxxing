@@ -2,36 +2,30 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, Search, Grid3X3, User, FolderOpen, BookOpen } from "lucide-react";
-
-interface Notebook {
-  id: string;
-  name: string;
-  folderId: string;
-  color: string;
-  createdAt: Date;
-}
+import {
+  Menu,
+  Search,
+  Grid3X3,
+  User,
+  FolderOpen,
+  BookOpen,
+} from "lucide-react";
+import {
+  getFolders,
+  getNotebooks,
+  type Folder,
+  type Notebook,
+} from "@/lib/storage";
 
 export default function Home() {
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("notemaxxing-notebooks");
-      setNotebooks(saved ? JSON.parse(saved) : []);
-    }
+    setFolders(getFolders());
+    setNotebooks(getNotebooks());
   }, []);
 
-  const folders = [
-    { id: "q1", name: "Q1", color: "bg-red-500" },
-    { id: "q2", name: "Q2", color: "bg-blue-500" },
-    { id: "q3", name: "Q3", color: "bg-purple-500" },
-    { id: "q4", name: "Q4", color: "bg-green-500" },
-  ];
-
-  const getNotebookCount = (folderId: string) => {
-    return notebooks.filter(n => n.folderId === folderId).length;
-  };
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -61,9 +55,8 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex flex-col items-center justify-center px-4 py-16">
-        <h1 className="text-4xl font-light italic mb-4">Notemaxxing</h1>
+        <h1 className="text-4xl font-light italic mb-4">Home</h1>
         <div className="w-24 h-0.5 bg-gray-300 mb-8"></div>
-        <p className="text-xl text-gray-900 mb-16 italic">Enhance your note-taking skills</p>
 
         {/* Feature Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
@@ -73,14 +66,20 @@ export default function Home() {
               <h2 className="text-lg font-medium mb-4 italic">Folders</h2>
               <div className="flex-1 space-y-3">
                 {folders.map((folder) => {
-                  const folderNotebooks = notebooks.filter(n => n.folderId === folder.id);
+                  const folderNotebooks = notebooks.filter(
+                    (n) => n.folderId === folder.id
+                  );
                   if (folderNotebooks.length === 0) return null;
-                  
+
                   return (
                     <div key={folder.id} className="space-y-2">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className={`w-3 h-3 ${folder.color} rounded`}></div>
-                        <span className="text-xs font-semibold text-gray-700">{folder.name}</span>
+                        <div
+                          className={`w-3 h-3 ${folder.color} rounded`}
+                        ></div>
+                        <span className="text-xs font-semibold text-gray-700">
+                          {folder.name}
+                        </span>
                       </div>
                       {folderNotebooks.slice(0, 2).map((notebook) => (
                         <div
@@ -94,7 +93,9 @@ export default function Home() {
                         >
                           <div className="flex items-center gap-2">
                             <BookOpen className="h-3 w-3 text-gray-700" />
-                            <span className="text-sm font-medium text-gray-800">{notebook.name}</span>
+                            <span className="text-sm font-medium text-gray-800">
+                              {notebook.name}
+                            </span>
                           </div>
                         </div>
                       ))}
@@ -120,7 +121,10 @@ export default function Home() {
                   <div className="border-2 border-gray-300 rounded-lg p-2">
                     <div className="grid grid-cols-12 gap-1">
                       {Array.from({ length: 48 }).map((_, i) => (
-                        <div key={i} className="aspect-square border border-gray-200 rounded-sm"></div>
+                        <div
+                          key={i}
+                          className="aspect-square border border-gray-200 rounded-sm"
+                        ></div>
                       ))}
                     </div>
                   </div>

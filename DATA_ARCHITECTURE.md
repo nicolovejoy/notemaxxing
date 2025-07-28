@@ -5,16 +5,18 @@ Notemaxxing currently uses browser's localStorage for data persistence. This is 
 
 ## Data Models
 
-### 1. Folders (Quarters)
-- **Storage**: Hard-coded in the application
+### 1. Folders
+- **Storage Key**: `notemaxxing-folders`
 - **Structure**: 
   ```typescript
   {
-    id: string;      // "q1", "q2", "q3", "q4"
-    name: string;    // "Q1 2025", etc.
-    color: string;   // Tailwind CSS class (bg-red-500, etc.)
+    id: string;         // Timestamp-based ID
+    name: string;       // User-defined name
+    color: string;      // Tailwind CSS class (bg-red-500, etc.)
+    createdAt: Date;    // Creation timestamp
   }
   ```
+- **Notes**: Initialized with Q1-Q4 on first load, fully customizable
 
 ### 2. Notebooks
 - **Storage Key**: `notemaxxing-notebooks`
@@ -23,9 +25,11 @@ Notemaxxing currently uses browser's localStorage for data persistence. This is 
   {
     id: string;         // Timestamp-based ID
     name: string;       // User-defined name
-    folderId: string;   // References folder (q1, q2, etc.)
+    folderId: string;   // References folder ID
     color: string;      // Random pastel color
     createdAt: Date;    // Creation timestamp
+    archived?: boolean; // Archive status
+    archivedAt?: Date;  // Archive timestamp
   }
   ```
 
