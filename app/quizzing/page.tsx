@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Play, Check, X } from "lucide-react";
+import { Logo } from "@/components/logo";
 import { STORAGE_KEYS } from "@/lib/constants";
 
 interface Quiz {
@@ -122,7 +123,10 @@ export default function QuizzingPage() {
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
                 <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
-              <h1 className="ml-4 text-xl font-semibold italic">Quizzing</h1>
+              <div className="flex items-center gap-3 ml-4">
+                <Logo size={36} />
+                <h1 className="text-xl font-semibold italic">Quizzing</h1>
+              </div>
             </div>
           </div>
         </div>

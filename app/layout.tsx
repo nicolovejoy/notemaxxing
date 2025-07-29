@@ -19,6 +19,11 @@ export const metadata: Metadata = {
   title: "Notemaxxing",
   description:
     "The world's best notetaking app for college students in the age of AI",
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
 };
 
 export default function RootLayout({

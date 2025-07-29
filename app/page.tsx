@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
+import { Logo } from "@/components/logo";
 import { useFolders, useNotebooks } from "@/lib/store/hooks";
 import { Card } from "@/components/ui";
 
@@ -28,9 +29,12 @@ export default function Home() {
               <button className="p-2 rounded-md hover:bg-gray-100">
                 <Menu className="h-5 w-5 text-gray-800" />
               </button>
-              <div className="relative group ml-4">
-                <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
-                <BuildTimestamp />
+              <div className="flex items-center gap-3 ml-4">
+                <Logo size={36} />
+                <div className="relative group">
+                  <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
+                  <BuildTimestamp />
+                </div>
               </div>
             </div>
             <div className="flex items-center space-x-4">
@@ -48,7 +52,8 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="flex flex-col items-center justify-center px-4 py-16">
-        <h1 className="text-4xl font-light italic mb-4">Home</h1>
+        <Logo size={48} />
+        <h1 className="text-4xl font-light italic mb-4 mt-4">Home</h1>
         <div className="w-24 h-0.5 bg-gray-300 mb-8"></div>
 
         {/* Feature Cards */}

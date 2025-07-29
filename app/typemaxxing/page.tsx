@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Timer, RotateCcw } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 export default function TypingPage() {
   const [text] = useState(
@@ -67,7 +68,10 @@ export default function TypingPage() {
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
                 <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
-              <h1 className="ml-4 text-xl font-semibold italic">Typemaxxing</h1>
+              <div className="flex items-center gap-3 ml-4">
+                <Logo size={36} />
+                <h1 className="text-xl font-semibold italic">Typemaxxing</h1>
+              </div>
             </div>
           </div>
         </div>
