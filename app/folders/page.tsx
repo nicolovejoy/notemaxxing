@@ -16,6 +16,7 @@ import {
   useInitializeStore,
   useSyncState
 } from "@/lib/store";
+import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
 
 export default function FoldersPage() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function FoldersPage() {
   
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
-  const [newFolderColor, setNewFolderColor] = useState("bg-indigo-500");
+  const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR);
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editFolderName, setEditFolderName] = useState("");
   const [isCreatingNotebook, setIsCreatingNotebook] = useState<string | null>(null);
@@ -38,16 +39,6 @@ export default function FoldersPage() {
   const [editNotebookName, setEditNotebookName] = useState("");
   const [showArchived, setShowArchived] = useState(false);
 
-  const folderColors = [
-    "bg-red-500",
-    "bg-blue-500",
-    "bg-purple-500",
-    "bg-green-500",
-    "bg-indigo-500",
-    "bg-pink-500",
-    "bg-yellow-500",
-    "bg-orange-500",
-  ];
 
   useEffect(() => {
     initializeStore();
@@ -60,7 +51,7 @@ export default function FoldersPage() {
       await createFolder(newFolderName, newFolderColor);
       setIsCreatingFolder(false);
       setNewFolderName("");
-      setNewFolderColor("bg-indigo-500");
+      setNewFolderColor(DEFAULT_FOLDER_COLOR);
     } catch (error) {
       console.error('Failed to create folder:', error);
     }
@@ -93,8 +84,7 @@ export default function FoldersPage() {
   const handleCreateNotebook = async (folderId: string) => {
     if (!newNotebookName.trim()) return;
 
-    const colors = ["bg-indigo-200", "bg-pink-200", "bg-yellow-200", "bg-emerald-200", "bg-cyan-200"];
-    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    const randomColor = NOTEBOOK_COLORS[Math.floor(Math.random() * NOTEBOOK_COLORS.length)];
 
     try {
       await createNotebook(newNotebookName, folderId, randomColor);
@@ -229,7 +219,7 @@ export default function FoldersPage() {
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
               <div className="grid grid-cols-4 gap-2">
-                {folderColors.map((color) => (
+                {FOLDER_COLORS.map((color) => (
                   <button
                     key={color}
                     onClick={() => setNewFolderColor(color)}
@@ -251,7 +241,7 @@ export default function FoldersPage() {
                 onClick={() => {
                   setIsCreatingFolder(false);
                   setNewFolderName("");
-                  setNewFolderColor("bg-indigo-500");
+                  setNewFolderColor(DEFAULT_FOLDER_COLOR);
                 }}
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
               >

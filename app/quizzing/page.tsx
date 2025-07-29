@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Play, Check, X } from "lucide-react";
+import { STORAGE_KEYS } from "@/lib/constants";
 
 interface Quiz {
   id: string;
@@ -19,7 +20,7 @@ interface Question {
 export default function QuizzingPage() {
   const [quizzes, setQuizzes] = useState<Quiz[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("notemaxxing-quizzes");
+      const saved = localStorage.getItem(STORAGE_KEYS.QUIZZES);
       return saved ? JSON.parse(saved) : [];
     }
     return [];
@@ -38,7 +39,7 @@ export default function QuizzingPage() {
   const [score, setScore] = useState(0);
 
   useEffect(() => {
-    localStorage.setItem("notemaxxing-quizzes", JSON.stringify(quizzes));
+    localStorage.setItem(STORAGE_KEYS.QUIZZES, JSON.stringify(quizzes));
   }, [quizzes]);
 
   const createQuiz = () => {

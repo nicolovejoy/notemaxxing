@@ -3,11 +3,13 @@ const path = require('path');
 
 const buildInfo = {
   timestamp: new Date().toISOString(),
-  date: new Date().toLocaleDateString('en-US', { 
+  date: new Date().toLocaleString('en-US', { 
+    timeZone: 'America/Los_Angeles',
     month: 'short', 
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    hour12: true
   })
 };
 

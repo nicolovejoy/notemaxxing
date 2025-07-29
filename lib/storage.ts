@@ -1,4 +1,5 @@
 // Storage service for managing data in localStorage
+import { STORAGE_KEYS, DEFAULT_FOLDERS } from './constants';
 
 export interface Folder {
   id: string;
@@ -26,27 +27,21 @@ export interface Note {
   updatedAt?: Date;
 }
 
-const FOLDERS_KEY = 'notemaxxing-folders';
-const NOTEBOOKS_KEY = 'notemaxxing-notebooks';
-const NOTES_KEY = 'notemaxxing-notes';
-
-// Default folders for initial setup
-const DEFAULT_FOLDERS: Folder[] = [
-  { id: "q1", name: "Q1 2025", color: "bg-red-500", createdAt: new Date() },
-  { id: "q2", name: "Q2 2025", color: "bg-blue-500", createdAt: new Date() },
-  { id: "q3", name: "Q3 2025", color: "bg-purple-500", createdAt: new Date() },
-  { id: "q4", name: "Q4 2025", color: "bg-green-500", createdAt: new Date() },
-];
+// Map default folders to include createdAt
+const defaultFolders: Folder[] = DEFAULT_FOLDERS.map(f => ({
+  ...f,
+  createdAt: new Date()
+}));
 
 // Folder operations
 export const getFolders = (): Folder[] => {
-  if (typeof window === 'undefined') return DEFAULT_FOLDERS;
+  if (typeof window === 'undefined') return defaultFolders;
   
-  const saved = localStorage.getItem(FOLDERS_KEY);
+  const saved = localStorage.getItem(STORAGE_KEYS.FOLDERS);
   if (!saved) {
     // Initialize with default folders on first load
-    localStorage.setItem(FOLDERS_KEY, JSON.stringify(DEFAULT_FOLDERS));
-    return DEFAULT_FOLDERS;
+    localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(defaultFolders));
+    return defaultFolders;
   }
   
   return JSON.parse(saved);
@@ -54,7 +49,7 @@ export const getFolders = (): Folder[] => {
 
 export const saveFolders = (folders: Folder[]) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+    localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders));
   }
 };
 
@@ -105,7 +100,7 @@ export const deleteFolder = (id: string) => {
 // Notebook operations
 export const getNotebooks = (includeArchived = false): Notebook[] => {
   if (typeof window === 'undefined') return [];
-  const saved = localStorage.getItem(NOTEBOOKS_KEY);
+  const saved = localStorage.getItem(STORAGE_KEYS.NOTEBOOKS);
   const notebooks = saved ? JSON.parse(saved) : [];
   
   if (includeArchived) {
@@ -117,7 +112,7 @@ export const getNotebooks = (includeArchived = false): Notebook[] => {
 
 export const saveNotebooks = (notebooks: Notebook[]) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(NOTEBOOKS_KEY, JSON.stringify(notebooks));
+    localStorage.setItem(STORAGE_KEYS.NOTEBOOKS, JSON.stringify(notebooks));
   }
 };
 
@@ -173,13 +168,13 @@ export const deleteNotebook = (id: string) => {
 // Note operations
 export const getNotes = (): Note[] => {
   if (typeof window === 'undefined') return [];
-  const saved = localStorage.getItem(NOTES_KEY);
+  const saved = localStorage.getItem(STORAGE_KEYS.NOTES);
   return saved ? JSON.parse(saved) : [];
 };
 
 export const saveNotes = (notes: Note[]) => {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+    localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(notes));
   }
 };
 
