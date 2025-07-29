@@ -1,6 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const protectedPaths = [
+  '/folders',
+  '/notebooks',
+  '/quizzing',
+  '/typemaxxing'
+]
+
 export async function middleware(request: NextRequest) {
   // Skip middleware if Supabase is not configured
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -36,14 +43,20 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected routes
-  if (!user && !request.nextUrl.pathname.startsWith('/auth')) {
+  const isProtectedPath = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
+  )
+
+  // Redirect unauthenticated users from protected routes
+  if (!user && isProtectedPath) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
+    // Preserve intended destination
+    url.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(url)
   }
 
-  // Redirect to home if user is logged in and trying to access auth pages
+  // Redirect authenticated users from auth pages
   if (user && request.nextUrl.pathname.startsWith('/auth')) {
     const url = request.nextUrl.clone()
     url.pathname = '/'

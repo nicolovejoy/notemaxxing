@@ -1,20 +1,34 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Folder, Notebook, Note, Quiz } from './types'
 
-const supabase = createClient()
+// Helper to get Supabase client with null check
+function getSupabaseClient() {
+  const supabase = createClient()
+  if (!supabase) {
+    throw new Error('Supabase client not available')
+  }
+  return supabase
+}
 
 export const foldersApi = {
   async getAll() {
-    const { data, error } = await supabase
-      .from('folders')
-      .select('*')
-      .order('created_at', { ascending: true })
-    
-    if (error) throw error
-    return data as Folder[]
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase
+        .from('folders')
+        .select('*')
+        .order('created_at', { ascending: true })
+      
+      if (error) throw error
+      return data as Folder[]
+    } catch (error) {
+      console.warn('Failed to fetch folders:', error)
+      return [] // Return empty array for development without Supabase
+    }
   },
 
   async create(folder: Omit<Folder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('folders')
       .insert(folder)
@@ -26,6 +40,7 @@ export const foldersApi = {
   },
 
   async update(id: string, updates: Partial<Omit<Folder, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('folders')
       .update(updates)
@@ -38,6 +53,7 @@ export const foldersApi = {
   },
 
   async delete(id: string) {
+    const supabase = getSupabaseClient()
     const { error } = await supabase
       .from('folders')
       .delete()
@@ -49,22 +65,29 @@ export const foldersApi = {
 
 export const notebooksApi = {
   async getAll(includeArchived = false) {
-    let query = supabase
-      .from('notebooks')
-      .select('*')
-      .order('created_at', { ascending: true })
-    
-    if (!includeArchived) {
-      query = query.eq('archived', false)
+    try {
+      const supabase = getSupabaseClient()
+      let query = supabase
+        .from('notebooks')
+        .select('*')
+        .order('created_at', { ascending: true })
+      
+      if (!includeArchived) {
+        query = query.eq('archived', false)
+      }
+      
+      const { data, error } = await query
+      
+      if (error) throw error
+      return data as Notebook[]
+    } catch (error) {
+      console.warn('Failed to fetch notebooks:', error)
+      return []
     }
-    
-    const { data, error } = await query
-    
-    if (error) throw error
-    return data as Notebook[]
   },
 
   async create(notebook: Omit<Notebook, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'archived' | 'archived_at'>) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('notebooks')
       .insert({ ...notebook, archived: false, archived_at: null })
@@ -76,6 +99,7 @@ export const notebooksApi = {
   },
 
   async update(id: string, updates: Partial<Omit<Notebook, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('notebooks')
       .update(updates)
@@ -96,6 +120,7 @@ export const notebooksApi = {
   },
 
   async delete(id: string) {
+    const supabase = getSupabaseClient()
     const { error } = await supabase
       .from('notebooks')
       .delete()
@@ -107,27 +132,40 @@ export const notebooksApi = {
 
 export const notesApi = {
   async getAll() {
-    const { data, error } = await supabase
-      .from('notes')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data as Note[]
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data as Note[]
+    } catch (error) {
+      console.warn('Failed to fetch notes:', error)
+      return []
+    }
   },
 
   async getByNotebook(notebookId: string) {
-    const { data, error } = await supabase
-      .from('notes')
-      .select('*')
-      .eq('notebook_id', notebookId)
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data as Note[]
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('notebook_id', notebookId)
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data as Note[]
+    } catch (error) {
+      console.warn('Failed to fetch notes by notebook:', error)
+      return []
+    }
   },
 
   async create(note: Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('notes')
       .insert(note)
@@ -139,6 +177,7 @@ export const notesApi = {
   },
 
   async update(id: string, updates: Partial<Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('notes')
       .update(updates)
@@ -151,6 +190,7 @@ export const notesApi = {
   },
 
   async delete(id: string) {
+    const supabase = getSupabaseClient()
     const { error } = await supabase
       .from('notes')
       .delete()
@@ -162,16 +202,23 @@ export const notesApi = {
 
 export const quizzesApi = {
   async getAll() {
-    const { data, error } = await supabase
-      .from('quizzes')
-      .select('*')
-      .order('created_at', { ascending: false })
-    
-    if (error) throw error
-    return data as Quiz[]
+    try {
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase
+        .from('quizzes')
+        .select('*')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data as Quiz[]
+    } catch (error) {
+      console.warn('Failed to fetch quizzes:', error)
+      return []
+    }
   },
 
   async create(quiz: Omit<Quiz, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('quizzes')
       .insert(quiz)
@@ -183,6 +230,7 @@ export const quizzesApi = {
   },
 
   async update(id: string, updates: Partial<Omit<Quiz, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {
+    const supabase = getSupabaseClient()
     const { data, error } = await supabase
       .from('quizzes')
       .update(updates)
@@ -195,6 +243,7 @@ export const quizzesApi = {
   },
 
   async delete(id: string) {
+    const supabase = getSupabaseClient()
     const { error } = await supabase
       .from('quizzes')
       .delete()

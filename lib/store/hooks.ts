@@ -25,20 +25,21 @@ export const useFolderActions = () => {
 
 // Notebook hooks
 export const useNotebooks = (folderId?: string | null, includeArchived = false) => {
-  const notebooks = useStore((state) => {
+  const allNotebooks = useStore((state) => state.notebooks)
+  const loading = useStore((state) => state.syncState.status === 'loading')
+  const error = useStore((state) => state.syncState.error)
+  
+  const notebooks = useMemo(() => {
     let filtered = includeArchived 
-      ? state.notebooks 
-      : state.notebooks.filter(n => !n.archived)
+      ? allNotebooks 
+      : allNotebooks.filter(n => !n.archived)
     
     if (folderId) {
       filtered = filtered.filter(n => n.folder_id === folderId)
     }
     
     return filtered
-  })
-  
-  const loading = useStore((state) => state.syncState.status === 'loading')
-  const error = useStore((state) => state.syncState.error)
+  }, [allNotebooks, folderId, includeArchived])
   
   return { notebooks, loading, error }
 }
@@ -61,13 +62,14 @@ export const useNotebookActions = () => {
 
 // Note hooks
 export const useNotes = (notebookId?: string | null) => {
-  const notes = useStore((state) => {
-    if (!notebookId) return state.notes
-    return state.notes.filter(n => n.notebook_id === notebookId)
-  })
-  
+  const allNotes = useStore((state) => state.notes)
   const loading = useStore((state) => state.syncState.status === 'loading')
   const error = useStore((state) => state.syncState.error)
+  
+  const notes = useMemo(() => {
+    if (!notebookId) return allNotes
+    return allNotes.filter(n => n.notebook_id === notebookId)
+  }, [allNotes, notebookId])
   
   return { notes, loading, error }
 }

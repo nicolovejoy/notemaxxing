@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen, Edit2, Check, X, Archive, ArchiveRestore } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -13,14 +13,12 @@ import {
   useNotebooks,
   useNotebookActions,
   useNotes,
-  useInitializeStore,
   useSyncState
 } from "@/lib/store";
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
 
 export default function FoldersPage() {
   const router = useRouter();
-  const initializeStore = useInitializeStore();
   const { folders, loading: foldersLoading } = useFolders();
   const { notebooks, loading: notebooksLoading } = useNotebooks(null, true);
   const { notes } = useNotes();
@@ -38,11 +36,6 @@ export default function FoldersPage() {
   const [editingNotebookId, setEditingNotebookId] = useState<string | null>(null);
   const [editNotebookName, setEditNotebookName] = useState("");
   const [showArchived, setShowArchived] = useState(false);
-
-
-  useEffect(() => {
-    initializeStore();
-  }, [initializeStore]);
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;

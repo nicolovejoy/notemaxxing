@@ -18,6 +18,7 @@ interface AppState {
   // Sync State
   syncState: SyncState
   optimisticUpdates: OptimisticUpdate<Folder | Notebook | Note | Quiz>[]
+  initialized: boolean
   
   // Actions - Folders
   loadFolders: () => Promise<void>
@@ -72,6 +73,7 @@ export const useStore = create<AppState>()(
         lastSyncTime: null,
       },
       optimisticUpdates: [],
+      initialized: false,
 
       // Folder Actions
       loadFolders: async () => {
@@ -591,6 +593,18 @@ export const useStore = create<AppState>()(
       }),
 
       initializeStore: async () => {
+        const state = get()
+        
+        // Prevent duplicate initialization
+        if (state.initialized || state.syncState.status === 'loading') {
+          return
+        }
+
+        set((state) => {
+          state.syncState.status = 'loading'
+          state.syncState.error = null
+        })
+
         try {
           await Promise.all([
             get().loadFolders(),
@@ -598,7 +612,17 @@ export const useStore = create<AppState>()(
             get().loadNotes(),
             get().loadQuizzes(),
           ])
+          
+          set((state) => {
+            state.initialized = true
+            state.syncState.status = 'idle'
+            state.syncState.lastSyncTime = new Date()
+          })
         } catch (error) {
+          set((state) => {
+            state.syncState.status = 'error'
+            state.syncState.error = error instanceof Error ? error.message : 'Failed to initialize store'
+          })
           console.error('Failed to initialize store:', error)
         }
       },
