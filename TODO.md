@@ -26,9 +26,9 @@
 ## Features to Implement
 
 ### Data Management
-- [ ] Make folders dynamic (store in localStorage)
-- [ ] Add folder CRUD operations (Create, Update, Delete)
-- [ ] Add notebook rename/edit functionality
+- [x] ~~Make folders dynamic (store in localStorage)~~ ✅ COMPLETED
+- [x] ~~Add folder CRUD operations (Create, Update, Delete)~~ ✅ COMPLETED
+- [x] ~~Add notebook rename/edit functionality~~ ✅ COMPLETED
 - [ ] Add bulk operations (delete multiple notes/notebooks)
 - [ ] Add move operations (move notes between notebooks, notebooks between folders)
 - [ ] Add export/import functionality for backup
@@ -36,8 +36,9 @@
 - [ ] Add tags or categories to notes
 
 ### UI/UX Improvements
+- [x] ~~Simplify folder cards on home screen (show only name and count)~~ ✅ COMPLETED
 - [ ] Add loading states for data fetching
-- [ ] Add confirmation dialogs for delete operations
+- [x] ~~Add confirmation dialogs for delete operations~~ ✅ COMPLETED (for folders)
 - [ ] Add keyboard shortcuts (Cmd+N for new note, etc.)
 - [ ] Add markdown support for notes
 - [ ] Add dark mode
@@ -69,6 +70,6 @@
 - [ ] Note sharing via public links
 
 ## Bugs to Fix
-- [ ] Folders showing as hardcoded "2025" - should be dynamic
+- [x] ~~Folders showing as hardcoded "2025" - should be dynamic~~ ✅ FIXED
 - [ ] Ensure all localStorage operations handle errors gracefully
 - [ ] Fix any navigation issues between notebook and note views

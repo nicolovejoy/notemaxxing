@@ -23,6 +23,7 @@ export interface Note {
   content: string;
   notebookId: string;
   createdAt: Date;
+  updatedAt?: Date;
 }
 
 const FOLDERS_KEY = 'notemaxxing-folders';
@@ -180,4 +181,36 @@ export const saveNotes = (notes: Note[]) => {
   if (typeof window !== 'undefined') {
     localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
   }
+};
+
+export const createNote = (title: string, content: string, notebookId: string): Note => {
+  const newNote: Note = {
+    id: Date.now().toString(),
+    title,
+    content,
+    notebookId,
+    createdAt: new Date(),
+  };
+  
+  const notes = getNotes();
+  notes.push(newNote);
+  saveNotes(notes);
+  
+  return newNote;
+};
+
+export const updateNote = (id: string, updates: Partial<Note>) => {
+  const notes = getNotes();
+  const index = notes.findIndex(n => n.id === id);
+  
+  if (index !== -1) {
+    notes[index] = { ...notes[index], ...updates };
+    saveNotes(notes);
+  }
+};
+
+export const deleteNote = (id: string) => {
+  const notes = getNotes();
+  const filtered = notes.filter(n => n.id !== id);
+  saveNotes(filtered);
 };

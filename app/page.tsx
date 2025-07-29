@@ -64,48 +64,29 @@ export default function Home() {
           <Link href="/folders" className="block">
             <div className="bg-white rounded-2xl border border-gray-200 p-6 h-64 hover:shadow-lg transition-shadow flex flex-col cursor-pointer">
               <h2 className="text-lg font-medium mb-4 italic">Folders</h2>
-              <div className="flex-1 space-y-3">
-                {folders.map((folder) => {
-                  const folderNotebooks = notebooks.filter(
-                    (n) => n.folderId === folder.id
-                  );
-                  if (folderNotebooks.length === 0) return null;
+              <div className="flex-1 grid grid-cols-2 gap-2 overflow-hidden">
+                {folders.slice(0, 4).map((folder) => {
+                  const notebookCount = notebooks.filter(
+                    (n) => n.folderId === folder.id && !n.archived
+                  ).length;
 
                   return (
-                    <div key={folder.id} className="space-y-2">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div
-                          className={`w-3 h-3 ${folder.color} rounded`}
-                        ></div>
-                        <span className="text-xs font-semibold text-gray-700">
-                          {folder.name}
-                        </span>
-                      </div>
-                      {folderNotebooks.slice(0, 2).map((notebook) => (
-                        <div
-                          key={notebook.id}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            window.location.href = `/notebooks/${notebook.id}`;
-                          }}
-                          className={`${notebook.color} rounded-md p-2 cursor-pointer hover:shadow-sm transition-shadow`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <BookOpen className="h-3 w-3 text-gray-700" />
-                            <span className="text-sm font-medium text-gray-800">
-                              {notebook.name}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
+                    <div
+                      key={folder.id}
+                      className={`${folder.color} rounded-lg p-2 flex flex-col items-center justify-center text-white`}
+                    >
+                      <FolderOpen className="h-5 w-5 opacity-80" />
+                      <span className="font-semibold text-xs truncate max-w-full px-1">{folder.name}</span>
+                      <span className="text-[10px] opacity-80">
+                        {notebookCount} {notebookCount === 1 ? 'notebook' : 'notebooks'}
+                      </span>
                     </div>
                   );
                 })}
-                {notebooks.length === 0 && (
-                  <div className="text-center py-8 text-gray-600">
-                    <FolderOpen className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm">No notebooks yet</p>
+                {folders.length === 0 && (
+                  <div className="col-span-2 text-center py-8 text-gray-600">
+                    <FolderOpen className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm">No folders yet</p>
                   </div>
                 )}
               </div>
