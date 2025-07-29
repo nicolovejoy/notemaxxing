@@ -7,12 +7,14 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 ## Features
 
 ### 📁 Dynamic Folders
+
 - Create custom folders with names and colors
 - Rename folders inline
 - Delete folders with cascade deletion
 - Visual organization with color coding
 
 ### 📓 Smart Notebooks
+
 - Create notebooks within folders
 - Rename notebooks anytime
 - Archive notebooks instead of deleting
@@ -20,6 +22,7 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 - Permanent delete option for archived items
 
 ### 📝 Note Taking
+
 - Create and edit notes within notebooks
 - Auto-save functionality with smart title generation
 - Card-based grid view with sorting options
@@ -27,12 +30,14 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 - Contextual navigation between notebooks
 
 ### ⌨️ Typemaxxing
+
 - Practice typing with real-time feedback
 - Track WPM (Words Per Minute)
 - Monitor accuracy percentage
 - Visual keyboard display
 
 ### 🎯 Quizzing
+
 - Create custom quizzes by subject
 - Add questions and answers
 - Practice mode with self-grading
@@ -40,21 +45,27 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 
 ## Tech Stack
 
-- **Framework**: Next.js 15
-- **Auth & Database**: Supabase
-- **State**: Zustand
-- **Styling**: Tailwind CSS
+- **Framework**: Next.js 15.4.4 with App Router
+- **Language**: TypeScript 5.7.3
+- **UI**: React 19.1.0 + Tailwind CSS 4
+- **State Management**: Zustand 5.0.6 with Immer middleware
+- **Auth & Database**: Supabase (PostgreSQL)
+- **Icons**: Lucide React
+- **Code Quality**: ESLint, Prettier, Husky pre-commit hooks
 - **Deployment**: Vercel
 
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 20+
 - npm or yarn
+- Supabase account (for cloud features)
 
 ### Setup
 
 1. Clone and install:
+
 ```bash
 git clone https://github.com/nicolovejoy/notemaxxing.git
 cd notemaxxing
@@ -62,11 +73,13 @@ npm install
 ```
 
 2. Set up Supabase:
+
 - Create project at [supabase.com](https://supabase.com)
 - Run schema from `/lib/supabase/schema.sql`
 - Copy `.env.local.example` to `.env.local` and add your keys
 
 3. Run:
+
 ```bash
 npm run dev
 ```
@@ -89,7 +102,9 @@ notemaxxing/
 │   ├── quizzing/          # Quiz feature
 │   └── page.tsx           # Homepage
 ├── lib/                   # Utilities
-│   └── storage.ts         # Data persistence layer
+│   ├── store/            # Zustand store with hooks
+│   ├── supabase/         # Database client & schema
+│   └── storage.ts        # Legacy localStorage (being phased out)
 ├── public/                # Static assets
 └── components/            # React components
 ```
@@ -97,6 +112,7 @@ notemaxxing/
 ## Data Storage
 
 Data is stored in Supabase PostgreSQL with:
+
 - User authentication
 - Real-time sync
 - Row-level security
@@ -109,7 +125,7 @@ Data is stored in Supabase PostgreSQL with:
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
-- `npm run typecheck` - Run TypeScript compiler
+- `npm run type-check` - Run TypeScript compiler
 
 ### Contributing
 
