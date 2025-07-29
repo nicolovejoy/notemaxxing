@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import type { AuthResponse } from "@supabase/supabase-js";
 import Link from "next/link";
 
 export default function LoginPage() {
