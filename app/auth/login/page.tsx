@@ -14,15 +14,17 @@ export default function LoginPage() {
   const supabase = createClient();
 
   useEffect(() => {
-    // Check if user is already logged in
-    if (supabase) {
-      supabase.auth.getSession().then(({ data }) => {
-        if (data.session) {
-          router.push("/");
-          router.refresh();
-        }
-      });
-    }
+    const checkSession = async () => {
+      if (!supabase) return;
+      
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        router.push("/");
+        router.refresh();
+      }
+    };
+    
+    checkSession();
   }, [router, supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {

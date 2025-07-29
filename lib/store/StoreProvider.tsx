@@ -23,6 +23,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     
     // Listen for auth state changes
     const supabase = createClient()
+    // @ts-expect-error - Supabase auth callbacks have complex types that TypeScript struggles with
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
         // User just signed in, initialize the store

@@ -15,19 +15,26 @@ export function UserMenu() {
   useEffect(() => {
     if (!supabase) return;
     
-    // Get initial user
-    supabase.auth.getUser().then(({ data }) => {
+    let subscription: { unsubscribe: () => void } | null = null;
+    
+    const initializeAuth = async () => {
+      // Get initial user
+      const { data } = await supabase.auth.getUser();
       setUser(data.user);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
+      
+      // Listen for auth changes
+      // @ts-expect-error - Supabase auth callbacks have complex types that TypeScript struggles with
+      const authListener = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
+      subscription = authListener.data.subscription;
+    };
+    
+    initializeAuth();
+    
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [supabase]);
 
   const handleSignOut = async () => {
