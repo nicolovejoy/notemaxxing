@@ -16,8 +16,8 @@ export function UserMenu() {
     if (!supabase) return;
     
     // Get initial user
-    supabase.auth.getUser().then((response) => {
-      setUser(response.data.user);
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user);
     });
 
     // Listen for auth changes

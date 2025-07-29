@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import type { AuthResponse } from "@supabase/supabase-js";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -17,9 +16,8 @@ export default function LoginPage() {
   useEffect(() => {
     // Check if user is already logged in
     if (supabase) {
-      supabase.auth.getSession().then((response) => {
-        const session = response.data.session;
-        if (session) {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
           router.push("/");
           router.refresh();
         }
