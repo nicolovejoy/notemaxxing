@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
-import { useFolders, useNotebooks, useInitializeStore } from "@/lib/hooks";
+import { useFolders, useNotebooks, useInitializeStore } from "@/lib/store/hooks";
 import { Card } from "@/components/ui";
 
 export default function Home() {
