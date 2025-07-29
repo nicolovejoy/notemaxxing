@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
 import {
   Menu,
   Search,
@@ -10,17 +9,12 @@ import {
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
-import { useFolders, useNotebooks, useInitializeStore } from "@/lib/store/hooks";
+import { useFolders, useNotebooks } from "@/lib/store/hooks";
 import { Card } from "@/components/ui";
 
 export default function Home() {
-  const initializeStore = useInitializeStore();
   const { folders, loading: foldersLoading } = useFolders();
   const { notebooks, loading: notebooksLoading } = useNotebooks();
-  
-  useEffect(() => {
-    initializeStore();
-  }, [initializeStore]);
   
   const loading = foldersLoading || notebooksLoading;
 
