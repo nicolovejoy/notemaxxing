@@ -28,6 +28,11 @@ export default function SignupPage() {
       return;
     }
 
+    if (!supabase) {
+      setError("Authentication is not configured. Please set up Supabase.");
+      return;
+    }
+
     setLoading(true);
 
     try {

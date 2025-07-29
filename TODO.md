@@ -10,8 +10,12 @@
 
 ### Phase 1: Core Infrastructure (Week 1)
 - [x] ~~Dependencies, Supabase setup, schema, auth~~ ✅
-- [ ] Migrate from localStorage to Supabase
-- [ ] Implement offline support with IndexedDB fallback
+- [ ] **localStorage → Supabase Migration** (In Progress)
+  - [ ] Create Zustand store for state management
+  - [ ] Build data service layer (dual read/write)
+  - [ ] Implement offline queue with IndexedDB
+  - [ ] Add sync status indicators
+  - [ ] Auto-migrate existing localStorage data
 - [ ] Create default folders for new users
 
 ### Phase 2: Essential Features (Week 2)
@@ -95,3 +99,21 @@
 - Auto-save works 100% reliably
 - Works perfectly on mobile
 - College students use it for real classes
+
+## Data Migration Architecture
+
+### Dual Write Strategy
+```
+User Action → Memory/localStorage (instant) → Background sync to Supabase
+```
+
+### Sync Priority
+1. **Online**: Read from Supabase, write to both
+2. **Offline**: Read/write localStorage, queue for sync
+3. **Reconnect**: Process sync queue automatically
+
+### Key Features
+- **No data loss**: Existing localStorage migrates on first login
+- **Instant UI**: Updates happen at localStorage speed
+- **Cross-device**: Data syncs when online
+- **Offline-first**: Works perfectly without internet

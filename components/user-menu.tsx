@@ -13,6 +13,8 @@ export function UserMenu() {
   const supabase = createClient();
 
   useEffect(() => {
+    if (!supabase) return;
+    
     // Get initial user
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
@@ -26,9 +28,11 @@ export function UserMenu() {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   const handleSignOut = async () => {
+    if (!supabase) return;
+    
     await supabase.auth.signOut();
     router.push("/auth/login");
     router.refresh();

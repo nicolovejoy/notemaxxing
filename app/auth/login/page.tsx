@@ -15,18 +15,26 @@ export default function LoginPage() {
 
   useEffect(() => {
     // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.push("/");
-        router.refresh();
-      }
-    });
-  }, [router, supabase.auth]);
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) {
+          router.push("/");
+          router.refresh();
+        }
+      });
+    }
+  }, [router, supabase]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    if (!supabase) {
+      setError("Authentication is not configured. Please set up Supabase.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
