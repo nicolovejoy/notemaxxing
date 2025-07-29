@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen, Edit2, Check, X, Archive, ArchiveRestore } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { UserMenu } from "@/components/user-menu";
 import { 
   getFolders, 
   saveFolders, 
@@ -164,6 +165,7 @@ export default function FoldersPage() {
                 <Plus className="h-4 w-4" />
                 New Folder
               </button>
+              <UserMenu />
             </div>
           </div>
         </div>

@@ -21,9 +21,10 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 
 ### 📝 Note Taking
 - Create and edit notes within notebooks
-- Auto-save functionality
+- Auto-save functionality with smart title generation
+- Card-based grid view with sorting options
 - Clean, distraction-free editor
-- Organized note management
+- Contextual navigation between notebooks
 
 ### ⌨️ Typemaxxing
 - Practice typing with real-time feedback
@@ -39,12 +40,11 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 
 ## Tech Stack
 
-- **Framework**: Next.js 15.4
-- **Language**: TypeScript
+- **Framework**: Next.js 15
+- **Auth & Database**: Supabase
+- **State**: Zustand
 - **Styling**: Tailwind CSS
-- **Storage**: localStorage (client-side)
 - **Deployment**: Vercel
-- **Icons**: Lucide React
 
 ## Getting Started
 
@@ -52,25 +52,24 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 - Node.js 18+ 
 - npm or yarn
 
-### Installation
+### Setup
 
-1. Clone the repository:
+1. Clone and install:
 ```bash
 git clone https://github.com/nicolovejoy/notemaxxing.git
 cd notemaxxing
-```
-
-2. Install dependencies:
-```bash
 npm install
 ```
 
-3. Run the development server:
+2. Set up Supabase:
+- Create project at [supabase.com](https://supabase.com)
+- Run schema from `/lib/supabase/schema.sql`
+- Copy `.env.local.example` to `.env.local` and add your keys
+
+3. Run:
 ```bash
 npm run dev
 ```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ### Building for Production
 
@@ -97,13 +96,11 @@ notemaxxing/
 
 ## Data Storage
 
-All data is stored locally in the browser using localStorage:
-- `notemaxxing-folders`: User-created folders
-- `notemaxxing-notebooks`: Notebooks with archive support
-- `notemaxxing-notes`: Individual notes
-- `notemaxxing-quizzes`: Quiz questions and answers
-
-See [DATA_ARCHITECTURE.md](./DATA_ARCHITECTURE.md) for detailed information.
+Data is stored in Supabase PostgreSQL with:
+- User authentication
+- Real-time sync
+- Row-level security
+- Offline support (coming soon)
 
 ## Development
 

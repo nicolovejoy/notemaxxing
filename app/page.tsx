@@ -6,10 +6,10 @@ import {
   Menu,
   Search,
   Grid3X3,
-  User,
   FolderOpen,
   BookOpen,
 } from "lucide-react";
+import { UserMenu } from "@/components/user-menu";
 import {
   getFolders,
   getNotebooks,
@@ -45,9 +45,7 @@ export default function Home() {
               <button className="p-2 rounded-md hover:bg-gray-100">
                 <Grid3X3 className="h-5 w-5 text-gray-800" />
               </button>
-              <button className="p-2 rounded-md hover:bg-gray-100">
-                <User className="h-5 w-5 text-gray-800" />
-              </button>
+              <UserMenu />
             </div>
           </div>
         </div>

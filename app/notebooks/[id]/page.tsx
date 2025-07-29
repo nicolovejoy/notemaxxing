@@ -18,6 +18,7 @@ import {
   Calendar,
   SortAsc
 } from "lucide-react";
+import { UserMenu } from "@/components/user-menu";
 import {
   getFolders,
   getNotebooks,
@@ -129,16 +130,33 @@ export default function NotebookPage() {
     const timeoutId = setTimeout(() => {
       // If it's a new note (temp id), create it properly
       if (selectedNote.id.startsWith('temp-')) {
+        // If no title, use first 3 words of content
+        let title = editingNoteTitle.trim();
+        if (!title && editingNoteContent.trim()) {
+          const words = editingNoteContent.trim().split(/\s+/);
+          title = words.slice(0, 3).join(' ');
+          if (words.length > 3) title += '...';
+        }
+        
         const newNote = createNote(
-          editingNoteTitle || "Untitled Note",
+          title || "Untitled Note",
           editingNoteContent,
           notebookId
         );
         setSelectedNote(newNote);
       } else {
         // Update existing note
+        let title = editingNoteTitle.trim();
+        
+        // If title is empty but content exists, use first 3 words
+        if (!title && editingNoteContent.trim()) {
+          const words = editingNoteContent.trim().split(/\s+/);
+          title = words.slice(0, 3).join(' ');
+          if (words.length > 3) title += '...';
+        }
+        
         updateNote(selectedNote.id, {
-          title: editingNoteTitle,
+          title: title || "Untitled Note",
           content: editingNoteContent,
           updatedAt: new Date()
         });
@@ -195,6 +213,7 @@ export default function NotebookPage() {
               </Link>
               <h1 className="ml-4 text-xl font-semibold italic">Notemaxxing</h1>
             </div>
+            <UserMenu />
           </div>
         </div>
       </header>

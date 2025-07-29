@@ -1,75 +1,97 @@
 # Notemaxxing TODO List
 
-## High Priority Issues
+## Development Philosophy: Ship Fast, Test with Users, Iterate
 
-### ✅ COMPLETED: Dynamic Folders & Full CRUD Operations
+**Current Focus**: Get to working MVP that college students love
+**Skip For Now**: Unit tests, perfect code, complex features
+**Success Metric**: Students using it for real classes within 3 weeks
 
-**Folders** - FULLY DYNAMIC:
-- ✅ Create: New folders with custom names and colors
-- ✅ Read: Stored in localStorage, no longer hardcoded
-- ✅ Update: Inline rename functionality
-- ✅ Delete: With confirmation and cascade delete
+## Development Strategy: Move Fast First
 
-**Notebooks** - FULL CRUD + ARCHIVE:
-- ✅ Create: Within any folder
-- ✅ Read: Navigate to individual notebook pages
-- ✅ Update: Inline rename functionality
-- ✅ Archive: Soft delete with restore option
-- ✅ Delete: Permanent delete (only for archived)
+### Phase 1: Core Infrastructure (Week 1)
+- [x] ~~Dependencies, Supabase setup, schema, auth~~ ✅
+- [ ] Migrate from localStorage to Supabase
+- [ ] Implement offline support with IndexedDB fallback
+- [ ] Create default folders for new users
 
-**Notes** - FULL CRUD:
-- ✅ Create: Within notebooks
-- ✅ Read: View and navigate notes
-- ✅ Update: Edit title and content
-- ✅ Delete: Remove individual notes
+### Phase 2: Essential Features (Week 2)
+- [ ] Improve mobile responsiveness
+- [ ] Add real-time sync across devices
+- [ ] Implement proper error handling
+- [ ] Add loading states
+- [ ] Basic keyboard shortcuts (Cmd+N for new note)
 
-## Features to Implement
+### Phase 3: User Testing & Polish (Week 3)
+- [ ] Test with 3-5 college students
+- [ ] Fix critical bugs from feedback
+- [ ] Add export functionality
+- [ ] Implement search across notes
 
-### Data Management
-- [x] ~~Make folders dynamic (store in localStorage)~~ ✅ COMPLETED
-- [x] ~~Add folder CRUD operations (Create, Update, Delete)~~ ✅ COMPLETED
-- [x] ~~Add notebook rename/edit functionality~~ ✅ COMPLETED
-- [ ] Add bulk operations (delete multiple notes/notebooks)
-- [ ] Add move operations (move notes between notebooks, notebooks between folders)
-- [ ] Add export/import functionality for backup
-- [ ] Add search functionality across all notes
-- [ ] Add tags or categories to notes
+### Phase 4: AI Features (After Core is Stable)
+- [ ] Install `openai` package
+- [ ] Create `/api/enhance` endpoint for note enhancement
+- [ ] Add AI-powered diagramming
+- [ ] Smart quiz generation from notes
 
-### UI/UX Improvements
-- [x] ~~Simplify folder cards on home screen (show only name and count)~~ ✅ COMPLETED
-- [ ] Add loading states for data fetching
-- [x] ~~Add confirmation dialogs for delete operations~~ ✅ COMPLETED (for folders)
-- [ ] Add keyboard shortcuts (Cmd+N for new note, etc.)
-- [ ] Add markdown support for notes
-- [ ] Add dark mode
+## Must-Have Features (MVP)
 
-### Performance
-- [ ] Add debouncing for note auto-save
-- [ ] Optimize localStorage usage (consider IndexedDB for larger datasets)
-- [ ] Add pagination for large numbers of notes
+### Core Functionality
+- [x] ~~Auto-save with debouncing~~ ✅ COMPLETED
+- [ ] Mobile-first responsive design
+- [ ] Offline support with sync
+- [ ] Search across all notes
+- [ ] Export notes (PDF/Markdown)
 
-### Mobile Experience
-- [ ] Improve responsive design for mobile
-- [ ] Add swipe gestures for navigation
-- [ ] Optimize touch targets
+### Learning Features
+- [ ] Note selection UI for quiz/typing practice:
+  - Checkbox selection (rounded squares)
+  - Shift+click range selection
+  - Visual feedback for selected notes
+- [ ] Improved quiz generation from notes
+- [ ] Better typing practice with note content
 
-## Technical Debt
-- [ ] Add error boundaries
-- [ ] Add proper TypeScript types for localStorage operations
-- [ ] Consolidate data access into a service layer
-- [ ] Add unit tests
-- [ ] Add data validation
+## Nice-to-Have Features (Post-MVP)
 
-## Future Enhancements
-- [ ] User authentication
-- [ ] Cloud sync with a backend
+### Enhanced Editing
+- [ ] Markdown support
+- [ ] Dark mode
+- [ ] Tags/categories for notes
+- [ ] Bulk operations
+- [ ] Move notes between notebooks
+
+### AI Features (Phase 4)
+- [ ] Note enhancement/expansion
+- [ ] AI-generated diagrams
+- [ ] Smart summaries
+- [ ] Study guide generation
+
+### Future Considerations
 - [ ] Collaborative editing
 - [ ] Rich text editor
 - [ ] File attachments
 - [ ] Note templates
-- [ ] Note sharing via public links
+- [ ] Public sharing links
 
-## Bugs to Fix
-- [x] ~~Folders showing as hardcoded "2025" - should be dynamic~~ ✅ FIXED
-- [ ] Ensure all localStorage operations handle errors gracefully
-- [ ] Fix any navigation issues between notebook and note views
+## Technical Architecture
+
+### Folder Structure
+```
+/lib
+  /supabase.ts    # Supabase client
+  /store.ts       # Zustand store
+  /ai.ts          # AI functions
+/api
+  /notes          # CRUD endpoints
+  /enhance        # AI enhancement
+  /quiz           # Quiz generation
+```
+
+### Testing Strategy
+- **Current**: Manual testing only
+- **Future**: Add Vitest + React Testing Library when stable
+
+## Success Metrics
+- User creates first note < 30 seconds
+- Auto-save works 100% reliably
+- Works perfectly on mobile
+- College students use it for real classes
