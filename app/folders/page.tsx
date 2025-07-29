@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen, Edit2, Check, X, Archive
 import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
+import { Logo } from "@/components/logo";
 import { 
   useFolders, 
   useFolderActions,
@@ -165,9 +166,12 @@ export default function FoldersPage() {
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
                 <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
-              <div className="relative group ml-4">
-                <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
-                <BuildTimestamp />
+              <div className="flex items-center gap-3 ml-4">
+                <Logo size={36} />
+                <div className="relative group">
+                  <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
+                  <BuildTimestamp />
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-4">
