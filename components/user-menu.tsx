@@ -16,14 +16,15 @@ export function UserMenu() {
     if (!supabase) return;
     
     // Get initial user
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    supabase.auth.getUser().then(({ data }) => {
+      const { user } = data;
       setUser(user);
     });
 
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
     });
 
