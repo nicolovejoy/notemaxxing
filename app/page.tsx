@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import {
   Menu,
   Search,
@@ -10,21 +10,19 @@ import {
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
-import {
-  getFolders,
-  getNotebooks,
-  type Folder,
-  type Notebook,
-} from "@/lib/storage";
+import { useFolders, useNotebooks, useInitializeStore } from "@/lib/hooks";
+import { Card } from "@/components/ui";
 
 export default function Home() {
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [notebooks, setNotebooks] = useState<Notebook[]>([]);
-
+  const initializeStore = useInitializeStore();
+  const { folders, loading: foldersLoading } = useFolders();
+  const { notebooks, loading: notebooksLoading } = useNotebooks();
+  
   useEffect(() => {
-    setFolders(getFolders());
-    setNotebooks(getNotebooks());
-  }, []);
+    initializeStore();
+  }, [initializeStore]);
+  
+  const loading = foldersLoading || notebooksLoading;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -63,12 +61,16 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
           {/* Folders Card */}
           <Link href="/folders" className="block">
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 h-64 hover:shadow-lg transition-shadow flex flex-col cursor-pointer">
+            <Card className="p-6 h-64 flex flex-col" hover>
               <h2 className="text-lg font-medium mb-4 italic">Folders</h2>
               <div className="flex-1 grid grid-cols-2 gap-2 overflow-hidden">
-                {folders.slice(0, 4).map((folder) => {
+                {loading ? (
+                  <div className="col-span-2 flex items-center justify-center">
+                    <p className="text-gray-500">Loading...</p>
+                  </div>
+                ) : folders.slice(0, 4).map((folder) => {
                   const notebookCount = notebooks.filter(
-                    (n) => n.folderId === folder.id && !n.archived
+                    (n) => n.folder_id === folder.id && !n.archived
                   ).length;
 
                   return (
@@ -84,19 +86,19 @@ export default function Home() {
                     </div>
                   );
                 })}
-                {folders.length === 0 && (
+                {!loading && folders.length === 0 && (
                   <div className="col-span-2 text-center py-8 text-gray-600">
                     <FolderOpen className="h-10 w-10 text-gray-300 mx-auto mb-2" />
                     <p className="text-sm">No folders yet</p>
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
           </Link>
 
           {/* Typemaxxing Card */}
           <Link href="/typemaxxing" className="block">
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 h-64 hover:shadow-lg transition-shadow flex flex-col">
+            <Card className="p-6 h-64 flex flex-col" hover>
               <h2 className="text-lg font-medium mb-4 italic">Typemaxxing</h2>
               <div className="flex-1 flex items-center justify-center">
                 <div className="w-full max-w-xs">
@@ -112,12 +114,12 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           </Link>
 
           {/* Quizzing Card */}
           <Link href="/quizzing" className="block md:col-span-2 md:max-w-md">
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 h-64 hover:shadow-lg transition-shadow">
+            <Card className="p-6 h-64" hover>
               <h2 className="text-lg font-medium mb-4 italic">Quizzing</h2>
               <div className="flex items-center justify-center h-32 relative">
                 <div className="bg-gray-100 rounded-lg p-4 w-48 h-24 flex items-center justify-center">
@@ -132,7 +134,7 @@ export default function Home() {
                   <span className="text-sm italic">Neuroscience...</span>
                 </div>
               </div>
-            </div>
+            </Card>
           </Link>
         </div>
       </main>
