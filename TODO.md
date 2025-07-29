@@ -23,9 +23,15 @@
 
 ### Phase 2: Essential Features (Week 2) - IN PROGRESS
 
+- [ ] **CODE SIMPLIFICATION** (See SIMPLIFICATION_PLAN.md)
+  - [ ] Extract constants and create shared UI components
+  - [ ] Unified type system
+  - [ ] Complete Zustand migration for all pages
+  - [ ] Generic CRUD hooks
 - [ ] Migrate remaining pages to Zustand store
   - [ ] Homepage (`/app/page.tsx`)
   - [ ] Notebooks page (`/app/notebooks/[id]/page.tsx`)
+  - [ ] Quizzing page (`/app/quizzing/page.tsx`)
 - [ ] Improve mobile responsiveness
 - [ ] Add real-time sync across devices
 - [x] ~~Implement proper error handling~~ ✅
