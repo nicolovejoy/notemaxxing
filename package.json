@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "node scripts/generate-build-info.js && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "prepare": "husky"
   },
   "dependencies": {
     "@radix-ui/react-icons": "1.3.2",
@@ -26,7 +28,24 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.4.4",
+    "husky": "9.1.7",
+    "lint-staged": "16.1.2",
+    "prettier": "3.6.2",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "lint-staged": {
+    "app/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ],
+    "lib/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ],
+    "components/**/*.{js,jsx,ts,tsx}": [
+      "eslint --fix"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   }
 }

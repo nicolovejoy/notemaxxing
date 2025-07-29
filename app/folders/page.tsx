@@ -7,25 +7,25 @@ import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
 import { 
-  getFolders, 
-  createFolder, 
-  updateFolder, 
-  deleteFolder,
-  getNotebooks,
-  createNotebook,
-  updateNotebook,
-  archiveNotebook,
-  restoreNotebook,
-  deleteNotebook,
-  getNotes,
-  type Folder,
-  type Notebook 
-} from "@/lib/storage";
+  useFolders, 
+  useFolderActions,
+  useNotebooks,
+  useNotebookActions,
+  useNotes,
+  useInitializeStore,
+  useSyncState
+} from "@/lib/store";
 
 export default function FoldersPage() {
   const router = useRouter();
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [notebooks, setNotebooks] = useState<Notebook[]>([]);
+  const initializeStore = useInitializeStore();
+  const { folders, loading: foldersLoading } = useFolders();
+  const { notebooks, loading: notebooksLoading } = useNotebooks(null, true);
+  const { notes } = useNotes();
+  const { createFolder, updateFolder, deleteFolder } = useFolderActions();
+  const { createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useNotebookActions();
+  const { error, setSyncError } = useSyncState();
+  
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState("bg-indigo-500");
@@ -49,89 +49,111 @@ export default function FoldersPage() {
   ];
 
   useEffect(() => {
-    setFolders(getFolders());
-    setNotebooks(getNotebooks(showArchived));
-  }, [showArchived]);
+    initializeStore();
+  }, [initializeStore]);
 
-  const handleCreateFolder = () => {
+  const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
 
-    const newFolder = createFolder(newFolderName, newFolderColor);
-    setFolders([...folders, newFolder]);
-    setIsCreatingFolder(false);
-    setNewFolderName("");
-    setNewFolderColor("bg-indigo-500");
+    try {
+      await createFolder(newFolderName, newFolderColor);
+      setIsCreatingFolder(false);
+      setNewFolderName("");
+      setNewFolderColor("bg-indigo-500");
+    } catch (error) {
+      console.error('Failed to create folder:', error);
+    }
   };
 
-  const handleUpdateFolder = (id: string) => {
+  const handleUpdateFolder = async (id: string) => {
     if (!editFolderName.trim()) return;
 
-    updateFolder(id, { name: editFolderName });
-    setFolders(folders.map(f => 
-      f.id === id ? { ...f, name: editFolderName } : f
-    ));
-    setEditingFolderId(null);
-    setEditFolderName("");
+    try {
+      await updateFolder(id, { name: editFolderName });
+      setEditingFolderId(null);
+      setEditFolderName("");
+    } catch (error) {
+      console.error('Failed to update folder:', error);
+    }
   };
 
-  const handleDeleteFolder = (id: string) => {
+  const handleDeleteFolder = async (id: string) => {
     if (!confirm("Are you sure you want to delete this folder? All notebooks and notes inside will be deleted.")) {
       return;
     }
 
-    deleteFolder(id);
-    setFolders(folders.filter(f => f.id !== id));
-    // Refresh notebooks to reflect deletions
-    setNotebooks(getNotebooks());
+    try {
+      await deleteFolder(id);
+    } catch (error) {
+      console.error('Failed to delete folder:', error);
+    }
   };
 
-  const handleCreateNotebook = (folderId: string) => {
+  const handleCreateNotebook = async (folderId: string) => {
     if (!newNotebookName.trim()) return;
 
     const colors = ["bg-indigo-200", "bg-pink-200", "bg-yellow-200", "bg-emerald-200", "bg-cyan-200"];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
-    createNotebook(newNotebookName, folderId, randomColor);
-    setNotebooks(getNotebooks(showArchived));
-    setIsCreatingNotebook(null);
-    setNewNotebookName("");
+    try {
+      await createNotebook(newNotebookName, folderId, randomColor);
+      setIsCreatingNotebook(null);
+      setNewNotebookName("");
+    } catch (error) {
+      console.error('Failed to create notebook:', error);
+    }
   };
 
-  const handleUpdateNotebook = (id: string) => {
+  const handleUpdateNotebook = async (id: string) => {
     if (!editNotebookName.trim()) return;
 
-    updateNotebook(id, { name: editNotebookName });
-    setNotebooks(getNotebooks(showArchived));
-    setEditingNotebookId(null);
-    setEditNotebookName("");
+    try {
+      await updateNotebook(id, { name: editNotebookName });
+      setEditingNotebookId(null);
+      setEditNotebookName("");
+    } catch (error) {
+      console.error('Failed to update notebook:', error);
+    }
   };
 
-  const handleArchiveNotebook = (notebookId: string) => {
-    archiveNotebook(notebookId);
-    setNotebooks(getNotebooks(showArchived));
+  const handleArchiveNotebook = async (notebookId: string) => {
+    try {
+      await archiveNotebook(notebookId);
+    } catch (error) {
+      console.error('Failed to archive notebook:', error);
+    }
   };
 
-  const handleRestoreNotebook = (notebookId: string) => {
-    restoreNotebook(notebookId);
-    setNotebooks(getNotebooks(showArchived));
+  const handleRestoreNotebook = async (notebookId: string) => {
+    try {
+      await restoreNotebook(notebookId);
+    } catch (error) {
+      console.error('Failed to restore notebook:', error);
+    }
   };
 
-  const handleDeleteNotebook = (notebookId: string) => {
+  const handleDeleteNotebook = async (notebookId: string) => {
     if (!confirm("Are you sure you want to permanently delete this notebook? All notes inside will be deleted. Consider archiving instead.")) {
       return;
     }
 
-    deleteNotebook(notebookId);
-    setNotebooks(getNotebooks(showArchived));
+    try {
+      await deleteNotebook(notebookId);
+    } catch (error) {
+      console.error('Failed to delete notebook:', error);
+    }
   };
 
-  const getNotebooksByFolder = (folderId: string) => 
-    notebooks.filter(notebook => notebook.folderId === folderId);
+  const getNotebooksByFolder = (folderId: string) => {
+    const filtered = notebooks.filter(notebook => notebook.folder_id === folderId);
+    return showArchived ? filtered : filtered.filter(n => !n.archived);
+  };
 
   const getNotesCount = (notebookId: string) => {
-    const notes = getNotes();
-    return notes.filter((n) => n.notebookId === notebookId).length;
+    return notes.filter((n) => n.notebook_id === notebookId).length;
   };
+
+  const loading = foldersLoading || notebooksLoading;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -172,6 +194,20 @@ export default function FoldersPage() {
           </div>
         </div>
       </header>
+
+      {/* Error Message */}
+      {error && (
+        <div className="mx-4 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <p className="font-semibold">Error</p>
+          <p>{error}</p>
+          <button 
+            onClick={() => setSyncError(null)}
+            className="mt-2 text-sm underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Create Folder Modal */}
       {isCreatingFolder && (
@@ -227,230 +263,236 @@ export default function FoldersPage() {
         <div className="max-w-7xl mx-auto">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">Your Folders</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {folders.map((folder) => {
-              const folderNotebooks = getNotebooksByFolder(folder.id);
-              
-              return (
-                <div key={folder.id} className="space-y-4">
-                  {/* Folder Header */}
-                  <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
-                    {editingFolderId === folder.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editFolderName}
-                          onChange={(e) => setEditFolderName(e.target.value)}
-                          className="bg-white/20 text-white placeholder-white/70 px-2 py-1 rounded"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleUpdateFolder(folder.id)}
-                          className="p-1 hover:bg-white/20 rounded"
-                        >
-                          <Check className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingFolderId(null);
-                            setEditFolderName("");
-                          }}
-                          className="p-1 hover:bg-white/20 rounded"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <h3 className="text-2xl font-bold">{folder.name}</h3>
-                        <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+          {loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-gray-500">Loading...</div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {folders.map((folder) => {
+                const folderNotebooks = getNotebooksByFolder(folder.id);
+                
+                return (
+                  <div key={folder.id} className="space-y-4">
+                    {/* Folder Header */}
+                    <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
+                      {editingFolderId === folder.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editFolderName}
+                            onChange={(e) => setEditFolderName(e.target.value)}
+                            className="bg-white/20 text-white placeholder-white/70 px-2 py-1 rounded"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleUpdateFolder(folder.id)}
+                            className="p-1 hover:bg-white/20 rounded"
+                          >
+                            <Check className="h-4 w-4" />
+                          </button>
                           <button
                             onClick={() => {
-                              setEditingFolderId(folder.id);
-                              setEditFolderName(folder.name);
+                              setEditingFolderId(null);
+                              setEditFolderName("");
                             }}
                             className="p-1 hover:bg-white/20 rounded"
                           >
-                            <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteFolder(folder.id)}
-                            className="p-1 hover:bg-white/20 rounded"
-                          >
-                            <Trash2 className="h-4 w-4" />
+                            <X className="h-4 w-4" />
                           </button>
                         </div>
-                        <div className="absolute bottom-4 right-4">
-                          <FolderOpen className="h-16 w-16 text-white/30" />
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  {/* Notebooks in Folder */}
-                  <div className="bg-white rounded-b-lg shadow-sm border border-gray-200 p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-base font-semibold text-gray-800">Notebooks</h4>
-                      <button
-                        onClick={() => setIsCreatingNotebook(folder.id)}
-                        className="text-blue-500 hover:text-blue-600"
-                      >
-                        <Plus className="h-5 w-5" />
-                      </button>
+                      ) : (
+                        <>
+                          <h3 className="text-2xl font-bold">{folder.name}</h3>
+                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingFolderId(folder.id);
+                                setEditFolderName(folder.name);
+                              }}
+                              className="p-1 hover:bg-white/20 rounded"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteFolder(folder.id)}
+                              className="p-1 hover:bg-white/20 rounded"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div className="absolute bottom-4 right-4">
+                            <FolderOpen className="h-16 w-16 text-white/30" />
+                          </div>
+                        </>
+                      )}
                     </div>
 
-                    {isCreatingNotebook === folder.id && (
-                      <div className="mb-3 p-3 bg-gray-50 rounded-lg">
-                        <input
-                          type="text"
-                          placeholder="Notebook name..."
-                          value={newNotebookName}
-                          onChange={(e) => setNewNotebookName(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2 text-sm text-gray-900 placeholder-gray-600"
-                          autoFocus
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              handleCreateNotebook(folder.id);
-                            }
-                          }}
-                        />
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleCreateNotebook(folder.id)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm"
-                          >
-                            Create
-                          </button>
-                          <button
-                            onClick={() => {
-                              setIsCreatingNotebook(null);
-                              setNewNotebookName("");
-                            }}
-                            className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm"
-                          >
-                            Cancel
-                          </button>
-                        </div>
+                    {/* Notebooks in Folder */}
+                    <div className="bg-white rounded-b-lg shadow-sm border border-gray-200 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-base font-semibold text-gray-800">Notebooks</h4>
+                        <button
+                          onClick={() => setIsCreatingNotebook(folder.id)}
+                          className="text-blue-500 hover:text-blue-600"
+                        >
+                          <Plus className="h-5 w-5" />
+                        </button>
                       </div>
-                    )}
 
-                    <div className="space-y-2">
-                      {folderNotebooks.map((notebook) => {
-                        const noteCount = getNotesCount(notebook.id);
-                        
-                        return (
-                          <div
-                            key={notebook.id}
-                            className={`${notebook.color} ${notebook.archived ? 'opacity-60' : ''} rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow group relative`}
-                          >
-                            {editingNotebookId === notebook.id ? (
-                              <div className="flex items-center gap-2">
-                                <input
-                                  type="text"
-                                  value={editNotebookName}
-                                  onChange={(e) => setEditNotebookName(e.target.value)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="flex-1 px-2 py-1 border border-gray-300 rounded text-gray-900"
-                                  autoFocus
-                                  onKeyPress={(e) => {
-                                    if (e.key === 'Enter') {
-                                      handleUpdateNotebook(notebook.id);
-                                    }
-                                  }}
-                                />
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleUpdateNotebook(notebook.id);
-                                  }}
-                                  className="p-1 hover:bg-gray-200 rounded"
-                                >
-                                  <Check className="h-4 w-4 text-gray-700" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingNotebookId(null);
-                                    setEditNotebookName("");
-                                  }}
-                                  className="p-1 hover:bg-gray-200 rounded"
-                                >
-                                  <X className="h-4 w-4 text-gray-700" />
-                                </button>
-                              </div>
-                            ) : (
-                              <div 
-                                onClick={() => !notebook.archived && router.push(`/notebooks/${notebook.id}`)}
-                                className="flex items-center justify-between"
-                              >
-                                <div className="flex items-center">
-                                  <BookOpen className="h-4 w-4 text-gray-700 mr-2" />
-                                  <span className="font-semibold text-gray-900">
-                                    {notebook.name}
-                                    {notebook.archived && " (Archived)"}
-                                  </span>
-                                </div>
+                      {isCreatingNotebook === folder.id && (
+                        <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                          <input
+                            type="text"
+                            placeholder="Notebook name..."
+                            value={newNotebookName}
+                            onChange={(e) => setNewNotebookName(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md mb-2 text-sm text-gray-900 placeholder-gray-600"
+                            autoFocus
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter') {
+                                handleCreateNotebook(folder.id);
+                              }
+                            }}
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleCreateNotebook(folder.id)}
+                              className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm"
+                            >
+                              Create
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsCreatingNotebook(null);
+                                setNewNotebookName("");
+                              }}
+                              className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        {folderNotebooks.map((notebook) => {
+                          const noteCount = getNotesCount(notebook.id);
+                          
+                          return (
+                            <div
+                              key={notebook.id}
+                              className={`${notebook.color} ${notebook.archived ? 'opacity-60' : ''} rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow group relative`}
+                            >
+                              {editingNotebookId === notebook.id ? (
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEditingNotebookId(notebook.id);
-                                        setEditNotebookName(notebook.name);
-                                      }}
-                                      className="p-1 hover:bg-gray-200 rounded"
-                                    >
-                                      <Edit2 className="h-4 w-4 text-gray-600" />
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (notebook.archived) {
-                                          handleRestoreNotebook(notebook.id);
-                                        } else {
-                                          handleArchiveNotebook(notebook.id);
-                                        }
-                                      }}
-                                      className="p-1 hover:bg-gray-200 rounded"
-                                      title={notebook.archived ? "Restore notebook" : "Archive notebook"}
-                                    >
-                                      {notebook.archived ? (
-                                        <ArchiveRestore className="h-4 w-4 text-gray-600" />
-                                      ) : (
-                                        <Archive className="h-4 w-4 text-gray-600" />
-                                      )}
-                                    </button>
-                                    {notebook.archived && (
+                                  <input
+                                    type="text"
+                                    value={editNotebookName}
+                                    onChange={(e) => setEditNotebookName(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-gray-900"
+                                    autoFocus
+                                    onKeyPress={(e) => {
+                                      if (e.key === 'Enter') {
+                                        handleUpdateNotebook(notebook.id);
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleUpdateNotebook(notebook.id);
+                                    }}
+                                    className="p-1 hover:bg-gray-200 rounded"
+                                  >
+                                    <Check className="h-4 w-4 text-gray-700" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingNotebookId(null);
+                                      setEditNotebookName("");
+                                    }}
+                                    className="p-1 hover:bg-gray-200 rounded"
+                                  >
+                                    <X className="h-4 w-4 text-gray-700" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div 
+                                  onClick={() => !notebook.archived && router.push(`/notebooks/${notebook.id}`)}
+                                  className="flex items-center justify-between"
+                                >
+                                  <div className="flex items-center">
+                                    <BookOpen className="h-4 w-4 text-gray-700 mr-2" />
+                                    <span className="font-semibold text-gray-900">
+                                      {notebook.name}
+                                      {notebook.archived && " (Archived)"}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
+                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
-                                          handleDeleteNotebook(notebook.id);
+                                          setEditingNotebookId(notebook.id);
+                                          setEditNotebookName(notebook.name);
                                         }}
                                         className="p-1 hover:bg-gray-200 rounded"
                                       >
-                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                        <Edit2 className="h-4 w-4 text-gray-600" />
                                       </button>
-                                    )}
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (notebook.archived) {
+                                            handleRestoreNotebook(notebook.id);
+                                          } else {
+                                            handleArchiveNotebook(notebook.id);
+                                          }
+                                        }}
+                                        className="p-1 hover:bg-gray-200 rounded"
+                                        title={notebook.archived ? "Restore notebook" : "Archive notebook"}
+                                      >
+                                        {notebook.archived ? (
+                                          <ArchiveRestore className="h-4 w-4 text-gray-600" />
+                                        ) : (
+                                          <Archive className="h-4 w-4 text-gray-600" />
+                                        )}
+                                      </button>
+                                      {notebook.archived && (
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeleteNotebook(notebook.id);
+                                          }}
+                                          className="p-1 hover:bg-gray-200 rounded"
+                                        >
+                                          <Trash2 className="h-4 w-4 text-red-500" />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                      
-                      {folderNotebooks.length === 0 && isCreatingNotebook !== folder.id && (
-                        <p className="text-center text-gray-600 py-4 text-sm font-medium">
-                          No notebooks yet
-                        </p>
-                      )}
+                              )}
+                            </div>
+                          );
+                        })}
+                        
+                        {folderNotebooks.length === 0 && isCreatingNotebook !== folder.id && (
+                          <p className="text-center text-gray-600 py-4 text-sm font-medium">
+                            No notebooks yet
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </main>
     </div>
