@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="#3B82F6" stroke="#2563EB" stroke-width="1"/>
+  
+  <!-- First X (pens 1 and 2) -->
+  <!-- Pen 1: Top-left to bottom-right -->
+  <g transform="rotate(45 16 16)">
+    <rect x="14" y="6" width="4" height="20" rx="2" fill="#FFF"/>
+    <rect x="14" y="6" width="4" height="4" fill="#1F2937"/>
+  </g>
+  
+  <!-- Pen 2: Top-right to bottom-left -->
+  <g transform="rotate(-45 16 16)">
+    <rect x="14" y="6" width="4" height="20" rx="2" fill="#FFF"/>
+    <rect x="14" y="6" width="4" height="4" fill="#1F2937"/>
+  </g>
+  
+  <!-- Second X (pens 3 and 4) - slightly offset -->
+  <!-- Pen 3: Top-left to bottom-right -->
+  <g transform="rotate(45 16 16)">
+    <rect x="14" y="6" width="4" height="20" rx="2" fill="#E5E7EB" opacity="0.8"/>
+    <rect x="14" y="6" width="4" height="4" fill="#374151"/>
+  </g>
+  
+  <!-- Pen 4: Top-right to bottom-left -->
+  <g transform="rotate(-45 16 16)">
+    <rect x="14" y="6" width="4" height="20" rx="2" fill="#E5E7EB" opacity="0.8"/>
+    <rect x="14" y="6" width="4" height="4" fill="#374151"/>
+  </g>
+</svg>
