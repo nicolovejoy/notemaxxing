@@ -47,6 +47,11 @@ export default function FoldersPage() {
       setNewFolderColor(DEFAULT_FOLDER_COLOR);
     } catch (error) {
       console.error('Failed to create folder:', error);
+      setSyncError(
+        error instanceof Error 
+          ? error.message 
+          : 'Failed to create folder. Please check your connection and try again.'
+      );
     }
   };
 
@@ -59,6 +64,11 @@ export default function FoldersPage() {
       setEditFolderName("");
     } catch (error) {
       console.error('Failed to update folder:', error);
+      setSyncError(
+        error instanceof Error 
+          ? error.message 
+          : 'Failed to update folder. Please try again.'
+      );
     }
   };
 

@@ -1,10 +1,13 @@
 import { createClient } from '@/lib/supabase/client'
 import type { Folder, Notebook, Note, Quiz } from './types'
+import { logger, logApiCall } from '@/lib/debug/logger'
+import { handleSupabaseError } from './error-handler'
 
 // Helper to get Supabase client with null check
 function getSupabaseClient() {
   const supabase = createClient()
   if (!supabase) {
+    logger.error('Supabase client not available - check environment variables')
     throw new Error('Supabase client not available')
   }
   return supabase
@@ -13,30 +16,51 @@ function getSupabaseClient() {
 export const foldersApi = {
   async getAll() {
     try {
+      logApiCall('folders', 'GET')
       const supabase = getSupabaseClient()
       const { data, error } = await supabase
         .from('folders')
         .select('*')
         .order('created_at', { ascending: true })
       
-      if (error) throw error
+      if (error) {
+        logApiCall('folders', 'GET', null, error)
+        handleSupabaseError(error, 'fetch folders')
+      }
+      
+      logApiCall('folders', 'GET', { count: data?.length || 0 })
       return data as Folder[]
     } catch (error) {
-      console.warn('Failed to fetch folders:', error)
-      return [] // Return empty array for development without Supabase
+      // Only return empty array if Supabase client is not available (dev mode)
+      if (error instanceof Error && error.message === 'Supabase client not available') {
+        logger.warn('Running without Supabase - returning empty folders')
+        return []
+      }
+      throw error // Re-throw to be handled by store
     }
   },
 
   async create(folder: Omit<Folder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
-    const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-      .from('folders')
-      .insert(folder)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as Folder
+    try {
+      logApiCall('folders', 'POST', folder)
+      const supabase = getSupabaseClient()
+      const { data, error } = await supabase
+        .from('folders')
+        .insert(folder)
+        .select()
+        .single()
+      
+      if (error) {
+        logApiCall('folders', 'POST', folder, error)
+        handleSupabaseError(error, 'create folder')
+      }
+      
+      logApiCall('folders', 'POST', { created: data })
+      return data as Folder
+    } catch (error) {
+      logger.error('Failed to create folder', { folder, error })
+      throw error
+    }
   },
 
   async update(id: string, updates: Partial<Omit<Folder, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {

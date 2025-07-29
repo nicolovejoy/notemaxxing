@@ -1,41 +1,44 @@
 # Notemaxxing TODO
 
-## ✅ FIXED: Infinite Loop Error (July 29, 2024)
+## 🚨 CRITICAL: Production Data Issues
 
-### What Was Done
+### Current Problems
 
-- Removed duplicate store initialization from folders page
-- Cleaned up unused imports (useEffect, useInitializeStore)
-- Store now only initializes once in StoreProvider
+1. **No data showing** - Store might not be initializing properly
+2. **Cannot create folders** - Error when trying to create new folders
+3. **Possible causes**:
+   - Supabase connection issues
+   - Authentication not working properly
+   - Store initialization failing silently
+   - Inconsistent error handling (getAll returns [], create throws)
 
-### Result
+### Immediate Actions Needed
 
-- ✅ No more infinite loops
-- ✅ Folders page working correctly
-- ✅ Build successful
-- ✅ All checks passing
+1. Check Supabase connection and environment variables
+2. Add proper error logging to identify the issue
+3. Fix inconsistent error handling in supabase-helpers.ts
+4. Verify authentication is working correctly
 
-## ✅ COMPLETED: React Hooks Error #185
+## ✅ FIXED: Critical Errors (July 29, 2024)
 
-### What Was Done
+### Infinite Loop Error
 
-1. Removed client-side auth from StoreProvider
-2. Updated middleware.ts with protected routes
-3. Added initialization guards to store
-4. Fixed Supabase client null handling
+- Removed duplicate store initialization
+- Fixed selector functions with proper memoization
+- Added SSR guards to StoreProvider
 
-### Result
+### React Hooks Error #185
 
-- No more conditional hooks
-- Auth handled server-side
-- Build successful
+- Moved auth checks to middleware
+- Removed conditional hooks
+- Store initializes unconditionally
 
 ## 📋 Current Migration Status
 
 ### Completed
 
 - ✅ Homepage - Migrated to Zustand
-- ✅ Folders page - Migrated to Zustand (has init bug)
+- ✅ Folders page - Migrated to Zustand
 - ✅ Auth flow - Server-side via middleware
 
 ### Pending
@@ -46,13 +49,22 @@
 
 ## 🎯 Next Steps (Priority Order)
 
-### Phase 1: Fix Infinite Loop (Immediate)
+### Phase 0: Fix Production Issues (URGENT)
 
-- [ ] Remove duplicate store initialization
-- [ ] Test all pages work correctly
-- [ ] Deploy hotfix
+- [ ] Debug why no data is showing
+- [ ] Fix folder creation error
+- [ ] Add proper error handling and logging
+- [ ] Verify Supabase connection
+- [ ] Check auth flow in production
 
-### Phase 2: Complete Migration (This Week)
+### Phase 1: Stabilize Current Implementation
+
+- [ ] Add consistent error handling across all API methods
+- [ ] Add loading states to prevent blank screens
+- [ ] Add error boundaries to catch crashes
+- [ ] Improve error messages for users
+
+### Phase 2: Complete Migration (After Stable)
 
 - [ ] Migrate notebooks page to Zustand
 - [ ] Migrate quizzing page to Zustand
@@ -62,9 +74,9 @@
 ### Phase 3: Architecture Improvements
 
 - [ ] Implement route-based providers
-- [ ] Add proper loading skeletons
-- [ ] Add error boundaries
-- [ ] Improve TypeScript types
+- [ ] Add proper TypeScript types
+- [ ] Break down large components
+- [ ] Add comprehensive error handling
 
 ### Phase 4: Future Enhancements
 
@@ -76,17 +88,30 @@
 
 ## 🐛 Known Issues
 
-1. **Infinite Loop** - Store double initialization
-2. **Migration Incomplete** - 2 pages still use localStorage
+1. **Production Data Issues** - No data showing, can't create folders
+2. **Inconsistent Error Handling** - Some methods hide errors, others throw
 3. **No Loading States** - Pages show blank while loading
 4. **No Error Boundaries** - Errors crash entire app
+5. **Migration Incomplete** - 2 pages still use localStorage
+
+## 🔍 Debugging Checklist
+
+### For Production Issues:
+
+1. Check browser console for errors
+2. Check network tab for failed requests
+3. Verify Supabase environment variables are set in Vercel
+4. Check if user is properly authenticated
+5. Look for any CORS or permission errors
 
 ## 📊 Tech Debt
 
 - Large components (450+ lines) need breaking down
-- Inconsistent error handling
+- Inconsistent error handling patterns
+- Missing user-facing error messages
+- No retry logic for failed requests
 - Missing tests
-- No CI/CD pipeline beyond Vercel
+- No monitoring/error tracking
 
 ## 🚀 Quick Commands
 
@@ -96,3 +121,10 @@ npm run lint       # Check linting
 npm run type-check # TypeScript check
 npm run build      # Production build
 ```
+
+## 📝 Notes
+
+- The SSR fix might be hiding initialization errors
+- Need better error visibility in production
+- Consider adding Sentry or similar for error tracking
+- May need to add retry logic for Supabase operations

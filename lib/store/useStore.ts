@@ -597,15 +597,18 @@ export const useStore = create<AppState>()(
         
         // Prevent duplicate initialization
         if (state.initialized || state.syncState.status === 'loading') {
+          console.log('[Store] Skipping initialization - already initialized or loading')
           return
         }
 
+        console.log('[Store] Starting initialization...')
         set((state) => {
           state.syncState.status = 'loading'
           state.syncState.error = null
         })
 
         try {
+          console.log('[Store] Loading all data...')
           await Promise.all([
             get().loadFolders(),
             get().loadNotebooks(),
@@ -618,12 +621,14 @@ export const useStore = create<AppState>()(
             state.syncState.status = 'idle'
             state.syncState.lastSyncTime = new Date()
           })
+          console.log('[Store] Initialization complete')
         } catch (error) {
           set((state) => {
             state.syncState.status = 'error'
             state.syncState.error = error instanceof Error ? error.message : 'Failed to initialize store'
           })
-          console.error('Failed to initialize store:', error)
+          console.error('[Store] Failed to initialize:', error)
+          throw error // Re-throw to be caught by StoreProvider
         }
       },
     })),

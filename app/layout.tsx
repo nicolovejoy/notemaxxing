@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { DebugConsole } from "@/components/debug-console";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,6 +34,7 @@ export default function RootLayout({
         <ErrorBoundary>
           <StoreProvider>
             {children}
+            <DebugConsole />
           </StoreProvider>
         </ErrorBoundary>
       </body>

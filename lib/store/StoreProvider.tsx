@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useInitializeStore } from './hooks'
+import { logger } from '@/lib/debug/logger'
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isClient, setIsClient] = useState(false)
@@ -9,15 +10,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     setIsClient(true)
+    logger.debug('StoreProvider mounted on client')
   }, [])
   
   useEffect(() => {
     if (!isClient) return
     
-    // Always initialize - middleware ensures only auth'd users reach protected pages
-    initializeStore().catch((error) => {
-      console.error('Store initialization failed:', error)
-    })
+    logger.info('Initializing store...')
+    initializeStore()
+      .then(() => {
+        logger.info('Store initialized successfully')
+      })
+      .catch((error) => {
+        logger.error('Store initialization failed', error)
+      })
   }, [isClient, initializeStore])
   
   // Don't render children until client-side to avoid hydration mismatch

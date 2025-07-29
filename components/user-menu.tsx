@@ -23,7 +23,6 @@ export function UserMenu() {
       setUser(data.user);
       
       // Listen for auth changes
-      // @ts-expect-error - Supabase auth callbacks have complex types that TypeScript struggles with
       const authListener = supabase.auth.onAuthStateChange((_event, session) => {
         setUser(session?.user ?? null);
       });
