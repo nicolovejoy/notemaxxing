@@ -2,7 +2,7 @@
 
 A modern note-taking application built with Next.js, TypeScript, and Tailwind CSS. Organize your thoughts with folders, notebooks, and notes while improving your typing skills.
 
-🌐 **Live at**: [notemaxxing.net](https://notemaxxing.net)
+🌐 **Live at**: [notemaxxing.net](https://notemaxxing.net) ✅
 
 ## Features
 
