@@ -10,6 +10,7 @@ import {
   BookOpen,
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
+import { BuildTimestamp } from "@/components/build-timestamp";
 import {
   getFolders,
   getNotebooks,
@@ -36,7 +37,10 @@ export default function Home() {
               <button className="p-2 rounded-md hover:bg-gray-100">
                 <Menu className="h-5 w-5 text-gray-800" />
               </button>
-              <h1 className="ml-4 text-xl font-semibold italic">Notemaxxing</h1>
+              <div className="relative group ml-4">
+                <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
+                <BuildTimestamp />
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               <button className="p-2 rounded-md hover:bg-gray-100">
