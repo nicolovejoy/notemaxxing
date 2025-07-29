@@ -8,10 +8,13 @@ export function BuildTimestamp() {
   useEffect(() => {
     // Try to load build info
     try {
-      const buildInfo = require("@/lib/build-info.json");
-      setBuildTime(buildInfo.date);
+      import("@/lib/build-info.json").then((buildInfo) => {
+        setBuildTime(buildInfo.date);
+      }).catch(() => {
+        // In dev mode, just show current time
+        setBuildTime("Dev mode");
+      });
     } catch {
-      // In dev mode, just show current time
       setBuildTime("Dev mode");
     }
   }, []);

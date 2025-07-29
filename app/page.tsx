@@ -7,7 +7,6 @@ import {
   Search,
   Grid3X3,
   FolderOpen,
-  BookOpen,
 } from "lucide-react";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";

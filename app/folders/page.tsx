@@ -8,12 +8,10 @@ import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
 import { 
   getFolders, 
-  saveFolders, 
   createFolder, 
   updateFolder, 
   deleteFolder,
   getNotebooks,
-  saveNotebooks,
   createNotebook,
   updateNotebook,
   archiveNotebook,

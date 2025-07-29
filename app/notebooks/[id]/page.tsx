@@ -76,6 +76,7 @@ export default function NotebookPage() {
     
     // Load notes
     loadNotes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notebookId, router]);
 
   const loadNotes = () => {
@@ -101,6 +102,7 @@ export default function NotebookPage() {
 
   useEffect(() => {
     loadNotes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sortOption]);
 
   const handleCreateNote = () => {
@@ -167,6 +169,7 @@ export default function NotebookPage() {
     }, 500); // Auto-save after 500ms of no typing
     
     return () => clearTimeout(timeoutId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editingNoteTitle, editingNoteContent, selectedNote, isEditingNote]);
 
   const handleDeleteNote = (noteId: string) => {
