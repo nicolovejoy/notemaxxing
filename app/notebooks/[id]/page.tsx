@@ -110,6 +110,13 @@ export default function NotebookPage() {
   useEffect(() => {
     if (!selectedNote || !isEditingNote) return;
     
+    // Check if content has actually changed
+    const hasContentChanged = editingNoteTitle !== selectedNote.title || 
+                            editingNoteContent !== selectedNote.content;
+    
+    // Don't save if nothing changed (prevents save on initial load)
+    if (!hasContentChanged && !tempNoteId) return;
+    
     // Don't save if both title and content are empty
     if (!editingNoteTitle.trim() && !editingNoteContent.trim()) {
       return;
