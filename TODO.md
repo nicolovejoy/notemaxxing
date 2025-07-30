@@ -1,58 +1,34 @@
 # Notemaxxing TODO
 
-_Last Updated: July 30, 2025_
+## 🚀 Immediate Priorities
 
-## ✅ COMPLETED (This Session)
+### 1. Fix: New User Seed Data Not Showing
 
-### localStorage to Zustand Migration
+- [ ] Verify seed trigger is deployed to production
+- [ ] Add delay in store initialization for new users
+- [ ] Consider RPC function to check/create seed data
+- [ ] Add loading state while seed data is created
 
-- ✅ Migrated notebooks page from localStorage
-- ✅ Migrated quizzing page from localStorage
-- ✅ Removed old storage.ts file
-- ✅ All pages now use centralized Zustand store
+### 2. Security: Server-Side Admin Auth
 
-### RLS Policy Fixes
+- [ ] Move admin check to middleware
+- [ ] Add admin role to Supabase auth metadata
+- [ ] Create RPC function for admin validation
+- [ ] Update admin console to use server check
 
-- ✅ Fixed INSERT policies for all tables
-- ✅ Changed from `auth.uid() = user_id` to `auth.uid() IS NOT NULL`
-- ✅ All CRUD operations working
+### 3. UX: Loading States
 
-### Seed Data Implementation
+- [ ] Add loading skeletons for folders list
+- [ ] Add loading skeletons for notebooks grid
+- [ ] Add loading skeletons for notes list
+- [ ] Show spinners during save operations
 
-- ✅ Created auto-seeding trigger for new users
-- ✅ Migration script for existing users
-- ✅ Documentation for seed data system
+### 4. Features: Search
 
-### Logo/Branding
-
-- ✅ Added custom Logo component to all pages
-- ✅ Created SVG favicon
-- ✅ Consistent branding throughout
-
-## 🚀 IMMEDIATE PRIORITIES
-
-### 1. Deploy Seed Data to Production
-
-```sql
--- Run in Supabase SQL Editor:
--- 1. /lib/supabase/seed-new-users.sql (for new users)
--- 2. /lib/supabase/add-starter-content-existing-users.sql (optional, for existing)
-```
-
-### 2. Enhanced Admin Console
-
-- [x] Add database management features
-- [x] View all users and their data
-- [x] Reset user data
-- [x] Manually seed data for specific users
-- [x] Export/import capabilities
-- [ ] Add automatic page refresh after seed/reset operations
-
-### 3. Sample Quiz Data
-
-- [ ] Add sample quizzes to seed data
-- [ ] Include variety of question types
-- [ ] Educational content for demo
+- [ ] Add search bar to notebooks page
+- [ ] Add search bar to notes page
+- [ ] Implement client-side filtering first
+- [ ] Consider Supabase full-text search later
 
 ## 📋 Short Term Goals
 

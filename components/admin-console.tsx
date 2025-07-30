@@ -39,9 +39,11 @@ interface UserData {
   id: string
   email: string
   created_at: string
-  folders_count?: number
-  notebooks_count?: number
-  notes_count?: number
+  last_sign_in_at?: string
+  folder_count: number
+  notebook_count: number
+  note_count: number
+  quiz_count: number
 }
 
 interface AdminConsoleProps {
@@ -157,29 +159,16 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
-      // For now, just get current user and their stats
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user) {
-        // Get user stats
-        const { data: stats } = await supabase.rpc('get_user_stats', {
-          target_user_id: user.id,
-        })
-
-        setAllUsers([
-          {
-            id: user.id,
-            email: user.email || '',
-            created_at: user.created_at,
-            folders_count: stats?.[0]?.folders_count || 0,
-            notebooks_count: stats?.[0]?.notebooks_count || 0,
-            notes_count: stats?.[0]?.notes_count || 0,
-          },
-        ])
+      // Get all users using our admin function
+      const { data: users, error } = await supabase.rpc('get_all_users_admin')
+      
+      if (error) {
+        logger.error('Failed to load users', error)
+        throw error
       }
 
-      logger.info('Loaded user data')
+      setAllUsers(users || [])
+      logger.info(`Loaded ${users?.length || 0} users`)
     } catch (error) {
       logger.error('Failed to load users', error)
     } finally {
@@ -275,6 +264,41 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     } catch (error) {
       logger.error('Failed to export user data', error)
       alert('Failed to export user data: ' + (error as Error).message)
+    }
+  }
+
+  const deleteUser = async (userId: string, userEmail: string) => {
+    if (!confirm(`Are you sure you want to DELETE the user account: ${userEmail}?\n\nThis will permanently delete:\n- The user account\n- All folders\n- All notebooks\n- All notes\n- All quizzes\n\nThis CANNOT be undone!`)) {
+      return
+    }
+
+    // Double confirmation for safety
+    const confirmEmail = prompt(`Type the user's email (${userEmail}) to confirm deletion:`)
+    if (confirmEmail !== userEmail) {
+      alert('Email does not match. Deletion cancelled.')
+      return
+    }
+
+    try {
+      const supabase = createClient()
+      if (!supabase) throw new Error('No Supabase client')
+
+      const { error } = await supabase.rpc('delete_user_admin', {
+        user_id: userId
+      })
+
+      if (error) {
+        throw error
+      }
+
+      logger.info('Deleted user', { userId, userEmail })
+      alert(`User ${userEmail} has been deleted successfully.`)
+
+      // Refresh the user list
+      await loadAllUsers()
+    } catch (error) {
+      logger.error('Failed to delete user', error)
+      alert('Failed to delete user: ' + (error as Error).message)
     }
   }
 
@@ -413,24 +437,64 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                   <div className="space-y-2">
                     {allUsers.map((user) => (
                       <div key={user.id} className="border rounded p-3 text-sm">
-                        <div className="font-medium">{user.email}</div>
-                        <div className="text-xs text-gray-500 mt-1">ID: {user.id}</div>
-                        <div className="text-xs text-gray-500">
-                          Created: {new Date(user.created_at).toLocaleDateString()}
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="font-medium">{user.email}</div>
+                            <div className="text-xs text-gray-500 mt-1">ID: {user.id}</div>
+                            <div className="text-xs text-gray-500">
+                              Created: {new Date(user.created_at).toLocaleDateString()}
+                            </div>
+                            {user.last_sign_in_at && (
+                              <div className="text-xs text-gray-500">
+                                Last login: {new Date(user.last_sign_in_at).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => deleteUser(user.id, user.email)}
+                            className="p-1 hover:bg-red-100 rounded text-red-600"
+                            title="Delete user"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 mt-2">
+                        <div className="grid grid-cols-4 gap-2 mt-2">
                           <div className="text-center">
-                            <div className="text-lg font-semibold">{user.folders_count || 0}</div>
+                            <div className="text-lg font-semibold">{user.folder_count}</div>
                             <div className="text-xs text-gray-500">Folders</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-lg font-semibold">{user.notebooks_count || 0}</div>
+                            <div className="text-lg font-semibold">{user.notebook_count}</div>
                             <div className="text-xs text-gray-500">Notebooks</div>
                           </div>
                           <div className="text-center">
-                            <div className="text-lg font-semibold">{user.notes_count || 0}</div>
+                            <div className="text-lg font-semibold">{user.note_count}</div>
                             <div className="text-xs text-gray-500">Notes</div>
                           </div>
+                          <div className="text-center">
+                            <div className="text-lg font-semibold">{user.quiz_count}</div>
+                            <div className="text-xs text-gray-500">Quizzes</div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => exportUserData(user.id)}
+                            className="text-xs text-blue-600 hover:underline"
+                          >
+                            Export Data
+                          </button>
+                          <button
+                            onClick={() => seedUserData(user.id)}
+                            className="text-xs text-green-600 hover:underline"
+                          >
+                            Add Seed Data
+                          </button>
+                          <button
+                            onClick={() => resetUserData(user.id)}
+                            className="text-xs text-orange-600 hover:underline"
+                          >
+                            Clear Data
+                          </button>
                         </div>
                       </div>
                     ))}
