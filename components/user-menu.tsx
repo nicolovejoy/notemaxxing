@@ -22,33 +22,20 @@ export function UserMenu() {
   const supabase = createClient();
 
   useEffect(() => {
-    if (!supabase) {
-      console.error('[UserMenu] Supabase client is null - check environment variables');
-      return;
-    }
+    if (!supabase) return;
     
     let subscription: { unsubscribe: () => void } | null = null;
     
     const initializeAuth = async () => {
-      try {
-        // Get initial user
-        const { data, error } = await supabase.auth.getUser();
-        if (error) {
-          console.error('[UserMenu] Error getting user:', error);
-        } else {
-          console.log('[UserMenu] User loaded:', data.user?.email);
-          setUser(data.user);
-        }
-        
-        // Listen for auth changes
-        const authListener = supabase.auth.onAuthStateChange((event, session) => {
-          console.log('[UserMenu] Auth state changed:', event, session?.user?.email);
-          setUser(session?.user ?? null);
-        });
-        subscription = authListener.data.subscription;
-      } catch (err) {
-        console.error('[UserMenu] Exception in initializeAuth:', err);
-      }
+      // Get initial user
+      const { data } = await supabase.auth.getUser();
+      setUser(data.user);
+      
+      // Listen for auth changes
+      const authListener = supabase.auth.onAuthStateChange((_event, session) => {
+        setUser(session?.user ?? null);
+      });
+      subscription = authListener.data.subscription;
     };
     
     initializeAuth();

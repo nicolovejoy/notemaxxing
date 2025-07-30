@@ -52,21 +52,6 @@ export default function SignupPage() {
 
       // If we have a session, user is logged in (email confirmation is disabled)
       if (data.session) {
-        // Try to seed starter data for new user
-        // TEMPORARILY DISABLED - might be causing auth issues
-        // try {
-        //   console.log('[Signup] Attempting to seed data for new user...')
-        //   const { error: seedError } = await supabase.rpc('seed_new_user_data')
-        //   if (seedError) {
-        //     console.error('[Signup] Failed to create starter content:', seedError)
-        //     // Don't block signup, just log the error
-        //   } else {
-        //     console.log('[Signup] Successfully created starter content')
-        //   }
-        // } catch (err) {
-        //   console.error('[Signup] Exception while creating starter content:', err)
-        // }
-        
         router.push("/");
         router.refresh();
       }
