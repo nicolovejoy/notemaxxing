@@ -66,6 +66,50 @@ npm run dev
 - **Type errors**: Run `npm run type-check`
 - **Build fails**: Check `npm run lint` first
 
+## AI Integration (Simplified MVP)
+
+### Tech Stack
+
+```bash
+npm install @tiptap/react @tiptap/starter-kit openai
+```
+
+### Implementation Steps
+
+1. **Rich Text Editor**
+   - Replace textarea with TipTap
+   - Add formatting toolbar (bold, italic, lists, headings)
+   - Auto-save on blur
+
+2. **AI Enhancement**
+
+   ```typescript
+   // Simple API route at /api/ai/enhance
+   const response = await openai.chat.completions.create({
+     model: 'gpt-3.5-turbo',
+     messages: [
+       { role: 'system', content: 'Improve grammar and clarity...' },
+       { role: 'user', content: noteContent },
+     ],
+   })
+   ```
+
+3. **Rate Limiting**
+   - Simple in-memory counter: 50 requests/day per user
+   - Upgrade to Redis later if needed
+
+4. **UI Integration**
+   - Single "Enhance with AI ✨" button
+   - Loading state while processing
+   - Toast notifications for errors
+
+### Environment Variables
+
+```env
+OPENAI_API_KEY=sk-...
+ENABLE_AI=true
+```
+
 ## Deployment
 
 Automatic via Vercel on push to main branch.

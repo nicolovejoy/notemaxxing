@@ -21,6 +21,7 @@ import {
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
 import { Logo } from "@/components/logo";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import {
   useFolder,
   useNotebook,
@@ -397,7 +398,10 @@ export default function NotebookPage() {
                       {note.title}
                     </h3>
                     <p className="text-sm text-gray-600 line-clamp-3 flex-1">
-                      {note.content || "No content yet..."}
+                      {note.content ? 
+                        note.content.replace(/<[^>]*>/g, '').substring(0, 150) : 
+                        "No content yet..."
+                      }
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
                       {formatDate(note.updated_at || note.created_at)}
@@ -449,20 +453,23 @@ export default function NotebookPage() {
                       value={editingNoteTitle}
                       onChange={(e) => setEditingNoteTitle(e.target.value)}
                       className="text-2xl font-semibold mb-4 w-full outline-none border-b border-gray-200 pb-2"
+                      placeholder="Note title..."
                     />
-                    <textarea
-                      value={editingNoteContent}
-                      onChange={(e) => setEditingNoteContent(e.target.value)}
+                    <RichTextEditor
+                      content={editingNoteContent}
+                      onChange={setEditingNoteContent}
                       placeholder="Start typing your note..."
-                      className="w-full h-[calc(100vh-20rem)] p-4 text-gray-900 placeholder-gray-600 outline-none resize-none border border-gray-200 rounded-lg"
                     />
                   </>
                 ) : (
                   <>
                     <h2 className="text-2xl font-semibold mb-4">{selectedNote.title}</h2>
-                    <div className="prose max-w-none">
-                      <p className="whitespace-pre-wrap">{selectedNote.content || "No content yet..."}</p>
-                    </div>
+                    <div 
+                      className="prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ 
+                        __html: selectedNote.content || "<p>No content yet...</p>" 
+                      }}
+                    />
                   </>
                 )}
               </div>

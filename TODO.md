@@ -2,35 +2,47 @@
 
 ## 🚀 Immediate Priorities
 
-### 1. Re-implement Seed Data (Without Breaking Auth)
+### 1. AI-Enhanced Rich Text Editor (NEW)
+
+- [ ] Install TipTap dependencies
+- [ ] Replace textarea with TipTap editor in notes
+- [ ] Add basic formatting toolbar (bold, italic, lists, headings)
+- [ ] Implement auto-save on blur
+- [ ] Create /api/ai/enhance endpoint with OpenAI
+- [ ] Add "Enhance with AI" button to editor
+- [ ] Simple rate limiting (50 requests/day)
+- [ ] Test with existing notes
+
+### 2. Re-implement Seed Data (Without Breaking Auth)
 
 - [ ] Move seed RPC call to homepage after auth is established
 - [ ] Add "Initialize Account" button for new users
 - [ ] Test thoroughly before deploying
 - [ ] Document the new approach
 
-### 2. Security: Server-Side Admin Auth
+### 3. Security: Server-Side Admin Auth
 
 - [ ] Create `user_roles` table in Supabase
 - [ ] Add RPC function to check admin status
 - [ ] Move admin check to middleware/server
 - [ ] Update admin console to use server validation
 
-### 3. UX: Loading States
+### 4. UX: Loading States
 
 - [ ] Add loading skeletons for folders list
 - [ ] Add loading skeletons for notebooks grid
 - [ ] Add loading skeletons for notes list
 - [ ] Show spinners during save operations
 
-### 4. Features: Search
-
-- [ ] Add search bar to notebooks page
-- [ ] Add search bar to notes page
-- [ ] Implement client-side filtering first
-- [ ] Consider Supabase full-text search later
-
 ## 📋 Short Term Goals
+
+### AI Features (After MVP)
+
+- [ ] Add more AI actions (summarize, expand, rephrase)
+- [ ] Streaming responses with Server-Sent Events
+- [ ] AI usage analytics dashboard
+- [ ] Keyboard shortcuts for AI actions
+- [ ] Custom AI prompts/templates
 
 ### UI/UX Improvements
 
