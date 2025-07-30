@@ -2,19 +2,19 @@
 
 ## 🚀 Immediate Priorities
 
-### 1. Fix: New User Seed Data Not Showing
+### 1. Re-implement Seed Data (Without Breaking Auth)
 
-- [ ] Verify seed trigger is deployed to production
-- [ ] Add delay in store initialization for new users
-- [ ] Consider RPC function to check/create seed data
-- [ ] Add loading state while seed data is created
+- [ ] Move seed RPC call to homepage after auth is established
+- [ ] Add "Initialize Account" button for new users
+- [ ] Test thoroughly before deploying
+- [ ] Document the new approach
 
 ### 2. Security: Server-Side Admin Auth
 
-- [ ] Move admin check to middleware
-- [ ] Add admin role to Supabase auth metadata
-- [ ] Create RPC function for admin validation
-- [ ] Update admin console to use server check
+- [ ] Create `user_roles` table in Supabase
+- [ ] Add RPC function to check admin status
+- [ ] Move admin check to middleware/server
+- [ ] Update admin console to use server validation
 
 ### 3. UX: Loading States
 

@@ -23,19 +23,26 @@ npm run dev
 
 ## Current Status
 
-✅ **All features working:**
+✅ **Working Features:**
 
 - User auth & data persistence
 - Folders, notebooks, notes CRUD
 - Quizzing & typemaxxing
-- Admin console (press 'd' 3x)
+- Admin console with user management (press 'd' 3x)
+- User deletion from admin console
+
+⚠️ **Known Issues:**
+
+- Seed data trigger breaks auth (currently disabled)
+- New users must be seeded manually via admin console
+- Admin auth is client-side only (security risk)
 
 ## Next Priorities
 
-1. **Security**: Move admin auth server-side
-2. **UX**: Add loading skeletons
-3. **Features**: Search functionality
-4. **Polish**: Auto-refresh admin console
+1. **Fix Seed Data**: Re-implement without breaking auth
+2. **Security**: Move admin auth server-side
+3. **UX**: Add loading skeletons
+4. **Features**: Search functionality
 
 ## Development Tips
 
