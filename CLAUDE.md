@@ -1,11 +1,12 @@
 # Context for Claude
 
-## Project Status (Updated: July 29, 2024)
+## Project Status (Updated: July 30, 2025)
 
-- **Status**: Both critical errors fixed! ✅
+- **Status**: Fully functional with all core features working! ✅
 - **React Hooks Error #185**: Fixed by moving auth to middleware
 - **Infinite Loop Error**: Fixed by removing duplicate store initialization
-- **Data Storage**: Hybrid - Zustand + Supabase (homepage, folders), localStorage (notebooks, quizzing)
+- **Data Storage**: Fully migrated to Zustand + Supabase (all pages)
+- **RLS Policies**: Fixed - all CRUD operations working
 
 ## Tech Stack
 
@@ -15,7 +16,7 @@
 - Supabase (auth + database with RLS)
 - Tailwind CSS 4
 - TypeScript 5.7.3
-- Icons: Lucide React
+- Icons: Lucide React + Custom Logo
 
 ## Current Architecture
 
@@ -24,43 +25,52 @@
 - **Zustand Store** (`/lib/store/`):
   - `useStore.ts` - Main store with optimistic updates
   - `hooks.ts` - React hooks for components
-  - `supabase-helpers.ts` - API layer with null checks
-  - `StoreProvider.tsx` - Wraps entire app (causing issues)
+  - `supabase-helpers.ts` - API layer with error handling
+  - `StoreProvider.tsx` - Wraps entire app
 
 ### Auth Flow
 
 - **Middleware.ts** handles all auth (server-side)
 - Protected routes: `/folders`, `/notebooks/*`, `/quizzing`, `/typemaxxing`
 - Public routes: `/`, `/auth/login`, `/auth/signup`
-- StoreProvider no longer does auth checks
+- StoreProvider initializes store for authenticated users
 
 ### Pages Migration Status
 
 - ✅ Homepage - Fully migrated to Zustand
-- ✅ Folders page - Migrated but has double-init bug
-- ❌ Notebooks page - Still uses localStorage
-- ❌ Quizzing - Uses localStorage
-- ❓ Typemaxxing - Unknown status
+- ✅ Folders page - Fully migrated, all bugs fixed
+- ✅ Notebooks page - Migrated from localStorage to Zustand
+- ✅ Quizzing - Migrated from localStorage to Zustand
+- ✅ Typemaxxing - Standalone page (no data storage needed)
 
-## Recent Fixes
+## Recent Accomplishments
 
-### React Hooks Error #185 (Fixed)
+### All Critical Issues Resolved ✅
 
-- Moved all auth checks to middleware.ts
-- Removed conditional logic from StoreProvider
-- Store initializes unconditionally for authenticated users
+1. **React Hooks Error #185**: Moved auth to middleware
+2. **Infinite Loop Error**: Fixed store initialization
+3. **RLS Policy Violations**: Fixed INSERT policies for all tables
+4. **localStorage Migration**: Completed for all pages
+5. **Seed Data**: Created auto-seeding for new users
+6. **Logo Branding**: Added custom logo throughout app
 
-### Infinite Loop Error (Fixed)
+### Working Features
 
-- Removed duplicate store initialization from folders page
-- Store now only initializes once in StoreProvider
-- No more "Maximum update depth exceeded" errors
+- ✅ Create/edit/delete folders with colors
+- ✅ Create/edit/archive/restore notebooks
+- ✅ Create/edit/delete notes with auto-save
+- ✅ Create quizzes with questions
+- ✅ User authentication with Supabase
+- ✅ Data persistence in cloud
+- ✅ Optimistic updates for instant UI feedback
+- ✅ Archive/restore functionality
+- ✅ Custom logo and favicon
 
 ### Data Model
 
 - Hierarchical: Users → Folders → Notebooks → Notes
 - Additional: Quizzes, Typemaxxing
-- All tables have RLS enabled
+- All tables have RLS enabled with proper policies
 - Using optimistic updates for better UX
 
 ## Development Guidelines
@@ -69,23 +79,13 @@
 
 1. **Always run**: `npm run lint` and `npm run type-check`
 2. **Test auth flow**: Logout → Login → Access protected routes
-3. **Check console**: No infinite loops or hydration errors
-4. **Verify data**: Folders/notebooks/notes load correctly
+3. **Check console**: No errors or warnings
+4. **Verify data**: All CRUD operations work correctly
 
-### Current Priorities
+### RLS Policy Pattern
 
-1. Fix infinite loop (remove duplicate init)
-2. Complete localStorage → Zustand migration
-3. Add proper SSR configuration
-4. Improve error handling
-
-### Known Issues
-
-- Infinite render loop on protected pages
-- 2 pages still use localStorage
-- No loading skeletons
-- Large components (450+ lines)
-- Edge Runtime warnings from Supabase (harmless)
+For INSERT operations, use: `WITH CHECK (auth.uid() IS NOT NULL)`
+For SELECT/UPDATE/DELETE: `USING (auth.uid() = user_id)`
 
 ## Build & Deploy
 
@@ -96,14 +96,22 @@
 
 ## Important Notes
 
-- **Experimental Phase**: No production data at risk
-- **Test Data**: Feel free to create/delete anything
+- **Production Ready**: All core features working
 - **Pre-commit Hooks**: ESLint and Prettier run automatically
-- **TypeScript Strict**: Some Supabase types use @ts-expect-error
+- **TypeScript Strict**: Full type safety
+- **Seed Data**: New users get starter content automatically
 
-## Next Session Focus
+## Next Priorities
 
-1. Apply infinite loop fix
-2. Test thoroughly
-3. Continue migration to Zustand
-4. Consider route-based providers for better architecture
+1. Add loading skeletons for better UX
+2. Implement search functionality
+3. Add export features (PDF, Markdown)
+4. Consider real-time sync between devices
+5. Add offline support with IndexedDB
+
+# important-instruction-reminders
+
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.

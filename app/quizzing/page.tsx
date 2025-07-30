@@ -1,31 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, Play, Check, X } from "lucide-react";
 import { Logo } from "@/components/logo";
-import { STORAGE_KEYS } from "@/lib/constants";
-
-interface Quiz {
-  id: string;
-  subject: string;
-  questions: Question[];
-}
-
-interface Question {
-  id: string;
-  question: string;
-  answer: string;
-}
+import { useQuizzes, useQuizActions, useSyncState } from "@/lib/store/hooks";
+import type { Quiz, QuizQuestion } from "@/lib/types";
 
 export default function QuizzingPage() {
-  const [quizzes, setQuizzes] = useState<Quiz[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem(STORAGE_KEYS.QUIZZES);
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
+  // Use Zustand hooks
+  const { quizzes, loading } = useQuizzes();
+  const { createQuiz, updateQuiz, deleteQuiz } = useQuizActions();
+  const { error, setSyncError } = useSyncState();
+
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
   const [newSubject, setNewSubject] = useState("");
@@ -39,56 +26,79 @@ export default function QuizzingPage() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [score, setScore] = useState(0);
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.QUIZZES, JSON.stringify(quizzes));
-  }, [quizzes]);
-
-  const createQuiz = () => {
+  const handleCreateQuiz = async () => {
     if (!newSubject.trim()) return;
 
-    const newQuiz: Quiz = {
-      id: Date.now().toString(),
-      subject: newSubject,
-      questions: []
-    };
-
-    setQuizzes([...quizzes, newQuiz]);
-    setSelectedQuiz(newQuiz);
-    setIsCreatingQuiz(false);
-    setNewSubject("");
+    try {
+      await createQuiz(newSubject, []);
+      // The store will be updated with the new quiz, but we need to wait a moment
+      setTimeout(() => {
+        const newQuiz = quizzes.find(q => q.subject === newSubject);
+        if (newQuiz) {
+          setSelectedQuiz(newQuiz);
+        }
+      }, 100);
+      setIsCreatingQuiz(false);
+      setNewSubject("");
+    } catch (error) {
+      console.error('Failed to create quiz:', error);
+      setSyncError(error instanceof Error ? error.message : 'Failed to create quiz');
+    }
   };
 
-  const addQuestion = () => {
+  const addQuestion = async () => {
     if (!selectedQuiz || !newQuestion.trim() || !newAnswer.trim()) return;
 
-    const question: Question = {
+    const question: QuizQuestion = {
       id: Date.now().toString(),
       question: newQuestion,
       answer: newAnswer
     };
 
-    const updatedQuiz = {
-      ...selectedQuiz,
-      questions: [...selectedQuiz.questions, question]
-    };
-
-    setQuizzes(quizzes.map(q => q.id === selectedQuiz.id ? updatedQuiz : q));
-    setSelectedQuiz(updatedQuiz);
-    setIsAddingQuestion(false);
-    setNewQuestion("");
-    setNewAnswer("");
+    try {
+      await updateQuiz(selectedQuiz.id, {
+        questions: [...selectedQuiz.questions, question]
+      });
+      
+      // Update selected quiz from the updated list
+      const updatedQuiz = quizzes.find(q => q.id === selectedQuiz.id);
+      if (updatedQuiz) {
+        setSelectedQuiz({
+          ...updatedQuiz,
+          questions: [...selectedQuiz.questions, question]
+        });
+      }
+      
+      setIsAddingQuestion(false);
+      setNewQuestion("");
+      setNewAnswer("");
+    } catch (error) {
+      console.error('Failed to add question:', error);
+      setSyncError(error instanceof Error ? error.message : 'Failed to add question');
+    }
   };
 
-  const deleteQuestion = (questionId: string) => {
+  const deleteQuestion = async (questionId: string) => {
     if (!selectedQuiz) return;
 
-    const updatedQuiz = {
-      ...selectedQuiz,
-      questions: selectedQuiz.questions.filter(q => q.id !== questionId)
-    };
-
-    setQuizzes(quizzes.map(q => q.id === selectedQuiz.id ? updatedQuiz : q));
-    setSelectedQuiz(updatedQuiz);
+    try {
+      const updatedQuestions = selectedQuiz.questions.filter(q => q.id !== questionId);
+      await updateQuiz(selectedQuiz.id, {
+        questions: updatedQuestions
+      });
+      
+      // Update selected quiz from the updated list
+      const updatedQuiz = quizzes.find(q => q.id === selectedQuiz.id);
+      if (updatedQuiz) {
+        setSelectedQuiz({
+          ...updatedQuiz,
+          questions: updatedQuestions
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete question:', error);
+      setSyncError(error instanceof Error ? error.message : 'Failed to delete question');
+    }
   };
 
   const startQuiz = () => {
@@ -132,6 +142,20 @@ export default function QuizzingPage() {
         </div>
       </header>
 
+      {/* Error Message */}
+      {error && (
+        <div className="mx-4 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <p className="font-semibold">Error</p>
+          <p>{error}</p>
+          <button 
+            onClick={() => setSyncError(null)}
+            className="mt-2 text-sm underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <div className="flex h-[calc(100vh-4rem)]">
         {/* Sidebar - Subjects */}
         <div className="w-64 bg-white border-r border-gray-200 p-4">
@@ -157,7 +181,7 @@ export default function QuizzingPage() {
               />
               <div className="flex gap-2">
                 <button
-                  onClick={createQuiz}
+                  onClick={handleCreateQuiz}
                   className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm"
                 >
                   Create
@@ -176,20 +200,24 @@ export default function QuizzingPage() {
           )}
 
           <div className="space-y-2">
-            {quizzes.map((quiz) => (
-              <button
-                key={quiz.id}
-                onClick={() => setSelectedQuiz(quiz)}
-                className={`w-full text-left p-3 rounded-lg hover:bg-gray-100 ${
-                  selectedQuiz?.id === quiz.id ? "bg-gray-100" : ""
-                }`}
-              >
-                <div className="font-medium">{quiz.subject}</div>
-                <div className="text-sm text-gray-700 font-medium">
-                  {quiz.questions.length} questions
-                </div>
-              </button>
-            ))}
+            {loading ? (
+              <div className="text-center py-4 text-gray-500">Loading...</div>
+            ) : (
+              quizzes.map((quiz) => (
+                <button
+                  key={quiz.id}
+                  onClick={() => setSelectedQuiz(quiz)}
+                  className={`w-full text-left p-3 rounded-lg hover:bg-gray-100 ${
+                    selectedQuiz?.id === quiz.id ? "bg-gray-100" : ""
+                  }`}
+                >
+                  <div className="font-medium">{quiz.subject}</div>
+                  <div className="text-sm text-gray-700 font-medium">
+                    {quiz.questions.length} questions
+                  </div>
+                </button>
+              ))
+            )}
           </div>
         </div>
 
@@ -199,15 +227,33 @@ export default function QuizzingPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-semibold">{selectedQuiz.subject}</h2>
-                {selectedQuiz.questions.length > 0 && (
+                <div className="flex items-center gap-2">
+                  {selectedQuiz.questions.length > 0 && (
+                    <button
+                      onClick={startQuiz}
+                      className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                    >
+                      <Play className="h-4 w-4 mr-2" />
+                      Start Quiz
+                    </button>
+                  )}
                   <button
-                    onClick={startQuiz}
-                    className="flex items-center px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                    onClick={async () => {
+                      if (confirm(`Are you sure you want to delete the quiz "${selectedQuiz.subject}"?`)) {
+                        try {
+                          await deleteQuiz(selectedQuiz.id);
+                          setSelectedQuiz(null);
+                        } catch (error) {
+                          console.error('Failed to delete quiz:', error);
+                          setSyncError(error instanceof Error ? error.message : 'Failed to delete quiz');
+                        }
+                      }
+                    }}
+                    className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
                   >
-                    <Play className="h-4 w-4 mr-2" />
-                    Start Quiz
+                    <Trash2 className="h-5 w-5" />
                   </button>
-                )}
+                </div>
               </div>
 
               <div className="mb-6">
@@ -267,7 +313,7 @@ export default function QuizzingPage() {
                         <p className="text-gray-800">{q.answer}</p>
                       </div>
                       <button
-                        onClick={() => deleteQuestion(q.id)}
+                        onClick={() => q.id && deleteQuestion(q.id)}
                         className="ml-4 p-1 text-red-500 hover:bg-red-50 rounded"
                       >
                         <Trash2 className="h-4 w-4" />

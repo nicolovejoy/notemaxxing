@@ -37,7 +37,7 @@ interface AppState {
   // Actions - Notes
   loadNotes: () => Promise<void>
   loadNotesByNotebook: (notebookId: string) => Promise<void>
-  createNote: (title: string, content: string, notebookId: string) => Promise<void>
+  createNote: (title: string, content: string, notebookId: string) => Promise<Note>
   updateNote: (id: string, updates: Partial<Note>) => Promise<void>
   deleteNote: (id: string) => Promise<void>
   
@@ -401,6 +401,7 @@ export const useStore = create<AppState>()(
             }
             state.optimisticUpdates = state.optimisticUpdates.filter((u: OptimisticUpdate<Folder | Notebook | Note | Quiz>) => u.id !== tempId)
           })
+          return newNote
         } catch (error) {
           // Rollback
           set((state) => {

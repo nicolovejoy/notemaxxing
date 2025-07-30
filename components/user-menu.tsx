@@ -2,13 +2,21 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { AdminConsole } from "./admin-console";
+
+// Admin emails who can see admin console
+const ADMIN_EMAILS = [
+  'nicolovejoy@gmail.com',
+  // Add other admin emails as needed
+];
 
 export function UserMenu() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showAdminConsole, setShowAdminConsole] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -44,6 +52,8 @@ export function UserMenu() {
     router.refresh();
   };
 
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+
   if (!user) return null;
 
   return (
@@ -65,6 +75,18 @@ export function UserMenu() {
             <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
               {user.email}
             </div>
+            {isAdmin && (
+              <button
+                onClick={() => {
+                  setShowAdminConsole(true);
+                  setShowDropdown(false);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                Admin Console
+              </button>
+            )}
             <button
               onClick={handleSignOut}
               className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
@@ -74,6 +96,11 @@ export function UserMenu() {
             </button>
           </div>
         </>
+      )}
+      
+      {/* Admin Console Modal */}
+      {showAdminConsole && (
+        <AdminConsole onClose={() => setShowAdminConsole(false)} />
       )}
     </div>
   );

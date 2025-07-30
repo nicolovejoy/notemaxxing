@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -22,16 +22,13 @@ import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
 import { Logo } from "@/components/logo";
 import {
-  getFolders,
-  getNotebooks,
-  getNotes,
-  createNote,
-  updateNote,
-  deleteNote,
-  type Folder,
-  type Notebook,
-  type Note
-} from "@/lib/storage";
+  useFolder,
+  useNotebook,
+  useNotebooks,
+  useNotes,
+  useNoteActions,
+  useSyncState
+} from "@/lib/store/hooks";
 
 type SortOption = "recent" | "alphabetical" | "created";
 
@@ -40,82 +37,70 @@ export default function NotebookPage() {
   const router = useRouter();
   const notebookId = params.id as string;
 
-  const [notebook, setNotebook] = useState<Notebook | null>(null);
-  const [folder, setFolder] = useState<Folder | null>(null);
-  const [folderNotebooks, setFolderNotebooks] = useState<Notebook[]>([]);
-  const [notes, setNotes] = useState<Note[]>([]);
+  // Use Zustand hooks
+  const notebook = useNotebook(notebookId);
+  const folder = useFolder(notebook?.folder_id || null);
+  const { notebooks: allNotebooks } = useNotebooks();
+  const { notes: allNotes, loading: notesLoading } = useNotes(notebookId);
+  const { createNote, updateNote, deleteNote } = useNoteActions();
+  const { error, setSyncError } = useSyncState();
+
+  const [notes, setNotes] = useState<typeof allNotes>([]);
   const [sortOption, setSortOption] = useState<SortOption>("recent");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [selectedNote, setSelectedNote] = useState<typeof allNotes[0] | null>(null);
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [editingNoteContent, setEditingNoteContent] = useState("");
   const [editingNoteTitle, setEditingNoteTitle] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [tempNoteId, setTempNoteId] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Load notebook and folder data
-    const notebooks = getNotebooks();
-    const currentNotebook = notebooks.find((n) => n.id === notebookId);
-    
-    if (!currentNotebook) {
-      router.push("/folders");
-      return;
-    }
-
-    setNotebook(currentNotebook);
-    
-    // Load folder
-    const folders = getFolders();
-    const currentFolder = folders.find((f) => f.id === currentNotebook.folderId);
-    setFolder(currentFolder || null);
-    
-    // Load all notebooks in this folder
-    const sameFolderNotebooks = notebooks.filter(
-      (n) => n.folderId === currentNotebook.folderId && !n.archived
+  // Get notebooks in the same folder
+  const folderNotebooks = useMemo(() => {
+    if (!notebook?.folder_id) return [];
+    return allNotebooks.filter(
+      (n) => n.folder_id === notebook.folder_id && !n.archived
     );
-    setFolderNotebooks(sameFolderNotebooks);
-    
-    // Load notes
-    loadNotes();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notebookId, router]);
+  }, [allNotebooks, notebook]);
 
-  const loadNotes = () => {
-    const allNotes = getNotes();
-    const notebookNotes = allNotes.filter((n) => n.notebookId === notebookId);
-    
-    // Sort notes
-    const sortedNotes = [...notebookNotes].sort((a, b) => {
+  // Redirect if notebook not found
+  useEffect(() => {
+    if (!notesLoading && !notebook) {
+      router.push("/folders");
+    }
+  }, [notebook, notesLoading, router]);
+
+  // Sort notes
+  useEffect(() => {
+    const sortedNotes = [...allNotes].sort((a, b) => {
       switch (sortOption) {
         case "recent":
-          return new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime();
+          return new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime();
         case "alphabetical":
           return a.title.localeCompare(b.title);
         case "created":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         default:
           return 0;
       }
     });
     
     setNotes(sortedNotes);
-  };
-
-  useEffect(() => {
-    loadNotes();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortOption]);
+  }, [allNotes, sortOption]);
 
   const handleCreateNote = () => {
     // Create a temporary note (not saved yet)
-    const tempNote: Note = {
-      id: `temp-${Date.now()}`,
+    const tempId = `temp-${Date.now()}`;
+    setTempNoteId(tempId);
+    setSelectedNote({
+      id: tempId,
+      user_id: '', // Will be set by server
+      notebook_id: notebookId,
       title: "",
       content: "",
-      notebookId: notebookId,
-      createdAt: new Date(),
-    };
-    setSelectedNote(tempNote);
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
     setEditingNoteTitle("");
     setEditingNoteContent("");
     setIsEditingNote(true);
@@ -131,57 +116,68 @@ export default function NotebookPage() {
     }
     
     setIsSaving(true);
-    const timeoutId = setTimeout(() => {
-      // If it's a new note (temp id), create it properly
-      if (selectedNote.id.startsWith('temp-')) {
-        // If no title, use first 3 words of content
-        let title = editingNoteTitle.trim();
-        if (!title && editingNoteContent.trim()) {
-          const words = editingNoteContent.trim().split(/\s+/);
-          title = words.slice(0, 3).join(' ');
-          if (words.length > 3) title += '...';
+    const timeoutId = setTimeout(async () => {
+      try {
+        // If it's a new note (temp id), create it properly
+        if (tempNoteId && selectedNote.id === tempNoteId) {
+          // If no title, use first 3 words of content
+          let title = editingNoteTitle.trim();
+          if (!title && editingNoteContent.trim()) {
+            const words = editingNoteContent.trim().split(/\s+/);
+            title = words.slice(0, 3).join(' ');
+            if (words.length > 3) title += '...';
+          }
+          
+          const newNote = await createNote(
+            title || "Untitled Note",
+            editingNoteContent,
+            notebookId
+          );
+          if (newNote) {
+            setSelectedNote(newNote);
+            setTempNoteId(null);
+          }
+        } else {
+          // Update existing note
+          let title = editingNoteTitle.trim();
+          
+          // If title is empty but content exists, use first 3 words
+          if (!title && editingNoteContent.trim()) {
+            const words = editingNoteContent.trim().split(/\s+/);
+            title = words.slice(0, 3).join(' ');
+            if (words.length > 3) title += '...';
+          }
+          
+          await updateNote(selectedNote.id, {
+            title: title || "Untitled Note",
+            content: editingNoteContent,
+          });
         }
-        
-        const newNote = createNote(
-          title || "Untitled Note",
-          editingNoteContent,
-          notebookId
-        );
-        setSelectedNote(newNote);
-      } else {
-        // Update existing note
-        let title = editingNoteTitle.trim();
-        
-        // If title is empty but content exists, use first 3 words
-        if (!title && editingNoteContent.trim()) {
-          const words = editingNoteContent.trim().split(/\s+/);
-          title = words.slice(0, 3).join(' ');
-          if (words.length > 3) title += '...';
-        }
-        
-        updateNote(selectedNote.id, {
-          title: title || "Untitled Note",
-          content: editingNoteContent,
-          updatedAt: new Date()
-        });
+        setIsSaving(false);
+      } catch (error) {
+        console.error('Failed to save note:', error);
+        setSyncError(error instanceof Error ? error.message : 'Failed to save note');
+        setIsSaving(false);
       }
-      loadNotes();
-      setIsSaving(false);
     }, 500); // Auto-save after 500ms of no typing
     
     return () => clearTimeout(timeoutId);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingNoteTitle, editingNoteContent, selectedNote, isEditingNote]);
+  }, [editingNoteTitle, editingNoteContent, selectedNote, isEditingNote, tempNoteId]);
 
-  const handleDeleteNote = (noteId: string) => {
+  const handleDeleteNote = async (noteId: string) => {
     if (!confirm("Are you sure you want to delete this note?")) return;
     
-    deleteNote(noteId);
-    if (selectedNote?.id === noteId) {
-      setSelectedNote(null);
-      setIsEditingNote(false);
+    try {
+      await deleteNote(noteId);
+      if (selectedNote?.id === noteId) {
+        setSelectedNote(null);
+        setIsEditingNote(false);
+      }
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      setSyncError(error instanceof Error ? error.message : 'Failed to delete note');
     }
-    loadNotes();
   };
 
   const formatDate = (date: Date | string) => {
@@ -229,7 +225,21 @@ export default function NotebookPage() {
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-4rem)]">
+      {/* Error Message */}
+      {error && (
+        <div className="mx-4 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <p className="font-semibold">Error</p>
+          <p>{error}</p>
+          <button 
+            onClick={() => setSyncError(null)}
+            className="mt-2 text-sm underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      <div className="flex h-[calc(100vh-4rem)]}">
         {/* Folder Sidebar */}
         <div className="w-64 bg-white border-r border-gray-200 p-4">
           <div className={`${folder.color} text-white rounded-lg p-3 mb-4`}>
@@ -383,7 +393,7 @@ export default function NotebookPage() {
                       {note.content || "No content yet..."}
                     </p>
                     <p className="text-xs text-gray-500 mt-2">
-                      {formatDate(note.updatedAt || note.createdAt)}
+                      {formatDate(note.updated_at || note.created_at)}
                     </p>
                   </div>
                 ))}
