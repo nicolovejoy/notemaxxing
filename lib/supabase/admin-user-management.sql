@@ -1,8 +1,11 @@
+-- Drop existing function if it exists
+DROP FUNCTION IF EXISTS get_all_users_admin();
+
 -- Function to get all users with their stats
-CREATE OR REPLACE FUNCTION get_all_users_admin()
+CREATE FUNCTION get_all_users_admin()
 RETURNS TABLE (
   id UUID,
-  email TEXT,
+  email VARCHAR(255),
   created_at TIMESTAMPTZ,
   last_sign_in_at TIMESTAMPTZ,
   folder_count BIGINT,
