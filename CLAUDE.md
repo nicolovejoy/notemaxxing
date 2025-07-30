@@ -9,6 +9,8 @@ Live at: [notemaxxing.net](https://notemaxxing.net)
 
 1. **Admin Console**: Added user management with delete functionality
 2. **Seed Data**: New users get starter content (via admin console for now - need to fix eventually)
+3. **AI Integration**: Rich text editor with "Enhance with AI" feature using GPT-3.5
+4. **Auth Fix**: Resolved Supabase email links pointing to localhost
 
 ## Known Issues
 
@@ -35,14 +37,10 @@ npm run build       # Production build
 
 ## Current Priorities
 
-1. **AI Integration**: Add rich text editor with AI enhancement
-   - TipTap for basic formatting (bold, italic, lists, headings)
-   - Single "Enhance with AI" button for grammar/clarity
-   - Simple OpenAI integration with 50 req/day limit
-   - Auto-save on blur
+1. **Code Refactoring**: See REFACTORING_RECOMMENDATIONS.md for modular components plan
 2. **Seed Data**: Re-implement without breaking auth
 3. **Security**: Move admin auth to server-side
-4. **UX**: Add loading skeletons
+4. **Features**: Typing and quiz features need development
 
 ## Quick Tips
 
