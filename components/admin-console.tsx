@@ -1,36 +1,51 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, ChevronDown, ChevronRight, RefreshCw, Trash2, Copy, AlertCircle, CheckCircle, Info, AlertTriangle, Database, Users, Loader } from 'lucide-react'
+import {
+  X,
+  ChevronDown,
+  ChevronRight,
+  RefreshCw,
+  Trash2,
+  Copy,
+  AlertCircle,
+  CheckCircle,
+  Info,
+  AlertTriangle,
+  Database,
+  Users,
+  Loader,
+} from 'lucide-react'
 import { logger } from '@/lib/debug/logger'
 import { useStore } from '@/lib/store'
 import { createClient } from '@/lib/supabase/client'
 
 // Admin emails who can access debug console
 const ADMIN_EMAILS = [
-  'nicolovejoy@gmail.com', // Add your email here
+  'nicholas.lovejoy@gmail.com', // Add your email here
+  'mlovejoy@scu.edu', // Add your email here
   // Add other admin emails as needed
 ]
 
 interface LogEntry {
-  timestamp: Date;
-  level: string;
-  message: string;
-  data?: unknown;
-  stack?: string;
+  timestamp: Date
+  level: string
+  message: string
+  data?: unknown
+  stack?: string
 }
 
 interface UserData {
-  id: string;
-  email: string;
-  created_at: string;
-  folders_count?: number;
-  notebooks_count?: number;
-  notes_count?: number;
+  id: string
+  email: string
+  created_at: string
+  folders_count?: number
+  notebooks_count?: number
+  notes_count?: number
 }
 
 interface AdminConsoleProps {
-  onClose?: () => void;
+  onClose?: () => void
 }
 
 export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
@@ -58,8 +73,10 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     const checkAuth = async () => {
       const supabase = createClient()
       if (!supabase) return
-      
-      const { data: { user } } = await supabase.auth.getUser()
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user?.email) {
         setUserEmail(user.email)
         setCurrentUserId(user.id)
@@ -78,10 +95,10 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       if (e.key === 'd' || e.key === 'D') {
         const now = Date.now()
         keyPresses.push(now)
-        
+
         // Keep only presses within last second
-        keyPresses = keyPresses.filter(time => now - time < 1000)
-        
+        keyPresses = keyPresses.filter((time) => now - time < 1000)
+
         if (keyPresses.length >= 3) {
           if (onClose) {
             onClose()
@@ -113,9 +130,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   if (!isAdmin) return null
 
   const toggleSection = (section: keyof typeof expandedSections) => {
-    setExpandedSections(prev => ({
+    setExpandedSections((prev) => ({
       ...prev,
-      [section]: !prev[section]
+      [section]: !prev[section],
     }))
   }
 
@@ -139,25 +156,29 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     try {
       const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
-      
+
       // For now, just get current user and their stats
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user) {
         // Get user stats
         const { data: stats } = await supabase.rpc('get_user_stats', {
-          target_user_id: user.id
+          target_user_id: user.id,
         })
-        
-        setAllUsers([{
-          id: user.id,
-          email: user.email || '',
-          created_at: user.created_at,
-          folders_count: stats?.[0]?.folders_count || 0,
-          notebooks_count: stats?.[0]?.notebooks_count || 0,
-          notes_count: stats?.[0]?.notes_count || 0,
-        }])
+
+        setAllUsers([
+          {
+            id: user.id,
+            email: user.email || '',
+            created_at: user.created_at,
+            folders_count: stats?.[0]?.folders_count || 0,
+            notebooks_count: stats?.[0]?.notebooks_count || 0,
+            notes_count: stats?.[0]?.notes_count || 0,
+          },
+        ])
       }
-      
+
       logger.info('Loaded user data')
     } catch (error) {
       logger.error('Failed to load users', error)
@@ -167,23 +188,25 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   }
 
   const resetUserData = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete ALL data for this user? This cannot be undone!')) {
+    if (
+      !confirm('Are you sure you want to delete ALL data for this user? This cannot be undone!')
+    ) {
       return
     }
-    
+
     try {
       const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
-      
+
       // Delete in order to respect foreign keys
       await supabase.from('notes').delete().eq('user_id', userId)
       await supabase.from('quizzes').delete().eq('user_id', userId)
       await supabase.from('notebooks').delete().eq('user_id', userId)
       await supabase.from('folders').delete().eq('user_id', userId)
-      
+
       logger.info('Reset data for user', { userId })
       alert('User data reset successfully')
-      
+
       // Refresh store
       await storeState.initializeStore()
     } catch (error) {
@@ -196,22 +219,25 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     try {
       const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
-      
+
       // Run the seed function manually for this user
       const { error } = await supabase.rpc('create_starter_content_for_specific_user', {
-        target_user_id: userId
+        target_user_id: userId,
       })
-      
+
       if (error) throw error
-      
+
       logger.info('Seeded data for user', { userId })
       alert('Starter content added successfully')
-      
+
       // Refresh store
       await storeState.initializeStore()
     } catch (error) {
       logger.error('Failed to seed user data', error)
-      alert('Failed to seed user data. Make sure the SQL function is deployed: ' + (error as Error).message)
+      alert(
+        'Failed to seed user data. Make sure the SQL function is deployed: ' +
+          (error as Error).message
+      )
     }
   }
 
@@ -219,7 +245,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     try {
       const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
-      
+
       // Get all user data
       const [folders, notebooks, notes, quizzes] = await Promise.all([
         supabase.from('folders').select('*').eq('user_id', userId),
@@ -227,7 +253,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
         supabase.from('notes').select('*').eq('user_id', userId),
         supabase.from('quizzes').select('*').eq('user_id', userId),
       ])
-      
+
       const exportData = {
         exportDate: new Date().toISOString(),
         userId,
@@ -236,7 +262,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
         notes: notes.data || [],
         quizzes: quizzes.data || [],
       }
-      
+
       // Download as JSON
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -244,7 +270,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       a.href = url
       a.download = `notemaxxing-export-${userId}-${new Date().toISOString().split('T')[0]}.json`
       a.click()
-      
+
       logger.info('Exported data for user', { userId })
     } catch (error) {
       logger.error('Failed to export user data', error)
@@ -254,10 +280,14 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const getLogIcon = (level: string) => {
     switch (level) {
-      case 'error': return <AlertCircle className="w-4 h-4 text-red-500" />
-      case 'warn': return <AlertTriangle className="w-4 h-4 text-yellow-500" />
-      case 'info': return <Info className="w-4 h-4 text-blue-500" />
-      default: return <CheckCircle className="w-4 h-4 text-gray-500" />
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-red-500" />
+      case 'warn':
+        return <AlertTriangle className="w-4 h-4 text-yellow-500" />
+      case 'info':
+        return <Info className="w-4 h-4 text-blue-500" />
+      default:
+        return <CheckCircle className="w-4 h-4 text-gray-500" />
     }
   }
 
@@ -275,7 +305,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   }
 
   if (!isOpen) {
-    return null;
+    return null
   }
 
   return (
@@ -289,9 +319,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
             <button
               onClick={() => {
                 if (onClose) {
-                  onClose();
+                  onClose()
                 } else {
-                  setIsOpen(false);
+                  setIsOpen(false)
                 }
               }}
               className="p-1 hover:bg-gray-100 rounded"
@@ -313,7 +343,11 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                 <Database className="w-4 h-4" />
                 Database Management
               </span>
-              {expandedSections.database ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {expandedSections.database ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
             </button>
             {expandedSections.database && (
               <div className="p-4 space-y-3">
@@ -363,7 +397,11 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                 <Users className="w-4 h-4" />
                 User Stats
               </span>
-              {expandedSections.users ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {expandedSections.users ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
             </button>
             {expandedSections.users && (
               <div className="p-4 space-y-3">
@@ -373,11 +411,13 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {allUsers.map(user => (
+                    {allUsers.map((user) => (
                       <div key={user.id} className="border rounded p-3 text-sm">
                         <div className="font-medium">{user.email}</div>
                         <div className="text-xs text-gray-500 mt-1">ID: {user.id}</div>
-                        <div className="text-xs text-gray-500">Created: {new Date(user.created_at).toLocaleDateString()}</div>
+                        <div className="text-xs text-gray-500">
+                          Created: {new Date(user.created_at).toLocaleDateString()}
+                        </div>
                         <div className="grid grid-cols-3 gap-2 mt-2">
                           <div className="text-center">
                             <div className="text-lg font-semibold">{user.folders_count || 0}</div>
@@ -417,7 +457,11 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
-                {expandedSections.logs ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                {expandedSections.logs ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
               </div>
             </button>
             {expandedSections.logs && (
@@ -429,7 +473,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                     <div key={i} className="flex items-start gap-2 text-sm">
                       {getLogIcon(log.level)}
                       <div className="flex-1">
-                        <span className="text-gray-500">{new Date(log.timestamp).toLocaleTimeString()}</span>
+                        <span className="text-gray-500">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
                         <span className="ml-2">{log.message}</span>
                         {log.data !== undefined && (
                           <pre className="text-xs bg-gray-100 p-1 rounded mt-1">
@@ -461,7 +507,11 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                 >
                   <RefreshCw className="w-4 h-4" />
                 </button>
-                {expandedSections.store ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                {expandedSections.store ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                )}
               </div>
             </button>
             {expandedSections.store && (

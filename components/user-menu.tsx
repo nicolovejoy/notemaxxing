@@ -9,7 +9,8 @@ import { AdminConsole } from "./admin-console";
 
 // Admin emails who can see admin console
 const ADMIN_EMAILS = [
-  'nicolovejoy@gmail.com',
+  'nicholas.lovejoy@gmail.com',
+  'mlovejoy@scu.edu',
   // Add other admin emails as needed
 ];
 
