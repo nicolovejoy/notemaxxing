@@ -52,7 +52,8 @@ npm run build       # Production build
 
 # important-instruction-reminders
 
-Do what has been asked; nothing more, nothing less.
+No superlatives
+Do what has been asked; nothing more.
 Keep things simple. when there are multiple steps needed, describe the plan and get user feedback.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User.
