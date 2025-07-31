@@ -252,12 +252,14 @@ export default function NotebookPage() {
       <div className="flex h-[calc(100vh-4rem)]}">
         {/* Folder Sidebar */}
         <div className="w-64 bg-white border-r border-gray-200 p-4">
-          <div className={`${folder.color} text-white rounded-lg p-3 mb-4`}>
-            <div className="flex items-center gap-2">
-              <FolderOpen className="h-5 w-5" />
-              <span className="font-semibold">{folder.name}</span>
+          <Link href="/folders" className="block">
+            <div className={`${folder.color} text-white rounded-lg p-3 mb-4 hover:opacity-90 transition-opacity cursor-pointer`}>
+              <div className="flex items-center gap-2">
+                <FolderOpen className="h-5 w-5" />
+                <span className="font-semibold">{folder.name}</span>
+              </div>
             </div>
-          </div>
+          </Link>
           
           <h3 className="text-sm font-medium text-gray-700 mb-3">Notebooks</h3>
           <div className="space-y-2">
