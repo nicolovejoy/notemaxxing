@@ -284,7 +284,7 @@ export function RichTextEditor({
             </button>
           )}
           <button
-            onClick={handleEnhance}
+            onClick={() => handleEnhance()}
             disabled={isEnhancing || !editor.getText().trim()}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               isEnhancing 
