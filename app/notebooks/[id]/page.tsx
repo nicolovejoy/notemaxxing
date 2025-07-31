@@ -162,7 +162,8 @@ export default function NotebookPage() {
           // If no title, use first 3 words of content
           let title = editingNoteTitle.trim();
           if (!title && editingNoteContent.trim()) {
-            const words = editingNoteContent.trim().split(/\s+/);
+            const plainText = toPlainText(editingNoteContent);
+            const words = plainText.trim().split(/\s+/);
             title = words.slice(0, 3).join(' ');
             if (words.length > 3) title += '...';
           }
@@ -182,7 +183,8 @@ export default function NotebookPage() {
           
           // If title is empty but content exists, use first 3 words
           if (!title && editingNoteContent.trim()) {
-            const words = editingNoteContent.trim().split(/\s+/);
+            const plainText = toPlainText(editingNoteContent);
+            const words = plainText.trim().split(/\s+/);
             title = words.slice(0, 3).join(' ');
             if (words.length > 3) title += '...';
           }

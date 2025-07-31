@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Menu,
   Search,
@@ -12,10 +13,13 @@ import { BuildTimestamp } from "@/components/build-timestamp";
 import { Logo } from "@/components/logo";
 import { useFolders, useNotebooks } from "@/lib/store/hooks";
 import { Card } from "@/components/ui";
+import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
 
 export default function Home() {
+  const router = useRouter();
   const { folders, loading: foldersLoading } = useFolders();
   const { notebooks, loading: notebooksLoading } = useNotebooks();
+  const navigateToRecentNotebook = useNavigateToRecentNotebook();
   
   const loading = foldersLoading || notebooksLoading;
 
@@ -59,7 +63,15 @@ export default function Home() {
         {/* Feature Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
           {/* Folders Card */}
-          <Link href="/folders" className="block">
+          <div 
+            className="block cursor-pointer"
+            onClick={(e) => {
+              // Only navigate to folders page if clicking on the card background
+              if (e.target === e.currentTarget || e.currentTarget.contains(e.target as Node)) {
+                router.push('/folders');
+              }
+            }}
+          >
             <Card className="p-6 h-64 flex flex-col" hover>
               <h2 className="text-lg font-medium mb-4 italic">Folders</h2>
               <div className="flex-1 grid grid-cols-2 gap-2 overflow-hidden">
@@ -75,7 +87,11 @@ export default function Home() {
                   return (
                     <div
                       key={folder.id}
-                      className={`${folder.color} rounded-lg p-2 flex flex-col items-center justify-center text-white`}
+                      className={`${folder.color} rounded-lg p-2 flex flex-col items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigateToRecentNotebook(folder.id);
+                      }}
                     >
                       <FolderOpen className="h-5 w-5 opacity-80" />
                       <span className="font-semibold text-xs truncate max-w-full px-1">{folder.name}</span>
@@ -93,7 +109,7 @@ export default function Home() {
                 )}
               </div>
             </Card>
-          </Link>
+          </div>
 
           {/* Typemaxxing Card */}
           <Link href="/typemaxxing" className="block">
