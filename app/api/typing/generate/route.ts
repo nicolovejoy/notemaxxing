@@ -120,10 +120,20 @@ Generate the practice text now (${wordCount} words):`
     console.error('Typing text generation error:', error);
     
     if (error instanceof Anthropic.APIError) {
+      console.error('Anthropic API Error details:', {
+        status: error.status,
+        message: error.message,
+        type: error.type
+      });
       return NextResponse.json(
         { error: 'AI service temporarily unavailable' },
         { status: 503 }
       );
+    }
+    
+    // Log more details in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Full error details:', error);
     }
     
     return NextResponse.json(

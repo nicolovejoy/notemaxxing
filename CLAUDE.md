@@ -7,18 +7,26 @@ Live at: [notemaxxing.net](https://notemaxxing.net)
 
 ## Recent Work Completed
 
-1. **Admin Console**: Added user management with delete functionality
-2. **Seed Data**: New users get starter content (via admin console for now - need to fix eventually)
-3. **AI Integration**: Rich text editor with "Enhance with AI" feature using GPT-3.5
-4. **Auth Fix**: Resolved Supabase email links pointing to localhost
-5. **UX Improvements**: Loading skeletons, content conversion for markdown, clickable header logos
+1. **AI Enhancement**:
+   - Switched from OpenAI to Claude 3.5 Sonnet
+   - Text selection enhancement with preview modal
+   - Undo functionality for AI changes
+   - Preserve HTML formatting during enhancement
+2. **Typemaxxing Feature**:
+   - Complete MVP with note-based typing practice
+   - AI generates practice text from selected notes
+   - Multi-step flow: notebook → notes → config → type → results
+3. **UI Improvements**:
+   - Clickable folder names in notebook sidebar
+   - Modular components (Modal, ColorPicker, EntityCard)
+   - Loading skeletons throughout
 
 ## Known Issues
 
 - Seed data trigger breaks auth (disabled for now)
 - Need to re-implement seed data without affecting signup flow
 - Admin auth is client-side only (security concern)
-- typing and quizz features not yet developed.
+- Quiz feature not yet developed
 
 ## Key Info
 
@@ -38,10 +46,11 @@ npm run build       # Production build
 
 ## Current Priorities
 
-1. **Code Refactoring**: See REFACTORING_RECOMMENDATIONS.md for modular components plan
-2. **Seed Data**: Re-implement without breaking auth
-3. **Security**: Move admin auth to server-side
-4. **Features**: Typing and quiz features need development
+1. **Quiz Feature**: Implement quiz functionality similar to typemaxxing
+2. **Study Topics**: Add persistence for note selections (reusable across features)
+3. **Code Refactoring**: Continue extracting reusable components
+4. **Seed Data**: Re-implement without breaking auth
+5. **Security**: Move admin auth to server-side
 
 ## Quick Tips
 

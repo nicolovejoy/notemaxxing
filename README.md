@@ -24,17 +24,23 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 ### 📝 Note Taking
 
 - Create and edit notes within notebooks
+- **Rich Text Editor**: Bold, italic, lists, headings with TipTap
+- **AI Enhancement**: Improve grammar and clarity with Claude AI
+- **Text Selection Enhancement**: Enhance specific portions of text
+- **Preview Before Apply**: See AI changes side-by-side before accepting
+- **Undo Support**: Revert AI enhancements with dedicated undo
 - Auto-save functionality with smart title generation
 - Card-based grid view with sorting options
-- Clean, distraction-free editor
 - Contextual navigation between notebooks
 
 ### ⌨️ Typemaxxing
 
-- Practice typing with real-time feedback
-- Track WPM (Words Per Minute)
-- Monitor accuracy percentage
-- Visual keyboard display
+- **AI-Powered Practice**: Generate typing tests from your own notes
+- **Note Selection**: Choose specific notes to practice with
+- **Customizable Length**: 50, 100, or 200 word practice sessions
+- **Real-time Feedback**: Character-by-character validation
+- **Performance Metrics**: Track WPM and accuracy
+- **Cost Transparency**: See estimated API usage before generating
 
 ### 🎯 Quizzing
 
@@ -48,6 +54,8 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 - **Framework**: Next.js 15.4.4 with App Router
 - **Language**: TypeScript 5.7.3
 - **UI**: React 19.1.0 + Tailwind CSS 4
+- **Rich Text**: TipTap 3.0 Editor
+- **AI Integration**: Anthropic Claude 3.5 Sonnet
 - **State Management**: Zustand 5.0.6 with Immer middleware
 - **Auth & Database**: Supabase (PostgreSQL)
 - **Icons**: Lucide React

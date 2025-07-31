@@ -80,16 +80,17 @@ export default function TypingPage() {
         })
       })
 
+      const data = await response.json()
+      
       if (!response.ok) {
-        throw new Error('Failed to generate text')
+        throw new Error(data.error || 'Failed to generate text')
       }
 
-      const data = await response.json()
       setGeneratedText(data.text)
       setCurrentStep('typing')
     } catch (error) {
       console.error('Failed to generate practice text:', error)
-      // TODO: Show error toast
+      alert(error instanceof Error ? error.message : 'Failed to generate practice text')
     } finally {
       setIsGenerating(false)
     }
@@ -368,7 +369,7 @@ export default function TypingPage() {
             {/* Typing Area */}
             <div className="bg-white rounded-xl p-8 shadow-sm">
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <p className="text-lg leading-relaxed font-mono">
+                <p className="text-lg leading-relaxed" style={{ fontFamily: 'Arial, sans-serif' }}>
                   {generatedText.split('').map((char, index) => {
                     let className = 'text-gray-600'
                     if (index < userInput.length) {
@@ -389,7 +390,8 @@ export default function TypingPage() {
                 value={userInput}
                 onChange={(e) => handleInputChange(e.target.value)}
                 placeholder="Start typing..."
-                className="w-full h-32 p-4 border-2 border-gray-200 rounded-lg font-mono resize-none focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-600"
+                className="w-full h-32 p-4 border-2 border-gray-200 rounded-lg resize-none focus:border-blue-500 focus:outline-none text-gray-900 placeholder-gray-600"
+                style={{ fontFamily: 'Arial, sans-serif' }}
                 autoFocus
               />
             </div>
