@@ -7,6 +7,9 @@
 - **Database**: Supabase (PostgreSQL with RLS)
 - **Styling**: Tailwind CSS 4
 - **Icons**: Lucide React + Custom Logo
+- **Rich Text**: TipTap 3.0 editor
+- **AI**: OpenAI GPT-3.5 for text enhancement
+- **Markdown**: marked 16.1 for content conversion
 
 ## Data Model
 
@@ -60,10 +63,31 @@ See admin console with 'd' key 3x.
 ## File Structure
 
 ```
-app/           # Pages & routes
-components/    # Shared UI components
+app/               # Pages & routes
+  api/            # API routes (AI enhancement)
+  auth/           # Authentication pages
+  folders/        # Folder management
+  notebooks/[id]/ # Notebook & notes view
+  quizzing/       # Quiz feature (in development)
+  typemaxxing/    # Typing practice (in development)
+
+components/        # Shared UI components
+  forms/          # Form components (ColorPicker)
+  layouts/        # Layout components (EntityGrid)
+  ui/             # Atomic UI components
+
 lib/
-  store/      # Zustand state management
-  supabase/   # DB client & SQL files
-  types/      # TypeScript definitions
+  store/          # Zustand state management
+  supabase/       # DB client & SQL files
+  types/          # TypeScript definitions
+  hooks/          # Custom React hooks
+  utils/          # Utility functions
+  constants/      # App constants
 ```
+
+## Recent Features
+
+- **AI-Enhanced Notes**: Rich text editor with AI grammar/clarity enhancement
+- **Loading Skeletons**: Smooth loading states across all data fetching
+- **Content Conversion**: Automatic markdown to HTML conversion
+- **Reusable Components**: ColorPicker, EntityGrid, Skeleton components
