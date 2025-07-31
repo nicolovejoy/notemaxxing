@@ -176,6 +176,13 @@ export const useGlobalSearch = () => {
   return { globalSearch, setGlobalSearch }
 }
 
+// Seed data hook
+export const useSeedData = () => {
+  const seedInitialData = useStore((state) => state.seedInitialData)
+  const loading = useStore((state) => state.syncState.status === 'loading')
+  return { seedInitialData, loading }
+}
+
 // Helper hook to get most recently edited notebook in a folder
 export const useMostRecentNotebook = (folderId: string | null) => {
   const notebooks = useStore((state) => state.notebooks)

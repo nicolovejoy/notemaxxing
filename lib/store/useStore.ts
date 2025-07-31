@@ -3,6 +3,8 @@ import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 import type { Folder, Notebook, Note, Quiz, QuizQuestion, SyncState, OptimisticUpdate } from './types'
 import { foldersApi, notebooksApi, notesApi, quizzesApi } from './supabase-helpers'
+import { SeedService } from '../seed-templates'
+import { createClient } from '../supabase/client'
 
 interface AppState {
   // Data
@@ -63,6 +65,7 @@ interface AppState {
   initializeStore: () => Promise<void>
   loadPreferences: () => void
   savePreferences: () => void
+  seedInitialData: (templateId?: string) => Promise<{ success: boolean; error?: string }>
 }
 
 export const useStore = create<AppState>()(
@@ -680,6 +683,65 @@ export const useStore = create<AppState>()(
           localStorage.setItem('notemaxxing-preferences', JSON.stringify(preferences))
         } catch (error) {
           console.error('[Store] Failed to save preferences:', error)
+        }
+      },
+
+      seedInitialData: async (templateId?: string) => {
+        try {
+          set((state) => {
+            state.syncState.status = 'loading'
+          })
+
+          // Get current user
+          const supabase = createClient()
+          if (!supabase) {
+            throw new Error('Supabase client not available')
+          }
+          
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) {
+            throw new Error('No authenticated user found')
+          }
+
+          // Check if user already has data
+          const seedService = new SeedService(supabase)
+          const hasData = await seedService.checkIfUserHasData(user.id)
+          
+          if (hasData) {
+            return { 
+              success: false, 
+              error: 'User already has data. Seed data is only for new users.' 
+            }
+          }
+
+          // Seed the data
+          const result = await seedService.seedUserData({
+            userId: user.id,
+            templateId,
+          })
+
+          if (result.success) {
+            // Reload all data to reflect the seeded content
+            await get().loadFolders()
+            await get().loadNotebooks(true)
+            await get().loadNotes()
+          }
+
+          set((state) => {
+            state.syncState.status = 'idle'
+          })
+
+          return result
+        } catch (error) {
+          console.error('[Store] Seed data error:', error)
+          set((state) => {
+            state.syncState.status = 'idle'
+            state.syncState.error = error instanceof Error ? error.message : 'Failed to seed data'
+          })
+          return { 
+            success: false, 
+            error: error instanceof Error ? error.message : 'Failed to seed data' 
+          }
         }
       },
     })),
