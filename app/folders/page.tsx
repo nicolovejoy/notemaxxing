@@ -7,6 +7,9 @@ import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
 import { Logo } from "@/components/logo";
+import { Modal } from "@/components/ui/Modal";
+import { ColorPicker } from "@/components/forms/ColorPicker";
+import { EntityCard } from "@/components/cards/EntityCard";
 import { 
   useFolders, 
   useFolderActions,
@@ -221,64 +224,61 @@ export default function FoldersPage() {
       )}
 
       {/* Create Folder Modal */}
-      {isCreatingFolder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold mb-4">Create New Folder</h3>
-            <input
-              type="text"
-              placeholder="Folder name..."
-              value={newFolderName}
-              onChange={(e) => setNewFolderName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4 text-gray-900 placeholder-gray-600"
-              autoFocus
-            />
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
-              <div className="grid grid-cols-4 gap-2">
-                {FOLDER_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    onClick={() => setNewFolderColor(color)}
-                    className={`${color} h-10 rounded-md hover:opacity-80 ${
-                      newFolderColor === color ? 'ring-2 ring-offset-2 ring-gray-800' : ''
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={handleCreateFolder}
-                disabled={isCreatingFolderLoading}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                {isCreatingFolderLoading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creating...
-                  </>
-                ) : (
-                  'Create'
-                )}
-              </button>
-              <button
-                onClick={() => {
-                  setIsCreatingFolder(false);
-                  setNewFolderName("");
-                  setNewFolderColor(DEFAULT_FOLDER_COLOR);
-                }}
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-            </div>
+      <Modal
+        isOpen={isCreatingFolder}
+        onClose={() => {
+          setIsCreatingFolder(false);
+          setNewFolderName("");
+          setNewFolderColor(DEFAULT_FOLDER_COLOR);
+        }}
+        title="Create New Folder"
+      >
+        <div>
+          <input
+            type="text"
+            placeholder="Folder name..."
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md mb-4 text-gray-900 placeholder-gray-600"
+            autoFocus
+          />
+          <ColorPicker
+            colors={FOLDER_COLORS}
+            selected={newFolderColor}
+            onChange={setNewFolderColor}
+            className="mb-4"
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleCreateFolder}
+              disabled={isCreatingFolderLoading}
+              className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            >
+              {isCreatingFolderLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating...
+                </>
+              ) : (
+                'Create'
+              )}
+            </button>
+            <button
+              onClick={() => {
+                setIsCreatingFolder(false);
+                setNewFolderName("");
+                setNewFolderColor(DEFAULT_FOLDER_COLOR);
+              }}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+            >
+              Cancel
+            </button>
           </div>
         </div>
-      )}
+      </Modal>
 
       {/* Folders Grid */}
       <main className="p-6">
@@ -313,8 +313,8 @@ export default function FoldersPage() {
                 return (
                   <div key={folder.id} className="space-y-4">
                     {/* Folder Header */}
-                    <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
-                      {editingFolderId === folder.id ? (
+                    {editingFolderId === folder.id ? (
+                      <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
                         <div className="flex items-center gap-2">
                           <input
                             type="text"
@@ -339,10 +339,15 @@ export default function FoldersPage() {
                             <X className="h-4 w-4" />
                           </button>
                         </div>
-                      ) : (
-                        <>
-                          <h3 className="text-2xl font-bold">{folder.name}</h3>
-                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                      </div>
+                    ) : (
+                      <EntityCard
+                        title={folder.name}
+                        color={folder.color}
+                        icon={FolderOpen}
+                        isHeader
+                        actions={
+                          <div className="flex gap-2">
                             <button
                               onClick={() => {
                                 setEditingFolderId(folder.id);
@@ -359,12 +364,9 @@ export default function FoldersPage() {
                               <Trash2 className="h-4 w-4" />
                             </button>
                           </div>
-                          <div className="absolute bottom-4 right-4">
-                            <FolderOpen className="h-16 w-16 text-white/30" />
-                          </div>
-                        </>
-                      )}
-                    </div>
+                        }
+                      />
+                    )}
 
                     {/* Notebooks in Folder */}
                     <div className="bg-white rounded-b-lg shadow-sm border border-gray-200 p-4">

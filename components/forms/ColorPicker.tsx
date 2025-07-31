@@ -1,5 +1,5 @@
 interface ColorPickerProps {
-  colors: string[];
+  colors: readonly string[];
   selected: string;
   onChange: (color: string) => void;
   label?: string;

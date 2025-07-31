@@ -2,8 +2,9 @@
 
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import { Bold, Italic, List, ListOrdered, Sparkles } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Sparkles, Undo, Redo } from 'lucide-react';
 import { useAI } from '@/lib/hooks/useAI';
+import { useState, useRef } from 'react';
 
 interface RichTextEditorProps {
   content: string;
@@ -18,6 +19,9 @@ export function RichTextEditor({
   onBlur
 }: RichTextEditorProps) {
   const { enhance, isEnhancing } = useAI();
+  const [contentHistory, setContentHistory] = useState<string[]>([]);
+  const [showUndo, setShowUndo] = useState(false);
+  const lastEnhancedContent = useRef<string | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -44,13 +48,40 @@ export function RichTextEditor({
     if (!editor || isEnhancing) return;
     
     try {
-      const currentContent = editor.getText();
-      const enhanced = await enhance(currentContent);
-      editor.commands.setContent(enhanced);
+      const currentContent = editor.getHTML();
+      const currentText = editor.getText();
+      
+      // Save current state to editor's history before enhancing
+      // This allows native undo to work
+      editor.chain().focus().setContent(currentContent).run();
+      
+      const enhanced = await enhance(currentText);
+      
+      // Set enhanced content as a new history entry
+      editor.chain().focus().setContent(enhanced).run();
       onChange(enhanced);
+      
+      // Save to our custom history as well for the undo button
+      setContentHistory(prev => [...prev, currentContent]);
+      lastEnhancedContent.current = enhanced;
+      setShowUndo(true);
+      
+      // Hide undo button after 10 seconds
+      setTimeout(() => setShowUndo(false), 10000);
     } catch (error) {
       // Error handling is done in the hook
       console.error('Enhancement failed:', error);
+    }
+  };
+
+  const handleUndo = () => {
+    if (contentHistory.length > 0 && editor) {
+      const previousContent = contentHistory[contentHistory.length - 1];
+      editor.chain().focus().setContent(previousContent).run();
+      onChange(previousContent);
+      setContentHistory(prev => prev.slice(0, -1));
+      setShowUndo(false);
+      lastEnhancedContent.current = null;
     }
   };
 
@@ -62,6 +93,24 @@ export function RichTextEditor({
     <div className="border border-gray-200 rounded-lg overflow-hidden">
       {/* Toolbar */}
       <div className="border-b border-gray-200 p-2 flex items-center gap-1 bg-gray-50">
+        {/* Undo/Redo buttons */}
+        <button
+          onClick={() => editor.chain().focus().undo().run()}
+          disabled={!editor.can().chain().focus().undo().run()}
+          className="p-2 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Undo (Cmd+Z)"
+        >
+          <Undo className="h-4 w-4" />
+        </button>
+        <button
+          onClick={() => editor.chain().focus().redo().run()}
+          disabled={!editor.can().chain().focus().redo().run()}
+          className="p-2 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Redo (Cmd+Shift+Z)"
+        >
+          <Redo className="h-4 w-4" />
+        </button>
+        <div className="w-px h-6 bg-gray-300 mx-1" />
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
           disabled={!editor.can().chain().focus().toggleBold().run()}
@@ -121,7 +170,17 @@ export function RichTextEditor({
         </select>
         
         {/* AI Enhance Button */}
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {showUndo && contentHistory.length > 0 && (
+            <button
+              onClick={handleUndo}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+              title="Undo AI enhancement"
+            >
+              <Undo className="h-4 w-4" />
+              Undo AI
+            </button>
+          )}
           <button
             onClick={handleEnhance}
             disabled={isEnhancing || !editor.getText().trim()}
