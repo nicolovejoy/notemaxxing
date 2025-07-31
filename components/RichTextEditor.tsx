@@ -126,27 +126,13 @@ export function RichTextEditor({
         improvements.push('Enhanced formatting and structure');
       }
       
-      if (isSelection) {
-        // Show preview for selection
-        setPreviewData({ 
-          original: textToEnhance, 
-          enhanced, 
-          improvements 
-        });
-        setShowPreview(true);
-      } else {
-        // For full document, apply directly as before
-        editor.chain().focus().setContent(enhanced).run();
-        onChange(enhanced);
-        
-        // Save to our custom history as well for the undo button
-        setContentHistory(prev => [...prev, currentContent]);
-        lastEnhancedContent.current = enhanced;
-        setShowUndo(true);
-        
-        // Hide undo button after 10 seconds
-        setTimeout(() => setShowUndo(false), 10000);
-      }
+      // Always show preview, whether it's selection or full document
+      setPreviewData({ 
+        original: textToEnhance, 
+        enhanced, 
+        improvements 
+      });
+      setShowPreview(true);
     } catch (error) {
       // Error handling is done in the hook
       console.error('Enhancement failed:', error);
@@ -156,26 +142,33 @@ export function RichTextEditor({
   const acceptEnhancement = () => {
     if (!editor || !previewData.enhanced) return;
     
-    const { from, to } = editor.state.selection;
     const currentContent = editor.getHTML();
     
-    // Replace selected text with enhanced text
-    editor.chain()
-      .focus()
-      .setTextSelection({ from, to })
-      .insertContent(previewData.enhanced)
-      .run();
+    if (selectedText && floatingButton.show) {
+      // Handle selection replacement
+      const { from, to } = editor.state.selection;
+      editor.chain()
+        .focus()
+        .setTextSelection({ from, to })
+        .insertContent(previewData.enhanced)
+        .run();
+    } else {
+      // Handle full document replacement
+      editor.chain().focus().setContent(previewData.enhanced).run();
+    }
     
     onChange(editor.getHTML());
     
     // Save to history
     setContentHistory(prev => [...prev, currentContent]);
+    lastEnhancedContent.current = previewData.enhanced;
     setShowUndo(true);
     setTimeout(() => setShowUndo(false), 10000);
     
     // Close preview and reset
     setShowPreview(false);
     setFloatingButton({ x: 0, y: 0, show: false });
+    setSelectedText('');
   };
 
   const handleUndo = () => {
