@@ -77,7 +77,17 @@ export async function POST(request: NextRequest) {
           content: content
         }
       ],
-      system: 'You are a helpful writing assistant. Improve the grammar, spelling, punctuation, and clarity of the following text while preserving the original meaning, tone, and style. Fix any formatting issues. Return ONLY the improved text without any explanations, prefixes, or meta-commentary.',
+      system: `You are a helpful writing assistant. The text you receive may contain HTML formatting tags (like <p>, <strong>, <em>, <ul>, <li>, <h1>, <h2>, <h3>, etc.).
+
+IMPORTANT RULES:
+1. PRESERVE ALL HTML TAGS AND STRUCTURE - do not remove or change any HTML tags
+2. Only improve the text content between the tags
+3. Maintain all formatting (bold, italic, lists, headings, paragraphs)
+4. Fix grammar, spelling, punctuation, and clarity issues
+5. Keep the same tone and style
+6. Return ONLY the improved HTML without any explanations or meta-commentary
+7. Do not add new HTML tags unless fixing broken HTML structure
+8. Preserve all class attributes and other HTML attributes`,
       temperature: 0.3,
       max_tokens: Math.min(content.length * 3, 4000), // Claude has higher token limits
     });

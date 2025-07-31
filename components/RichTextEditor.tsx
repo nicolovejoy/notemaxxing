@@ -105,9 +105,12 @@ export function RichTextEditor({
       let textToEnhance = '';
       
       if (isSelection && selectedText) {
+        // For selections, we'll use plain text for now
+        // TODO: In the future, we can implement HTML extraction for selections
         textToEnhance = selectedText;
       } else {
-        textToEnhance = editor.getText();
+        // For full document, send HTML to preserve formatting
+        textToEnhance = editor.getHTML();
       }
       
       // Save current state to editor's history before enhancing
