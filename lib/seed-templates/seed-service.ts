@@ -1,10 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SeedDataOptions, SeedTemplate } from './types';
-import { chemistryGenZTemplate } from './chemistry-gen-z';
+import { defaultSeedTemplate } from './default-with-tutorials';
 
 // Template registry
 const TEMPLATES: Record<string, SeedTemplate> = {
-  'chemistry-gen-z': chemistryGenZTemplate,
+  'default-with-tutorials': defaultSeedTemplate,
+  'chemistry-gen-z': defaultSeedTemplate, // Keep for backwards compatibility
 };
 
 export class SeedService {
@@ -19,7 +20,7 @@ export class SeedService {
   async seedUserData(options: SeedDataOptions): Promise<{ success: boolean; error?: string }> {
     try {
       // Get template or use custom data
-      const template = options.customData || TEMPLATES[options.templateId || 'chemistry-gen-z'];
+      const template = options.customData || TEMPLATES[options.templateId || 'default-with-tutorials'];
       
       if (!template) {
         throw new Error('No valid template found');
@@ -111,7 +112,7 @@ export class SeedService {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async generateCustomTemplate(interests: string[], style?: string): Promise<SeedTemplate> {
     // This will use AI to generate a custom template based on interests
-    // For now, return chemistry as fallback
-    return chemistryGenZTemplate;
+    // For now, return default template as fallback
+    return defaultSeedTemplate;
   }
 }

@@ -208,10 +208,10 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     try {
       // Check if it's the current user - use store method
       if (userId === currentUserId) {
-        const result = await storeState.seedInitialData('chemistry-gen-z')
+        const result = await storeState.seedInitialData('default-with-tutorials')
         if (result.success) {
           logger.info('Seeded data for current user', { userId })
-          alert('Chemistry notes added successfully!')
+          alert('Starter content added successfully!')
         } else {
           throw new Error(result.error || 'Failed to seed data')
         }
@@ -383,7 +383,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                       className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                       disabled={!currentUserId}
                     >
-                      Add Chemistry Notes
+                      Add Starter Content
                     </button>
                     <button
                       onClick={() => currentUserId && resetUserData(currentUserId)}
@@ -402,7 +402,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                   </div>
                 </div>
                 <div className="text-xs text-gray-500">
-                  Note: Chemistry notes can only be added if you have no existing folders
+                  Note: Starter content can only be added if you have no existing folders
                 </div>
               </div>
             )}
@@ -487,7 +487,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                             onClick={() => seedUserData(user.id)}
                             className="text-xs text-green-600 hover:underline"
                           >
-                            Add Chemistry Notes
+                            Add Starter Content
                           </button>
                           <button
                             onClick={() => resetUserData(user.id)}

@@ -1,9 +1,9 @@
 import { SeedTemplate } from './types';
 
-export const chemistryGenZTemplate: SeedTemplate = {
-  id: 'chemistry-gen-z',
-  name: 'Chemistry 101 - Gen Z Edition',
-  description: 'First quarter college chemistry with a modern twist',
+export const defaultSeedTemplate: SeedTemplate = {
+  id: 'default-with-tutorials',
+  name: 'Default Starter Content',
+  description: 'Tutorials and chemistry notes to get you started',
   metadata: {
     interests: ['science', 'chemistry', 'STEM'],
     level: 'beginner',
@@ -12,7 +12,129 @@ export const chemistryGenZTemplate: SeedTemplate = {
   },
   folders: [
     {
-      name: 'Chemistry 101 💜',
+      name: 'Start maxxing your notes',
+      color: 'bg-yellow-500',
+      notebooks: [
+        {
+          name: 'Folder & Notebook Tutorial',
+          color: 'bg-cyan-100',
+          notes: [
+            {
+              title: 'Welcome to Notemaxxing!',
+              content: `<h2>Welcome to Notemaxxing! 🎉</h2>
+              <p>This tutorial will help you get started with organizing your notes effectively.</p>
+              
+              <h3>What are Folders?</h3>
+              <p>Folders are the top-level containers for organizing your content by subject or theme. You can:</p>
+              <ul>
+                <li>Create folders with custom names and colors</li>
+                <li>Rename or delete folders anytime</li>
+                <li>Each folder contains multiple notebooks</li>
+              </ul>
+              
+              <h3>What are Notebooks?</h3>
+              <p>Notebooks live inside folders and contain your actual notes. Features include:</p>
+              <ul>
+                <li>Create unlimited notebooks per folder</li>
+                <li>Archive notebooks instead of deleting them</li>
+                <li>Each notebook has its own color for easy identification</li>
+              </ul>
+              
+              <h3>Try it out!</h3>
+              <p>Click the + button to create your first folder and start organizing your notes!</p>`
+            }
+          ]
+        },
+        {
+          name: 'Typemaxxing Tutorial',
+          color: 'bg-cyan-100',
+          notes: [
+            {
+              title: 'Master Your Typing Skills',
+              content: `<h2>Typemaxxing: Learn by Typing Your Notes 🚀</h2>
+              <p>Typemaxxing helps you memorize your notes while improving your typing speed!</p>
+              
+              <h3>How it works:</h3>
+              <ol>
+                <li><strong>Select a notebook</strong> - Choose which notes to practice with</li>
+                <li><strong>Pick your notes</strong> - Select specific notes or use all</li>
+                <li><strong>Set difficulty</strong> - Choose 50, 100, or 200 words</li>
+                <li><strong>Start typing</strong> - Type the generated text from your notes</li>
+                <li><strong>See results</strong> - Track your WPM and accuracy</li>
+              </ol>
+              
+              <h3>Pro Tips:</h3>
+              <ul>
+                <li>Green text = correct typing</li>
+                <li>Red background = mistakes to fix</li>
+                <li>The AI combines your notes into natural practice text</li>
+                <li>Regular practice improves both typing and retention!</li>
+              </ul>
+              
+              <p>Head to the Typemaxxing section to try it out!</p>`
+            }
+          ]
+        },
+        {
+          name: 'Quizzing Tutorial',
+          color: 'bg-purple-100',
+          notes: [
+            {
+              title: 'Test Your Knowledge',
+              content: `<h2>Quizzing: Active Recall for Better Learning 🧠</h2>
+              <p>Create custom quizzes from your notes to test your understanding!</p>
+              
+              <h3>Quiz Features:</h3>
+              <ul>
+                <li><strong>AI-Generated Questions</strong> - Automatically create questions from your notes</li>
+                <li><strong>Multiple Formats</strong> - Multiple choice, true/false, and short answer</li>
+                <li><strong>Progress Tracking</strong> - See your improvement over time</li>
+                <li><strong>Custom Difficulty</strong> - Easy, medium, or hard questions</li>
+              </ul>
+              
+              <h3>Coming Soon!</h3>
+              <p>The quiz feature is currently in development. Once ready, you'll be able to:</p>
+              <ul>
+                <li>Generate quizzes from any notebook</li>
+                <li>Save quiz templates for repeated practice</li>
+                <li>Share quizzes with study partners</li>
+                <li>Export results for tracking</li>
+              </ul>
+              
+              <p>Check back soon for this exciting feature!</p>`
+            }
+          ]
+        }
+      ]
+    },
+    {
+      name: 'Fall Quarter (example)',
+      color: 'bg-purple-500',
+      notebooks: [
+        {
+          name: 'Chemistry',
+          color: 'bg-purple-100',
+          notes: []
+        },
+        {
+          name: 'Intro to neuro',
+          color: 'bg-pink-100',
+          notes: []
+        },
+        {
+          name: 'Calculus II',
+          color: 'bg-yellow-100',
+          notes: []
+        },
+        {
+          name: 'Culture & Ideas',
+          color: 'bg-yellow-100',
+          notes: []
+        }
+      ]
+    },
+    {
+      name: 'Chemistry 101 (bonus content)',
       color: 'bg-purple-500',
       notebooks: [
         {

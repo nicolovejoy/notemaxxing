@@ -39,7 +39,7 @@ export default function Home() {
   
   const handleSeedData = async () => {
     setSeedMessage(null);
-    const result = await seedInitialData('chemistry-gen-z');
+    const result = await seedInitialData('default-with-tutorials');
     if (result.success) {
       setSeedMessage({ type: 'success', text: 'Sample data added successfully! Check your folders.' });
       setShowSeedButton(false);
@@ -89,7 +89,7 @@ export default function Home() {
         {showSeedButton && (
           <div className="mb-8 max-w-md text-center">
             <p className="text-gray-600 mb-4">
-              Welcome! Get started with sample chemistry notes to explore all features.
+              Welcome! Get started with tutorials and sample notes to explore all features.
             </p>
             <Button
               onClick={handleSeedData}
@@ -97,7 +97,7 @@ export default function Home() {
               className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 mx-auto"
             >
               <Sparkles className="h-5 w-5" />
-              {seedLoading ? 'Adding sample data...' : 'Add Sample Chemistry Notes'}
+              {seedLoading ? 'Adding sample data...' : 'Add Starter Content'}
             </Button>
             {seedMessage && (
               <p className={`mt-4 text-sm ${
