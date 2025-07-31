@@ -4,7 +4,8 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Bold, Italic, List, ListOrdered, Sparkles, Undo, Redo } from 'lucide-react';
 import { useAI } from '@/lib/hooks/useAI';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { EnhancementPreview } from './EnhancementPreview';
 
 interface RichTextEditorProps {
   content: string;
@@ -22,6 +23,11 @@ export function RichTextEditor({
   const [contentHistory, setContentHistory] = useState<string[]>([]);
   const [showUndo, setShowUndo] = useState(false);
   const lastEnhancedContent = useRef<string | null>(null);
+  const [floatingButton, setFloatingButton] = useState<{ x: number; y: number; show: boolean }>({ x: 0, y: 0, show: false });
+  const [selectedText, setSelectedText] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<{ original: string; enhanced: string; improvements: string[] }>({ original: '', enhanced: '', improvements: [] });
+  const floatingButtonRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
     extensions: [
@@ -44,34 +50,129 @@ export function RichTextEditor({
     immediatelyRender: false,
   });
 
-  const handleEnhance = async () => {
+  // Handle text selection
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateSelection = () => {
+      const { selection } = editor.state;
+      const { from, to } = selection;
+      const text = editor.state.doc.textBetween(from, to, ' ');
+      
+      if (text && text.trim().length > 0) {
+        // Get selection coordinates
+        const coords = editor.view.coordsAtPos(from);
+        const editorRect = editor.view.dom.getBoundingClientRect();
+        
+        setSelectedText(text);
+        setFloatingButton({
+          x: coords.left - editorRect.left,
+          y: coords.top - editorRect.top - 40, // Position above selection
+          show: true
+        });
+      } else {
+        setFloatingButton({ x: 0, y: 0, show: false });
+        setSelectedText('');
+      }
+    };
+
+    editor.on('selectionUpdate', updateSelection);
+    return () => {
+      editor.off('selectionUpdate', updateSelection);
+    };
+  }, [editor]);
+
+  // Hide floating button when clicking outside
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (floatingButtonRef.current && !floatingButtonRef.current.contains(e.target as Node)) {
+        const editorDom = editor?.view.dom;
+        if (editorDom && !editorDom.contains(e.target as Node)) {
+          setFloatingButton({ x: 0, y: 0, show: false });
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [editor]);
+
+  const handleEnhance = async (isSelection = false) => {
     if (!editor || isEnhancing) return;
     
     try {
       const currentContent = editor.getHTML();
-      const currentText = editor.getText();
+      let textToEnhance = '';
+      
+      if (isSelection && selectedText) {
+        textToEnhance = selectedText;
+      } else {
+        textToEnhance = editor.getText();
+      }
       
       // Save current state to editor's history before enhancing
-      // This allows native undo to work
       editor.chain().focus().setContent(currentContent).run();
       
-      const enhanced = await enhance(currentText);
+      const enhanced = await enhance(textToEnhance);
       
-      // Set enhanced content as a new history entry
-      editor.chain().focus().setContent(enhanced).run();
-      onChange(enhanced);
+      // Analyze improvements (simple example - in production, do this server-side)
+      const improvements = [];
+      if (enhanced !== textToEnhance) {
+        improvements.push('Corrected spelling and grammar');
+        improvements.push('Improved clarity and readability');
+        improvements.push('Enhanced formatting and structure');
+      }
       
-      // Save to our custom history as well for the undo button
-      setContentHistory(prev => [...prev, currentContent]);
-      lastEnhancedContent.current = enhanced;
-      setShowUndo(true);
-      
-      // Hide undo button after 10 seconds
-      setTimeout(() => setShowUndo(false), 10000);
+      if (isSelection) {
+        // Show preview for selection
+        setPreviewData({ 
+          original: textToEnhance, 
+          enhanced, 
+          improvements 
+        });
+        setShowPreview(true);
+      } else {
+        // For full document, apply directly as before
+        editor.chain().focus().setContent(enhanced).run();
+        onChange(enhanced);
+        
+        // Save to our custom history as well for the undo button
+        setContentHistory(prev => [...prev, currentContent]);
+        lastEnhancedContent.current = enhanced;
+        setShowUndo(true);
+        
+        // Hide undo button after 10 seconds
+        setTimeout(() => setShowUndo(false), 10000);
+      }
     } catch (error) {
       // Error handling is done in the hook
       console.error('Enhancement failed:', error);
     }
+  };
+
+  const acceptEnhancement = () => {
+    if (!editor || !previewData.enhanced) return;
+    
+    const { from, to } = editor.state.selection;
+    const currentContent = editor.getHTML();
+    
+    // Replace selected text with enhanced text
+    editor.chain()
+      .focus()
+      .setTextSelection({ from, to })
+      .insertContent(previewData.enhanced)
+      .run();
+    
+    onChange(editor.getHTML());
+    
+    // Save to history
+    setContentHistory(prev => [...prev, currentContent]);
+    setShowUndo(true);
+    setTimeout(() => setShowUndo(false), 10000);
+    
+    // Close preview and reset
+    setShowPreview(false);
+    setFloatingButton({ x: 0, y: 0, show: false });
   };
 
   const handleUndo = () => {
@@ -90,7 +191,8 @@ export function RichTextEditor({
   }
 
   return (
-    <div className="border border-gray-200 rounded-lg overflow-hidden">
+    <>
+      <div className="border border-gray-200 rounded-lg overflow-hidden relative">
       {/* Toolbar */}
       <div className="border-b border-gray-200 p-2 flex items-center gap-1 bg-gray-50">
         {/* Undo/Redo buttons */}
@@ -191,16 +293,54 @@ export function RichTextEditor({
             }`}
           >
             <Sparkles className="h-4 w-4" />
-            {isEnhancing ? 'Enhancing...' : 'Enhance with AI'}
+            {isEnhancing ? 'Enhancing...' : 'Enhance entire note'}
           </button>
         </div>
       </div>
 
-      {/* Editor */}
-      <EditorContent 
-        editor={editor} 
-        className="min-h-[400px]"
+        {/* Editor */}
+        <div className="relative">
+          <EditorContent 
+            editor={editor} 
+            className="min-h-[400px]"
+          />
+          
+          {/* Floating enhance button */}
+          {floatingButton.show && (
+            <div
+              ref={floatingButtonRef}
+              className="absolute z-10"
+              style={{ 
+                left: `${floatingButton.x}px`, 
+                top: `${floatingButton.y}px`,
+                transform: 'translateX(-50%)'
+              }}
+            >
+              <button
+                onClick={() => handleEnhance(true)}
+                disabled={isEnhancing}
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 shadow-lg transition-all"
+              >
+                <Sparkles className="h-3 w-3" />
+                {isEnhancing ? 'Enhancing...' : 'Enhance selection'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Enhancement Preview Modal */}
+      <EnhancementPreview
+        isOpen={showPreview}
+        onClose={() => {
+          setShowPreview(false);
+          setFloatingButton({ x: 0, y: 0, show: false });
+        }}
+        originalText={previewData.original}
+        enhancedText={previewData.enhanced}
+        improvements={previewData.improvements}
+        onAccept={acceptEnhancement}
       />
-    </div>
+    </>
   );
 }

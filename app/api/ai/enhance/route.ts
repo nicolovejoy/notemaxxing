@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/lib/supabase/server';
 
 // Simple in-memory rate limiting (upgrade to Redis later)
@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Check API key
-    if (!process.env.OPENAI_API_KEY) {
+    if (!process.env.ANTHROPIC_API_KEY) {
       return NextResponse.json(
-        { error: 'OpenAI API key not configured' },
+        { error: 'Claude API key not configured' },
         { status: 500 }
       );
     }
@@ -63,29 +63,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Initialize OpenAI
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+    // Initialize Anthropic
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
-    // Call OpenAI
-    const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+    // Call Claude
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-sonnet-20241022',
       messages: [
-        {
-          role: 'system',
-          content: 'You are a helpful writing assistant. Improve the grammar and clarity of the following text while preserving the original meaning, tone, and style. Return only the improved text without any explanations or prefixes.'
-        },
         {
           role: 'user',
           content: content
         }
       ],
+      system: 'You are a helpful writing assistant. Improve the grammar, spelling, punctuation, and clarity of the following text while preserving the original meaning, tone, and style. Fix any formatting issues. Return ONLY the improved text without any explanations, prefixes, or meta-commentary.',
       temperature: 0.3,
-      max_tokens: Math.min(content.length * 2, 2000), // Allow for expansion but cap it
+      max_tokens: Math.min(content.length * 3, 4000), // Claude has higher token limits
     });
 
-    const enhanced = response.choices[0]?.message?.content;
+    const enhanced = response.content[0].type === 'text' ? response.content[0].text : null;
 
     if (!enhanced) {
       return NextResponse.json(
@@ -99,7 +96,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('AI enhancement error:', error);
     
-    if (error instanceof OpenAI.APIError) {
+    if (error instanceof Anthropic.APIError) {
       return NextResponse.json(
         { error: 'AI service temporarily unavailable' },
         { status: 503 }

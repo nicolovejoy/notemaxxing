@@ -106,7 +106,7 @@ npm install @tiptap/react @tiptap/starter-kit openai
 ### Environment Variables
 
 ```env
-OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
 ENABLE_AI=true
 ```
 
