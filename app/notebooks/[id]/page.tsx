@@ -5,24 +5,21 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
   ArrowLeft, 
-  Plus, 
-  FileText, 
   Trash2, 
   FolderOpen, 
   BookOpen,
-  Search,
   Filter,
-  ChevronDown,
   Edit2,
   Clock,
   Calendar,
   SortAsc
 } from "lucide-react";
-import { UserMenu } from "@/components/user-menu";
-import { BuildTimestamp } from "@/components/build-timestamp";
-import { Logo } from "@/components/logo";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { NoteCard, AddNoteCard } from "@/components/cards/NoteCard";
 import { toHTML, toPlainText } from "@/lib/utils/content";
 import {
   useFolder,
@@ -54,7 +51,6 @@ export default function NotebookPage() {
 
   const [notes, setNotes] = useState<typeof allNotes>([]);
   const [sortOption, setSortOption] = useState<SortOption>("recent");
-  const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [selectedNote, setSelectedNote] = useState<typeof allNotes[0] | null>(null);
   const [isEditingNote, setIsEditingNote] = useState(false);
   const [editingNoteContent, setEditingNoteContent] = useState("");
@@ -246,25 +242,7 @@ export default function NotebookPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/folders" className="p-2 rounded-md hover:bg-gray-100">
-                <ArrowLeft className="h-5 w-5 text-gray-800" />
-              </Link>
-              <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity">
-                <Logo size={36} />
-                <div className="relative group">
-                  <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
-                  <BuildTimestamp />
-                </div>
-              </Link>
-            </div>
-            <UserMenu />
-          </div>
-        </div>
-      </header>
+      <PageHeader backUrl="/folders" />
 
       {/* Error Message */}
       {error && (
@@ -326,70 +304,27 @@ export default function NotebookPage() {
           <div className="bg-white border-b border-gray-200 p-4">
             <h2 className="text-2xl font-semibold mb-3">{notebook.name}</h2>
             <div className="flex items-center gap-4">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search notes..."
-                  value={globalSearch}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm"
-                />
-              </div>
+              <SearchInput
+                value={globalSearch}
+                onChange={setGlobalSearch}
+                placeholder="Search notes..."
+                className="flex-1"
+              />
               <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50" disabled>
                 <Filter className="h-4 w-4" />
                 Filter
               </button>
-              <div className="relative">
-                <button
-                  onClick={() => setShowSortDropdown(!showSortDropdown)}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                >
-                  <SortAsc className="h-4 w-4" />
-                  Sort
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-                {showSortDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                    <button
-                      onClick={() => {
-                        setSortOption("recent");
-                        setShowSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        sortOption === "recent" ? "bg-gray-50 font-medium" : ""
-                      }`}
-                    >
-                      <Clock className="inline h-4 w-4 mr-2" />
-                      Recently edited
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortOption("alphabetical");
-                        setShowSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        sortOption === "alphabetical" ? "bg-gray-50 font-medium" : ""
-                      }`}
-                    >
-                      <SortAsc className="inline h-4 w-4 mr-2" />
-                      Alphabetical
-                    </button>
-                    <button
-                      onClick={() => {
-                        setSortOption("created");
-                        setShowSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        sortOption === "created" ? "bg-gray-50 font-medium" : ""
-                      }`}
-                    >
-                      <Calendar className="inline h-4 w-4 mr-2" />
-                      Date created
-                    </button>
-                  </div>
-                )}
-              </div>
+              <Dropdown
+                label="Sort"
+                icon={<SortAsc className="h-4 w-4" />}
+                value={sortOption}
+                onChange={(value) => setSortOption(value as SortOption)}
+                options={[
+                  { value: 'recent', label: 'Recently edited', icon: <Clock className="h-4 w-4" /> },
+                  { value: 'alphabetical', label: 'Alphabetical', icon: <SortAsc className="h-4 w-4" /> },
+                  { value: 'created', label: 'Date created', icon: <Calendar className="h-4 w-4" /> },
+                ]}
+              />
             </div>
           </div>
 
@@ -399,13 +334,7 @@ export default function NotebookPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {/* Add Note Card */}
                 {!notesLoading && (
-                  <button
-                    onClick={handleCreateNote}
-                    className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-6 hover:border-gray-400 hover:shadow-md transition-all h-48 flex flex-col items-center justify-center group"
-                  >
-                    <Plus className="h-8 w-8 text-gray-400 group-hover:text-gray-600 mb-2" />
-                    <span className="text-gray-600 font-medium">Add new note</span>
-                  </button>
+                  <AddNoteCard onClick={handleCreateNote} />
                 )}
 
                 {/* Loading Skeletons */}
@@ -425,41 +354,20 @@ export default function NotebookPage() {
                 ) : (
                   /* Note Cards */
                   notes.map((note) => (
-                  <div
-                    key={note.id}
-                    onClick={() => {
-                      setSelectedNote(note);
-                      setEditingNoteTitle(note.title);
-                      setEditingNoteContent(toHTML(note.content));
-                      setIsEditingNote(true);
-                    }}
-                    className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer h-48 flex flex-col group"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <FileText className="h-5 w-5 text-gray-400" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteNote(note.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-                      {note.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 line-clamp-3 flex-1">
-                      {note.content ? 
-                        toPlainText(toHTML(note.content)).substring(0, 150) : 
-                        "No content yet..."
-                      }
-                    </p>
-                    <p className="text-xs text-gray-500 mt-2">
-                      {formatDate(note.updated_at || note.created_at)}
-                    </p>
-                  </div>
+                    <NoteCard
+                      key={note.id}
+                      title={note.title}
+                      content={note.content}
+                      updatedAt={note.updated_at || note.created_at}
+                      onClick={() => {
+                        setSelectedNote(note);
+                        setEditingNoteTitle(note.title);
+                        setEditingNoteContent(toHTML(note.content));
+                        setIsEditingNote(true);
+                      }}
+                      onDelete={() => handleDeleteNote(note.id)}
+                      formatDate={formatDate}
+                    />
                   ))
                 )}
               </div>

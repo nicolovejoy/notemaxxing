@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
-import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen, Edit2, Check, X, Archive, ArchiveRestore, Search, SortAsc, ChevronDown } from "lucide-react";
+import { Plus, Trash2, FolderOpen, Archive, SortAsc, Edit2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { UserMenu } from "@/components/user-menu";
-import { BuildTimestamp } from "@/components/build-timestamp";
-import { Logo } from "@/components/logo";
 import { Modal } from "@/components/ui/Modal";
 import { ColorPicker } from "@/components/forms/ColorPicker";
 import { EntityCard } from "@/components/cards/EntityCard";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { InlineEdit } from "@/components/ui/InlineEdit";
+import { NotebookCard } from "@/components/cards/NotebookCard";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { 
   useFolders, 
   useFolderActions,
@@ -22,7 +25,6 @@ import {
 } from "@/lib/store";
 import { useStore } from "@/lib/store/useStore";
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
 
 export default function FoldersPage() {
@@ -46,7 +48,6 @@ export default function FoldersPage() {
   const [editNotebookName, setEditNotebookName] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [isCreatingFolderLoading, setIsCreatingFolderLoading] = useState(false);
-  const [showNotebookSortDropdown, setShowNotebookSortDropdown] = useState(false);
   
   const { notebookSort, setNotebookSort } = useNotebookSort();
   const { globalSearch, setGlobalSearch } = useGlobalSearch();
@@ -303,45 +304,31 @@ export default function FoldersPage() {
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
-                <ArrowLeft className="h-5 w-5 text-gray-800" />
-              </Link>
-              <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity">
-                <Logo size={36} />
-                <div className="relative group">
-                  <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
-                  <BuildTimestamp />
-                </div>
-              </Link>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setShowArchived(!showArchived)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
-                  showArchived 
-                    ? "bg-gray-200 text-gray-700 hover:bg-gray-300" 
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <Archive className="h-4 w-4" />
-                {showArchived ? "Hide" : "Show"} Archived
-              </button>
-              <button
-                onClick={() => setIsCreatingFolder(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-              >
-                <Plus className="h-4 w-4" />
-                New Folder
-              </button>
-              <UserMenu />
-            </div>
-          </div>
-        </div>
-      </header>
+      <PageHeader 
+        backUrl="/" 
+        rightContent={
+          <>
+            <button
+              onClick={() => setShowArchived(!showArchived)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
+                showArchived 
+                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300" 
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              <Archive className="h-4 w-4" />
+              {showArchived ? "Hide" : "Show"} Archived
+            </button>
+            <button
+              onClick={() => setIsCreatingFolder(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              <Plus className="h-4 w-4" />
+              New Folder
+            </button>
+          </>
+        }
+      />
 
       {/* Error Message */}
       {error && (
@@ -422,86 +409,26 @@ export default function FoldersPage() {
             <h2 className="text-3xl font-bold text-gray-900">Your Folders</h2>
             <div className="flex items-center gap-3">
               {/* Universal Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search everything..."
-                  value={globalSearch}
-                  onChange={(e) => setGlobalSearch(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-64"
-                />
-              </div>
+              <SearchInput
+                value={globalSearch}
+                onChange={setGlobalSearch}
+                placeholder="Search everything..."
+                className="w-64"
+              />
               {/* Notebook Sort */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowNotebookSortDropdown(!showNotebookSortDropdown)}
-                  className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                >
-                  <SortAsc className="h-4 w-4" />
-                  Sort Notebooks
-                  <ChevronDown className="h-3 w-3" />
-                </button>
-                {showNotebookSortDropdown && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
-                    <button
-                      onClick={() => {
-                        setNotebookSort('recent');
-                        setShowNotebookSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        notebookSort === 'recent' ? 'bg-gray-50 font-medium' : ''
-                      }`}
-                    >
-                      Recently edited
-                    </button>
-                    <button
-                      onClick={() => {
-                        setNotebookSort('alphabetical');
-                        setShowNotebookSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        notebookSort === 'alphabetical' ? 'bg-gray-50 font-medium' : ''
-                      }`}
-                    >
-                      Alphabetical (A-Z)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setNotebookSort('alphabetical-reverse');
-                        setShowNotebookSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        notebookSort === 'alphabetical-reverse' ? 'bg-gray-50 font-medium' : ''
-                      }`}
-                    >
-                      Alphabetical (Z-A)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setNotebookSort('created');
-                        setShowNotebookSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        notebookSort === 'created' ? 'bg-gray-50 font-medium' : ''
-                      }`}
-                    >
-                      Date created (Newest)
-                    </button>
-                    <button
-                      onClick={() => {
-                        setNotebookSort('created-reverse');
-                        setShowNotebookSortDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
-                        notebookSort === 'created-reverse' ? 'bg-gray-50 font-medium' : ''
-                      }`}
-                    >
-                      Date created (Oldest)
-                    </button>
-                  </div>
-                )}
-              </div>
+              <Dropdown
+                label="Sort Notebooks"
+                icon={<SortAsc className="h-4 w-4" />}
+                value={notebookSort}
+                onChange={(value) => setNotebookSort(value as typeof notebookSort)}
+                options={[
+                  { value: 'recent', label: 'Recently edited' },
+                  { value: 'alphabetical', label: 'Alphabetical (A-Z)' },
+                  { value: 'alphabetical-reverse', label: 'Alphabetical (Z-A)' },
+                  { value: 'created', label: 'Date created (Newest)' },
+                  { value: 'created-reverse', label: 'Date created (Oldest)' },
+                ]}
+              />
             </div>
           </div>
           
@@ -535,30 +462,15 @@ export default function FoldersPage() {
                     {/* Folder Header */}
                     {editingFolderId === folder.id ? (
                       <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editFolderName}
-                            onChange={(e) => setEditFolderName(e.target.value)}
-                            className="bg-white/20 text-white placeholder-white/70 px-2 py-1 rounded"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => handleUpdateFolder(folder.id)}
-                            className="p-1 hover:bg-white/20 rounded"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditingFolderId(null);
-                              setEditFolderName("");
-                            }}
-                            className="p-1 hover:bg-white/20 rounded"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
+                        <InlineEdit
+                          value={editFolderName}
+                          onSave={() => handleUpdateFolder(folder.id)}
+                          onCancel={() => {
+                            setEditingFolderId(null);
+                            setEditFolderName("");
+                          }}
+                          inputClassName="bg-white/20 text-white placeholder-white/70"
+                        />
                       </div>
                     ) : (
                       <EntityCard
@@ -644,111 +556,38 @@ export default function FoldersPage() {
                           const noteCount = getNotesCount(notebook.id);
                           
                           return (
-                            <div
+                            <NotebookCard
                               key={notebook.id}
-                              className={`${notebook.color} ${notebook.archived ? 'opacity-60' : ''} rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow group relative`}
-                            >
-                              {editingNotebookId === notebook.id ? (
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    type="text"
-                                    value={editNotebookName}
-                                    onChange={(e) => setEditNotebookName(e.target.value)}
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="flex-1 px-2 py-1 border border-gray-300 rounded text-gray-900"
-                                    autoFocus
-                                    onKeyPress={(e) => {
-                                      if (e.key === 'Enter') {
-                                        handleUpdateNotebook(notebook.id);
-                                      }
-                                    }}
-                                  />
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleUpdateNotebook(notebook.id);
-                                    }}
-                                    className="p-1 hover:bg-gray-200 rounded"
-                                  >
-                                    <Check className="h-4 w-4 text-gray-700" />
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setEditingNotebookId(null);
-                                      setEditNotebookName("");
-                                    }}
-                                    className="p-1 hover:bg-gray-200 rounded"
-                                  >
-                                    <X className="h-4 w-4 text-gray-700" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <div 
-                                  onClick={() => !notebook.archived && router.push(`/notebooks/${notebook.id}`)}
-                                  className="flex items-center justify-between"
-                                >
-                                  <div className="flex items-center">
-                                    <BookOpen className="h-4 w-4 text-gray-700 mr-2" />
-                                    <span className="font-semibold text-gray-900">
-                                      {notebook.name}
-                                      {notebook.archived && " (Archived)"}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setEditingNotebookId(notebook.id);
-                                          setEditNotebookName(notebook.name);
-                                        }}
-                                        className="p-1 hover:bg-gray-200 rounded"
-                                      >
-                                        <Edit2 className="h-4 w-4 text-gray-600" />
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          if (notebook.archived) {
-                                            handleRestoreNotebook(notebook.id);
-                                          } else {
-                                            handleArchiveNotebook(notebook.id);
-                                          }
-                                        }}
-                                        className="p-1 hover:bg-gray-200 rounded"
-                                        title={notebook.archived ? "Restore notebook" : "Archive notebook"}
-                                      >
-                                        {notebook.archived ? (
-                                          <ArchiveRestore className="h-4 w-4 text-gray-600" />
-                                        ) : (
-                                          <Archive className="h-4 w-4 text-gray-600" />
-                                        )}
-                                      </button>
-                                      {notebook.archived && (
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteNotebook(notebook.id);
-                                          }}
-                                          className="p-1 hover:bg-gray-200 rounded"
-                                        >
-                                          <Trash2 className="h-4 w-4 text-red-500" />
-                                        </button>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
+                              id={notebook.id}
+                              name={notebook.name}
+                              color={notebook.color}
+                              noteCount={noteCount}
+                              archived={notebook.archived}
+                              isEditing={editingNotebookId === notebook.id}
+                              editingName={editNotebookName}
+                              onEditingNameChange={setEditNotebookName}
+                              onClick={() => router.push(`/notebooks/${notebook.id}`)}
+                              onEdit={() => {
+                                setEditingNotebookId(notebook.id);
+                                setEditNotebookName(notebook.name);
+                              }}
+                              onArchive={() => handleArchiveNotebook(notebook.id)}
+                              onRestore={() => handleRestoreNotebook(notebook.id)}
+                              onDelete={() => handleDeleteNotebook(notebook.id)}
+                              onUpdate={() => handleUpdateNotebook(notebook.id)}
+                              onCancelEdit={() => {
+                                setEditingNotebookId(null);
+                                setEditNotebookName("");
+                              }}
+                            />
                           );
                         })}
                         
                         {folderNotebooks.length === 0 && isCreatingNotebook !== folder.id && (
-                          <p className="text-center text-gray-600 py-4 text-sm font-medium">
-                            No notebooks yet
-                          </p>
+                          <EmptyState
+                            title="No notebooks yet"
+                            className="py-4"
+                          />
                         )}
                       </div>
                     </div>

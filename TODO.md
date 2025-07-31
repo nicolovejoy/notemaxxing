@@ -55,7 +55,7 @@
 
 ### Features
 
-- [ ] Search functionality (notes, notebooks)
+- [x] Search functionality (universal search across everything)
 - [ ] Export to PDF/Markdown
 - [ ] Bulk operations (select multiple)
 - [ ] Tags/categories for notes
