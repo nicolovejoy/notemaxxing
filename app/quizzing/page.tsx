@@ -133,10 +133,10 @@ export default function QuizzingPage() {
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
                 <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
-              <div className="flex items-center gap-3 ml-4">
+              <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity">
                 <Logo size={36} />
                 <h1 className="text-xl font-semibold italic">Quizzing</h1>
-              </div>
+              </Link>
             </div>
           </div>
         </div>

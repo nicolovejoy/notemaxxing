@@ -2,16 +2,16 @@
 
 ## 🚀 Immediate Priorities
 
-### 1. AI-Enhanced Rich Text Editor (NEW)
+### 1. AI-Enhanced Rich Text Editor ✅ COMPLETED
 
-- [ ] Install TipTap dependencies
-- [ ] Replace textarea with TipTap editor in notes
-- [ ] Add basic formatting toolbar (bold, italic, lists, headings)
-- [ ] Implement auto-save on blur
-- [ ] Create /api/ai/enhance endpoint with OpenAI
-- [ ] Add "Enhance with AI" button to editor
-- [ ] Simple rate limiting (50 requests/day)
-- [ ] Test with existing notes
+- [x] Install TipTap dependencies
+- [x] Replace textarea with TipTap editor in notes
+- [x] Add basic formatting toolbar (bold, italic, lists, headings)
+- [x] Implement auto-save on blur
+- [x] Create /api/ai/enhance endpoint with OpenAI
+- [x] Add "Enhance with AI" button to editor
+- [x] Simple rate limiting (50 requests/day)
+- [x] Test with existing notes
 
 ### 2. Re-implement Seed Data (Without Breaking Auth)
 
@@ -27,12 +27,14 @@
 - [ ] Move admin check to middleware/server
 - [ ] Update admin console to use server validation
 
-### 4. UX: Loading States
+### 4. UX: Loading States ✅ COMPLETED
 
-- [ ] Add loading skeletons for folders list
-- [ ] Add loading skeletons for notebooks grid
-- [ ] Add loading skeletons for notes list
-- [ ] Show spinners during save operations
+- [x] Add loading skeletons for folders list
+- [x] Add loading skeletons for notebooks grid
+- [x] Add loading skeletons for notes list
+- [x] Show spinners during save operations
+- [x] Fix markdown content display in note cards
+- [x] Make header logos clickable for navigation
 
 ## 📋 Short Term Goals
 

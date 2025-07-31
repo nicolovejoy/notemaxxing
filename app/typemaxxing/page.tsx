@@ -1,62 +1,61 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { ArrowLeft, Timer, RotateCcw } from "lucide-react";
-import { Logo } from "@/components/logo";
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { ArrowLeft, Timer, RotateCcw } from 'lucide-react'
+import { Logo } from '@/components/logo'
 
 export default function TypingPage() {
-  const [text] = useState(
-    "The quick brown fox jumps over the lazy dog. This sentence contains every letter of the alphabet and is commonly used for typing practice."
-  );
-  const [userInput, setUserInput] = useState("");
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const [endTime, setEndTime] = useState<number | null>(null);
-  const [errors, setErrors] = useState(0);
-  const [isComplete, setIsComplete] = useState(false);
+  const [text] = useState('The quick brown fox jumps over the lazy dog.')
+  const [userInput, setUserInput] = useState('')
+  const [startTime, setStartTime] = useState<number | null>(null)
+  const [endTime, setEndTime] = useState<number | null>(null)
+  const [errors, setErrors] = useState(0)
+  const [isComplete, setIsComplete] = useState(false)
 
   useEffect(() => {
     if (userInput.length === text.length && !isComplete) {
-      setEndTime(Date.now());
-      setIsComplete(true);
+      setEndTime(Date.now())
+      setIsComplete(true)
     }
-  }, [userInput, text, isComplete]);
+  }, [userInput, text, isComplete])
 
   const handleInputChange = (value: string) => {
     if (!startTime && value.length > 0) {
-      setStartTime(Date.now());
+      setStartTime(Date.now())
     }
 
     if (value.length <= text.length) {
-      setUserInput(value);
+      setUserInput(value)
 
       // Count errors
-      let errorCount = 0;
+      let errorCount = 0
       for (let i = 0; i < value.length; i++) {
         if (value[i] !== text[i]) {
-          errorCount++;
+          errorCount++
         }
       }
-      setErrors(errorCount);
+      setErrors(errorCount)
     }
-  };
+  }
 
   const calculateWPM = () => {
-    if (!startTime || !endTime) return 0;
-    const minutes = (endTime - startTime) / 60000;
-    const words = text.split(" ").length;
-    return Math.round(words / minutes);
-  };
+    if (!startTime || !endTime) return 0
+    const minutes = (endTime - startTime) / 60000
+    const words = text.split(' ').length
+    return Math.round(words / minutes)
+  }
 
   const reset = () => {
-    setUserInput("");
-    setStartTime(null);
-    setEndTime(null);
-    setErrors(0);
-    setIsComplete(false);
-  };
+    setUserInput('')
+    setStartTime(null)
+    setEndTime(null)
+    setErrors(0)
+    setIsComplete(false)
+  }
 
-  const accuracy = userInput.length > 0 ? Math.round(((userInput.length - errors) / userInput.length) * 100) : 100;
+  const accuracy =
+    userInput.length > 0 ? Math.round(((userInput.length - errors) / userInput.length) * 100) : 100
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -68,10 +67,10 @@ export default function TypingPage() {
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
                 <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
-              <div className="flex items-center gap-3 ml-4">
+              <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity">
                 <Logo size={36} />
                 <h1 className="text-xl font-semibold italic">Typemaxxing</h1>
-              </div>
+              </Link>
             </div>
           </div>
         </div>
@@ -87,7 +86,7 @@ export default function TypingPage() {
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-lg p-4 text-center">
             <Timer className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-            <p className="text-2xl font-semibold">{isComplete ? calculateWPM() : "0"}</p>
+            <p className="text-2xl font-semibold">{isComplete ? calculateWPM() : '0'}</p>
             <p className="text-sm text-gray-800 font-medium">WPM</p>
           </div>
           <div className="bg-white rounded-lg p-4 text-center">
@@ -104,18 +103,19 @@ export default function TypingPage() {
         <div className="bg-white rounded-xl p-8 shadow-sm">
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-lg leading-relaxed font-mono">
-              {text.split("").map((char, index) => {
-                let className = "text-gray-800";
+              {text.split('').map((char, index) => {
+                let className = 'text-gray-800'
                 if (index < userInput.length) {
-                  className = userInput[index] === char ? "text-green-600" : "text-red-600 bg-red-100";
+                  className =
+                    userInput[index] === char ? 'text-green-600' : 'text-red-600 bg-red-100'
                 } else if (index === userInput.length) {
-                  className = "bg-blue-100";
+                  className = 'bg-blue-100'
                 }
                 return (
                   <span key={index} className={className}>
                     {char}
                   </span>
-                );
+                )
               })}
             </p>
           </div>
@@ -148,7 +148,7 @@ export default function TypingPage() {
         <div className="mt-8 bg-white rounded-xl p-6 shadow-sm">
           <div className="max-w-2xl mx-auto">
             <div className="grid grid-cols-10 gap-1">
-              {"QWERTYUIOP".split("").map((key) => (
+              {'QWERTYUIOP'.split('').map((key) => (
                 <div
                   key={key}
                   className="aspect-square border border-gray-300 rounded flex items-center justify-center text-xs font-mono bg-gray-50"
@@ -156,7 +156,7 @@ export default function TypingPage() {
                   {key}
                 </div>
               ))}
-              {"ASDFGHJKL".split("").map((key) => (
+              {'ASDFGHJKL'.split('').map((key) => (
                 <div
                   key={key}
                   className="aspect-square border border-gray-300 rounded flex items-center justify-center text-xs font-mono bg-gray-50"
@@ -164,7 +164,7 @@ export default function TypingPage() {
                   {key}
                 </div>
               ))}
-              {"ZXCVBNM".split("").map((key) => (
+              {'ZXCVBNM'.split('').map((key) => (
                 <div
                   key={key}
                   className="aspect-square border border-gray-300 rounded flex items-center justify-center text-xs font-mono bg-gray-50"
@@ -181,5 +181,5 @@ export default function TypingPage() {
         </div>
       </main>
     </div>
-  );
+  )
 }

@@ -11,6 +11,7 @@ Live at: [notemaxxing.net](https://notemaxxing.net)
 2. **Seed Data**: New users get starter content (via admin console for now - need to fix eventually)
 3. **AI Integration**: Rich text editor with "Enhance with AI" feature using GPT-3.5
 4. **Auth Fix**: Resolved Supabase email links pointing to localhost
+5. **UX Improvements**: Loading skeletons, content conversion for markdown, clickable header logos
 
 ## Known Issues
 

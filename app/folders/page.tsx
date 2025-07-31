@@ -173,13 +173,13 @@ export default function FoldersPage() {
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
                 <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
-              <div className="flex items-center gap-3 ml-4">
+              <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity">
                 <Logo size={36} />
                 <div className="relative group">
                   <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
                   <BuildTimestamp />
                 </div>
-              </div>
+              </Link>
             </div>
             <div className="flex items-center gap-4">
               <button
