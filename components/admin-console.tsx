@@ -206,27 +206,27 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const seedUserData = async (userId: string) => {
     try {
-      const supabase = createClient()
-      if (!supabase) throw new Error('No Supabase client')
-
-      // Run the seed function manually for this user
-      const { error } = await supabase.rpc('create_starter_content_for_specific_user', {
-        target_user_id: userId,
-      })
-
-      if (error) throw error
-
-      logger.info('Seeded data for user', { userId })
-      alert('Starter content added successfully')
+      // Check if it's the current user - use store method
+      if (userId === currentUserId) {
+        const result = await storeState.seedInitialData('chemistry-gen-z')
+        if (result.success) {
+          logger.info('Seeded data for current user', { userId })
+          alert('Chemistry notes added successfully!')
+        } else {
+          throw new Error(result.error || 'Failed to seed data')
+        }
+      } else {
+        // For other users, we need to implement admin seeding
+        // For now, show a message
+        alert('Admin seeding for other users coming soon. Users can seed their own data from the homepage.')
+        return
+      }
 
       // Refresh store
       await storeState.initializeStore()
     } catch (error) {
       logger.error('Failed to seed user data', error)
-      alert(
-        'Failed to seed user data. Make sure the SQL function is deployed: ' +
-          (error as Error).message
-      )
+      alert('Failed to seed user data: ' + (error as Error).message)
     }
   }
 
@@ -383,7 +383,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                       className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                       disabled={!currentUserId}
                     >
-                      Seed My Data
+                      Add Chemistry Notes
                     </button>
                     <button
                       onClick={() => currentUserId && resetUserData(currentUserId)}
@@ -402,7 +402,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                   </div>
                 </div>
                 <div className="text-xs text-gray-500">
-                  Note: To seed data, first deploy the admin functions SQL to your database
+                  Note: Chemistry notes can only be added if you have no existing folders
                 </div>
               </div>
             )}
@@ -487,7 +487,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                             onClick={() => seedUserData(user.id)}
                             className="text-xs text-green-600 hover:underline"
                           >
-                            Add Seed Data
+                            Add Chemistry Notes
                           </button>
                           <button
                             onClick={() => resetUserData(user.id)}
