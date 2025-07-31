@@ -15,6 +15,10 @@ interface AppState {
   selectedFolderId: string | null
   selectedNotebookId: string | null
   
+  // Sort & Search State
+  notebookSort: 'recent' | 'alphabetical' | 'created' | 'alphabetical-reverse' | 'created-reverse'
+  globalSearch: string
+  
   // Sync State
   syncState: SyncState
   optimisticUpdates: OptimisticUpdate<Folder | Notebook | Note | Quiz>[]
@@ -50,11 +54,15 @@ interface AppState {
   // UI Actions
   setSelectedFolder: (id: string | null) => void
   setSelectedNotebook: (id: string | null) => void
+  setNotebookSort: (sort: AppState['notebookSort']) => void
+  setGlobalSearch: (search: string) => void
   
   // Utility Actions
   clearOptimisticUpdate: (id: string) => void
   setSyncError: (error: string | null) => void
   initializeStore: () => Promise<void>
+  loadPreferences: () => void
+  savePreferences: () => void
 }
 
 export const useStore = create<AppState>()(
@@ -67,6 +75,8 @@ export const useStore = create<AppState>()(
       quizzes: [],
       selectedFolderId: null,
       selectedNotebookId: null,
+      notebookSort: 'recent',
+      globalSearch: '',
       syncState: {
         status: 'idle',
         error: null,
@@ -583,6 +593,17 @@ export const useStore = create<AppState>()(
       setSelectedNotebook: (id: string | null) => set((state) => {
         state.selectedNotebookId = id
       }),
+      
+      setNotebookSort: (sort: AppState['notebookSort']) => {
+        set((state) => {
+          state.notebookSort = sort
+        })
+        get().savePreferences()
+      },
+      
+      setGlobalSearch: (search: string) => set((state) => {
+        state.globalSearch = search
+      }),
 
       // Utility Actions
       clearOptimisticUpdate: (id: string) => set((state) => {
@@ -609,6 +630,9 @@ export const useStore = create<AppState>()(
         })
 
         try {
+          // Load preferences first
+          get().loadPreferences()
+          
           console.log('[Store] Loading all data...')
           await Promise.all([
             get().loadFolders(),
@@ -630,6 +654,32 @@ export const useStore = create<AppState>()(
           })
           console.error('[Store] Failed to initialize:', error)
           throw error // Re-throw to be caught by StoreProvider
+        }
+      },
+      
+      loadPreferences: () => {
+        try {
+          const stored = localStorage.getItem('notemaxxing-preferences')
+          if (stored) {
+            const preferences = JSON.parse(stored)
+            set((state) => {
+              if (preferences.notebookSort) state.notebookSort = preferences.notebookSort
+            })
+          }
+        } catch (error) {
+          console.error('[Store] Failed to load preferences:', error)
+        }
+      },
+      
+      savePreferences: () => {
+        try {
+          const state = get()
+          const preferences = {
+            notebookSort: state.notebookSort,
+          }
+          localStorage.setItem('notemaxxing-preferences', JSON.stringify(preferences))
+        } catch (error) {
+          console.error('[Store] Failed to save preferences:', error)
         }
       },
     })),

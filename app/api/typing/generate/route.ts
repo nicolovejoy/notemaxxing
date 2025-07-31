@@ -123,7 +123,7 @@ Generate the practice text now (${wordCount} words):`
       console.error('Anthropic API Error details:', {
         status: error.status,
         message: error.message,
-        type: error.type
+        name: error.name
       });
       return NextResponse.json(
         { error: 'AI service temporarily unavailable' },

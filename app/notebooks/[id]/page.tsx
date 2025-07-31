@@ -30,7 +30,9 @@ import {
   useNotebooks,
   useNotes,
   useNoteActions,
-  useSyncState
+  useSyncState,
+  useNotebookSort,
+  useGlobalSearch
 } from "@/lib/store/hooks";
 
 type SortOption = "recent" | "alphabetical" | "created";
@@ -47,6 +49,8 @@ export default function NotebookPage() {
   const { notes: allNotes, loading: notesLoading } = useNotes(notebookId);
   const { createNote, updateNote, deleteNote } = useNoteActions();
   const { error, setSyncError } = useSyncState();
+  const { notebookSort } = useNotebookSort();
+  const { globalSearch, setGlobalSearch } = useGlobalSearch();
 
   const [notes, setNotes] = useState<typeof allNotes>([]);
   const [sortOption, setSortOption] = useState<SortOption>("recent");
@@ -61,10 +65,30 @@ export default function NotebookPage() {
   // Get notebooks in the same folder
   const folderNotebooks = useMemo(() => {
     if (!notebook?.folder_id) return [];
-    return allNotebooks.filter(
+    const filtered = allNotebooks.filter(
       (n) => n.folder_id === notebook.folder_id && !n.archived
     );
-  }, [allNotebooks, notebook]);
+    
+    // Sort notebooks
+    const sorted = [...filtered].sort((a, b) => {
+      switch (notebookSort) {
+        case 'alphabetical':
+          return a.name.localeCompare(b.name);
+        case 'alphabetical-reverse':
+          return b.name.localeCompare(a.name);
+        case 'created':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'created-reverse':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'recent':
+        default:
+          // For recent, we'd need to check notes - for now just use created date
+          return new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime();
+      }
+    });
+    
+    return sorted;
+  }, [allNotebooks, notebook, notebookSort]);
 
   // Redirect if notebook not found
   useEffect(() => {
@@ -73,9 +97,14 @@ export default function NotebookPage() {
     }
   }, [notebook, notesLoading, router]);
 
-  // Sort notes
+  // Sort and filter notes
   useEffect(() => {
-    const sortedNotes = [...allNotes].sort((a, b) => {
+    const filteredNotes = allNotes.filter(note =>
+      note.title.toLowerCase().includes(globalSearch.toLowerCase()) ||
+      note.content.toLowerCase().includes(globalSearch.toLowerCase())
+    );
+    
+    const sortedNotes = [...filteredNotes].sort((a, b) => {
       switch (sortOption) {
         case "recent":
           return new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime();
@@ -89,7 +118,7 @@ export default function NotebookPage() {
     });
     
     setNotes(sortedNotes);
-  }, [allNotes, sortOption]);
+  }, [allNotes, sortOption, globalSearch]);
 
   const handleCreateNote = () => {
     // Create a temporary note (not saved yet)
@@ -300,8 +329,9 @@ export default function NotebookPage() {
                 <input
                   type="text"
                   placeholder="Search notes..."
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm"
-                  disabled
                 />
               </div>
               <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50" disabled>

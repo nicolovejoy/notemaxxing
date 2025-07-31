@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
-import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen, Edit2, Check, X, Archive, ArchiveRestore } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen, Edit2, Check, X, Archive, ArchiveRestore, Search, SortAsc, ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
@@ -16,7 +16,9 @@ import {
   useNotebooks,
   useNotebookActions,
   useNotes,
-  useSyncState
+  useSyncState,
+  useNotebookSort,
+  useGlobalSearch
 } from "@/lib/store";
 import { useStore } from "@/lib/store/useStore";
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
@@ -43,6 +45,10 @@ export default function FoldersPage() {
   const [editNotebookName, setEditNotebookName] = useState("");
   const [showArchived, setShowArchived] = useState(false);
   const [isCreatingFolderLoading, setIsCreatingFolderLoading] = useState(false);
+  const [showNotebookSortDropdown, setShowNotebookSortDropdown] = useState(false);
+  
+  const { notebookSort, setNotebookSort } = useNotebookSort();
+  const { globalSearch, setGlobalSearch } = useGlobalSearch();
 
   // Ensure notebooks are loaded
   useEffect(() => {
@@ -50,6 +56,37 @@ export default function FoldersPage() {
       loadNotebooks(true);
     }
   }, [folders.length, notebooks.length, notebooksLoading, loadNotebooks]);
+  
+  // Filter folders based on search - now searches folder names, notebook names, and note content
+  const filteredFolders = useMemo(() => {
+    if (!globalSearch) return folders;
+    
+    const searchLower = globalSearch.toLowerCase();
+    
+    return folders.filter(folder => {
+      // Check folder name
+      if (folder.name.toLowerCase().includes(searchLower)) return true;
+      
+      // Check notebooks in this folder
+      const folderNotebooks = notebooks.filter(n => n.folder_id === folder.id);
+      for (const notebook of folderNotebooks) {
+        // Check notebook name
+        if (notebook.name.toLowerCase().includes(searchLower)) return true;
+        
+        // Check notes in this notebook
+        const notebookNotes = notes.filter(n => n.notebook_id === notebook.id);
+        for (const note of notebookNotes) {
+          // Check note title or content
+          if (note.title.toLowerCase().includes(searchLower) ||
+              note.content.toLowerCase().includes(searchLower)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    });
+  }, [folders, notebooks, notes, globalSearch]);
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
@@ -156,12 +193,127 @@ export default function FoldersPage() {
   };
 
   const getNotebooksByFolder = (folderId: string) => {
-    const filtered = notebooks.filter(notebook => notebook.folder_id === folderId);
-    return showArchived ? filtered : filtered.filter(n => !n.archived);
+    let filtered = notebooks.filter(notebook => notebook.folder_id === folderId);
+    
+    // If there's a search, filter notebooks that match directly OR contain matching notes
+    if (globalSearch) {
+      const searchLower = globalSearch.toLowerCase();
+      filtered = filtered.filter(notebook => {
+        // Check notebook name
+        if (notebook.name.toLowerCase().includes(searchLower)) return true;
+        
+        // Check notes in this notebook
+        const notebookNotes = notes.filter(n => n.notebook_id === notebook.id);
+        return notebookNotes.some(note => 
+          note.title.toLowerCase().includes(searchLower) ||
+          note.content.toLowerCase().includes(searchLower)
+        );
+      });
+    }
+    
+    filtered = showArchived ? filtered : filtered.filter(n => !n.archived);
+    
+    // Sort notebooks
+    const sorted = [...filtered].sort((a, b) => {
+      switch (notebookSort) {
+        case 'alphabetical':
+          return a.name.localeCompare(b.name);
+        case 'alphabetical-reverse':
+          return b.name.localeCompare(a.name);
+        case 'created':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'created-reverse':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'recent':
+        default:
+          // Sort by most recently edited note
+          const aNotesLatest = notes
+            .filter(n => n.notebook_id === a.id)
+            .reduce((latest, note) => {
+              const noteTime = new Date(note.updated_at || note.created_at).getTime();
+              return noteTime > latest ? noteTime : latest;
+            }, 0);
+            
+          const bNotesLatest = notes
+            .filter(n => n.notebook_id === b.id)
+            .reduce((latest, note) => {
+              const noteTime = new Date(note.updated_at || note.created_at).getTime();
+              return noteTime > latest ? noteTime : latest;
+            }, 0);
+            
+          return bNotesLatest - aNotesLatest;
+      }
+    });
+    
+    return sorted;
   };
 
   const getNotesCount = (notebookId: string) => {
     return notes.filter((n) => n.notebook_id === notebookId).length;
+  };
+  
+  const getSearchMatchInfo = (folderId: string) => {
+    if (!globalSearch) return null;
+    
+    const searchLower = globalSearch.toLowerCase();
+    const folder = folders.find(f => f.id === folderId);
+    const folderNotebooks = notebooks.filter(n => n.folder_id === folderId);
+    
+    let matchCount = 0;
+    const matchTypes = new Set<string>();
+    
+    // Check folder name
+    if (folder?.name.toLowerCase().includes(searchLower)) {
+      matchTypes.add('folder');
+    }
+    
+    // Check notebooks and notes
+    for (const notebook of folderNotebooks) {
+      if (notebook.name.toLowerCase().includes(searchLower)) {
+        matchCount++;
+        matchTypes.add('notebook');
+      }
+      
+      const notebookNotes = notes.filter(n => n.notebook_id === notebook.id);
+      const matchingNotes = notebookNotes.filter(note => 
+        note.title.toLowerCase().includes(searchLower) ||
+        note.content.toLowerCase().includes(searchLower)
+      );
+      
+      if (matchingNotes.length > 0) {
+        matchCount += matchingNotes.length;
+        matchTypes.add('note');
+      }
+    }
+    
+    if (matchTypes.size === 0) return null;
+    
+    const typeText = Array.from(matchTypes).join(', ');
+    return `Found in: ${typeText}${matchCount > 0 ? ` (${matchCount} matches)` : ''}`;
+  };
+  
+  const handleFolderClick = (folderId: string) => {
+    // Find the most recently edited notebook in this folder
+    const folderNotebooks = notebooks.filter(n => n.folder_id === folderId && !n.archived);
+    if (folderNotebooks.length === 0) return;
+    
+    let mostRecentNotebook = folderNotebooks[0];
+    let mostRecentTime = new Date(0);
+    
+    for (const notebook of folderNotebooks) {
+      const notebookNotes = notes.filter(n => n.notebook_id === notebook.id);
+      for (const note of notebookNotes) {
+        const noteTime = new Date(note.updated_at || note.created_at);
+        if (noteTime > mostRecentTime) {
+          mostRecentTime = noteTime;
+          mostRecentNotebook = notebook;
+        }
+      }
+    }
+    
+    if (mostRecentNotebook) {
+      router.push(`/notebooks/${mostRecentNotebook.id}`);
+    }
   };
 
   const loading = foldersLoading || notebooksLoading;
@@ -187,14 +339,14 @@ export default function FoldersPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setShowArchived(!showArchived)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
                   showArchived 
                     ? "bg-gray-200 text-gray-700 hover:bg-gray-300" 
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
                 <Archive className="h-4 w-4" />
-                {showArchived ? "Hide Archived" : "Show Archived"}
+                {showArchived ? "Hide" : "Show"} Archived
               </button>
               <button
                 onClick={() => setIsCreatingFolder(true)}
@@ -283,7 +435,93 @@ export default function FoldersPage() {
       {/* Folders Grid */}
       <main className="p-6">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Your Folders</h2>
+          {/* Controls Section */}
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-3xl font-bold text-gray-900">Your Folders</h2>
+            <div className="flex items-center gap-3">
+              {/* Universal Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search everything..."
+                  value={globalSearch}
+                  onChange={(e) => setGlobalSearch(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-64"
+                />
+              </div>
+              {/* Notebook Sort */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowNotebookSortDropdown(!showNotebookSortDropdown)}
+                  className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
+                >
+                  <SortAsc className="h-4 w-4" />
+                  Sort Notebooks
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+                {showNotebookSortDropdown && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10">
+                    <button
+                      onClick={() => {
+                        setNotebookSort('recent');
+                        setShowNotebookSortDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
+                        notebookSort === 'recent' ? 'bg-gray-50 font-medium' : ''
+                      }`}
+                    >
+                      Recently edited
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNotebookSort('alphabetical');
+                        setShowNotebookSortDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
+                        notebookSort === 'alphabetical' ? 'bg-gray-50 font-medium' : ''
+                      }`}
+                    >
+                      Alphabetical (A-Z)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNotebookSort('alphabetical-reverse');
+                        setShowNotebookSortDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
+                        notebookSort === 'alphabetical-reverse' ? 'bg-gray-50 font-medium' : ''
+                      }`}
+                    >
+                      Alphabetical (Z-A)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNotebookSort('created');
+                        setShowNotebookSortDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
+                        notebookSort === 'created' ? 'bg-gray-50 font-medium' : ''
+                      }`}
+                    >
+                      Date created (Newest)
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNotebookSort('created-reverse');
+                        setShowNotebookSortDropdown(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 ${
+                        notebookSort === 'created-reverse' ? 'bg-gray-50 font-medium' : ''
+                      }`}
+                    >
+                      Date created (Oldest)
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
           
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -307,7 +545,7 @@ export default function FoldersPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {folders.map((folder) => {
+              {filteredFolders.map((folder) => {
                 const folderNotebooks = getNotebooksByFolder(folder.id);
                 
                 return (
@@ -343,9 +581,11 @@ export default function FoldersPage() {
                     ) : (
                       <EntityCard
                         title={folder.name}
+                        subtitle={getSearchMatchInfo(folder.id) || undefined}
                         color={folder.color}
                         icon={FolderOpen}
                         isHeader
+                        onTitleClick={() => handleFolderClick(folder.id)}
                         actions={
                           <div className="flex gap-2">
                             <button
@@ -372,12 +612,14 @@ export default function FoldersPage() {
                     <div className="bg-white rounded-b-lg shadow-sm border border-gray-200 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="text-base font-semibold text-gray-800">Notebooks</h4>
-                        <button
-                          onClick={() => setIsCreatingNotebook(folder.id)}
-                          className="text-blue-500 hover:text-blue-600"
-                        >
-                          <Plus className="h-5 w-5" />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setIsCreatingNotebook(folder.id)}
+                            className="text-blue-500 hover:text-blue-600"
+                          >
+                            <Plus className="h-5 w-5" />
+                          </button>
+                        </div>
                       </div>
 
                       {isCreatingNotebook === folder.id && (

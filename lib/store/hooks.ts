@@ -162,3 +162,46 @@ export const useAppData = () => {
   
   return { folders, notebooks, notes, stats, loading, error }
 }
+
+// Sort & Search hooks
+export const useNotebookSort = () => {
+  const notebookSort = useStore((state) => state.notebookSort)
+  const setNotebookSort = useStore((state) => state.setNotebookSort)
+  return { notebookSort, setNotebookSort }
+}
+
+export const useGlobalSearch = () => {
+  const globalSearch = useStore((state) => state.globalSearch)
+  const setGlobalSearch = useStore((state) => state.setGlobalSearch)
+  return { globalSearch, setGlobalSearch }
+}
+
+// Helper hook to get most recently edited notebook in a folder
+export const useMostRecentNotebook = (folderId: string | null) => {
+  const notebooks = useStore((state) => state.notebooks)
+  const notes = useStore((state) => state.notes)
+  
+  return useMemo(() => {
+    if (!folderId) return null
+    
+    const folderNotebooks = notebooks.filter(n => n.folder_id === folderId && !n.archived)
+    if (folderNotebooks.length === 0) return null
+    
+    // Find the notebook with the most recently updated note
+    let mostRecentNotebook = folderNotebooks[0]
+    let mostRecentTime = new Date(0)
+    
+    for (const notebook of folderNotebooks) {
+      const notebookNotes = notes.filter(n => n.notebook_id === notebook.id)
+      for (const note of notebookNotes) {
+        const noteTime = new Date(note.updated_at || note.created_at)
+        if (noteTime > mostRecentTime) {
+          mostRecentTime = noteTime
+          mostRecentNotebook = notebook
+        }
+      }
+    }
+    
+    return mostRecentNotebook
+  }, [folderId, notebooks, notes])
+}

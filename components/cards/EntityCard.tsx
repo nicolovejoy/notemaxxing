@@ -8,6 +8,7 @@ interface EntityCardProps {
   icon?: LucideIcon;
   actions?: React.ReactNode;
   onClick?: () => void;
+  onTitleClick?: () => void;
   children?: React.ReactNode;
   className?: string;
   headerClassName?: string;
@@ -22,6 +23,7 @@ export function EntityCard({
   icon: Icon,
   actions,
   onClick,
+  onTitleClick,
   children,
   className = '',
   headerClassName = '',
@@ -36,7 +38,12 @@ export function EntityCard({
     <>
       {isHeader ? (
         <div className={`${baseClasses} ${headerClassName}`}>
-          <h3 className="text-2xl font-bold">{title}</h3>
+          <h3 
+            className={`text-2xl font-bold ${onTitleClick ? 'cursor-pointer hover:underline' : ''}`}
+            onClick={onTitleClick}
+          >
+            {title}
+          </h3>
           {subtitle && <p className="text-sm opacity-90 mt-1">{subtitle}</p>}
           {actions && (
             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
