@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, BookOpen, Trash2, FolderOpen, Edit2, Check, X, Archive, ArchiveRestore } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -15,7 +15,9 @@ import {
   useNotes,
   useSyncState
 } from "@/lib/store";
+import { useStore } from "@/lib/store/useStore";
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 export default function FoldersPage() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function FoldersPage() {
   const { createFolder, updateFolder, deleteFolder } = useFolderActions();
   const { createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useNotebookActions();
   const { error, setSyncError } = useSyncState();
+  const { loadNotebooks } = useStore();
   
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -36,10 +39,19 @@ export default function FoldersPage() {
   const [editingNotebookId, setEditingNotebookId] = useState<string | null>(null);
   const [editNotebookName, setEditNotebookName] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [isCreatingFolderLoading, setIsCreatingFolderLoading] = useState(false);
+
+  // Ensure notebooks are loaded
+  useEffect(() => {
+    if (folders.length > 0 && notebooks.length === 0 && !notebooksLoading) {
+      loadNotebooks(true);
+    }
+  }, [folders.length, notebooks.length, notebooksLoading, loadNotebooks]);
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
 
+    setIsCreatingFolderLoading(true);
     try {
       await createFolder(newFolderName, newFolderColor);
       setIsCreatingFolder(false);
@@ -52,6 +64,8 @@ export default function FoldersPage() {
           ? error.message 
           : 'Failed to create folder. Please check your connection and try again.'
       );
+    } finally {
+      setIsCreatingFolderLoading(false);
     }
   };
 
@@ -236,9 +250,20 @@ export default function FoldersPage() {
             <div className="flex gap-2">
               <button
                 onClick={handleCreateFolder}
-                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                disabled={isCreatingFolderLoading}
+                className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Create
+                {isCreatingFolderLoading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creating...
+                  </>
+                ) : (
+                  'Create'
+                )}
               </button>
               <button
                 onClick={() => {
@@ -261,8 +286,24 @@ export default function FoldersPage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-6">Your Folders</h2>
           
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-gray-500">Loading...</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="space-y-4">
+                  {/* Folder Header Skeleton */}
+                  <div className="bg-gray-200 animate-pulse rounded-t-lg p-4 h-32">
+                    <Skeleton width="60%" height={24} className="mb-2" />
+                    <Skeleton width="40%" height={16} />
+                  </div>
+                  {/* Notebooks List Skeleton */}
+                  <div className="bg-white rounded-b-lg shadow-sm">
+                    <div className="p-4 space-y-3">
+                      <Skeleton height={48} className="rounded-lg" />
+                      <Skeleton height={48} className="rounded-lg" />
+                      <Skeleton height={48} className="rounded-lg" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

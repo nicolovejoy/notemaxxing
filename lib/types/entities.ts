@@ -43,29 +43,3 @@ export interface QuizQuestion {
   explanation?: string;
 }
 
-// Legacy types for localStorage (to be removed after migration)
-export interface LegacyFolder {
-  id: string;
-  name: string;
-  color: string;
-  createdAt: Date;
-}
-
-export interface LegacyNotebook {
-  id: string;
-  name: string;
-  folderId: string;
-  color: string;
-  createdAt: Date;
-  archived?: boolean;
-  archivedAt?: Date;
-}
-
-export interface LegacyNote {
-  id: string;
-  title: string;
-  content: string;
-  notebookId: string;
-  createdAt: Date;
-  updatedAt?: Date;
-}

@@ -22,6 +22,8 @@ import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
 import { Logo } from "@/components/logo";
 import { RichTextEditor } from "@/components/RichTextEditor";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { toHTML, toPlainText } from "@/lib/utils/content";
 import {
   useFolder,
   useNotebook,
@@ -98,12 +100,12 @@ export default function NotebookPage() {
       user_id: '', // Will be set by server
       notebook_id: notebookId,
       title: "",
-      content: "",
+      content: "<p></p>",
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     });
     setEditingNoteTitle("");
-    setEditingNoteContent("");
+    setEditingNoteContent("<p></p>");
     setIsEditingNote(true);
   };
 
@@ -362,22 +364,39 @@ export default function NotebookPage() {
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {/* Add Note Card */}
-                <button
-                  onClick={handleCreateNote}
-                  className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-6 hover:border-gray-400 hover:shadow-md transition-all h-48 flex flex-col items-center justify-center group"
-                >
-                  <Plus className="h-8 w-8 text-gray-400 group-hover:text-gray-600 mb-2" />
-                  <span className="text-gray-600 font-medium">Add new note</span>
-                </button>
+                {!notesLoading && (
+                  <button
+                    onClick={handleCreateNote}
+                    className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-6 hover:border-gray-400 hover:shadow-md transition-all h-48 flex flex-col items-center justify-center group"
+                  >
+                    <Plus className="h-8 w-8 text-gray-400 group-hover:text-gray-600 mb-2" />
+                    <span className="text-gray-600 font-medium">Add new note</span>
+                  </button>
+                )}
 
-                {/* Note Cards */}
-                {notes.map((note) => (
+                {/* Loading Skeletons */}
+                {notesLoading ? (
+                  [...Array(8)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-lg border border-gray-200 p-6 h-48 flex flex-col">
+                      <div className="flex items-start justify-between mb-2">
+                        <Skeleton width={20} height={20} />
+                        <Skeleton width={16} height={16} />
+                      </div>
+                      <Skeleton height={20} className="mb-2" />
+                      <Skeleton height={16} width="80%" className="mb-1" />
+                      <Skeleton height={16} width="60%" className="mb-1" />
+                      <Skeleton height={12} width="40%" className="mt-auto" />
+                    </div>
+                  ))
+                ) : (
+                  /* Note Cards */
+                  notes.map((note) => (
                   <div
                     key={note.id}
                     onClick={() => {
                       setSelectedNote(note);
                       setEditingNoteTitle(note.title);
-                      setEditingNoteContent(note.content);
+                      setEditingNoteContent(toHTML(note.content));
                       setIsEditingNote(true);
                     }}
                     className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-shadow cursor-pointer h-48 flex flex-col group"
@@ -399,7 +418,7 @@ export default function NotebookPage() {
                     </h3>
                     <p className="text-sm text-gray-600 line-clamp-3 flex-1">
                       {note.content ? 
-                        note.content.replace(/<[^>]*>/g, '').substring(0, 150) : 
+                        toPlainText(toHTML(note.content)).substring(0, 150) : 
                         "No content yet..."
                       }
                     </p>
@@ -407,7 +426,8 @@ export default function NotebookPage() {
                       {formatDate(note.updated_at || note.created_at)}
                     </p>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           ) : (
@@ -467,7 +487,7 @@ export default function NotebookPage() {
                     <div 
                       className="prose prose-sm max-w-none"
                       dangerouslySetInnerHTML={{ 
-                        __html: selectedNote.content || "<p>No content yet...</p>" 
+                        __html: toHTML(selectedNote.content) || "<p>No content yet...</p>" 
                       }}
                     />
                   </>
