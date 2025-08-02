@@ -66,12 +66,22 @@ export function RichTextEditor({
         const coords = editor.view.coordsAtPos(from);
         const editorRect = editor.view.dom.getBoundingClientRect();
         
+        // Calculate button position with bounds checking
+        const buttonWidth = 120; // Approximate button width
+        let x = coords.left - editorRect.left;
+        
+        // Ensure button stays within editor bounds
+        // Account for translateX(-50%) which shifts button left by half its width
+        const minX = buttonWidth / 2;
+        const maxX = editorRect.width - buttonWidth / 2;
+        x = Math.max(minX, Math.min(x, maxX));
+        
         setSelectedText(text);
         // Don't set range here - we'll capture it when enhance is clicked
         setFullDocumentContent(editor.getHTML()); // Store full content
         setFloatingButton({
-          x: coords.left - editorRect.left,
-          y: coords.top - editorRect.top - 40, // Position above selection
+          x,
+          y: Math.max(10, coords.top - editorRect.top - 40), // Position above selection, min 10px from top
           show: true
         });
       } else {
