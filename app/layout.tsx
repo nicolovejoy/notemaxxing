@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Notemaxxing",
+  title: process.env.NODE_ENV === 'development' ? "[DEV] Notemaxxing" : "Notemaxxing",
   description:
     "The world's best notetaking app for college students in the age of AI",
   icons: {
