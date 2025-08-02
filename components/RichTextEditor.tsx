@@ -104,6 +104,7 @@ export function RichTextEditor({
   }, [editor]);
 
   const handleEnhance = async (isSelection = false) => {
+    console.log('handleEnhance called:', { isSelection, selectedText, hasEditor: !!editor });
     if (!editor || isEnhancing) return;
     
     try {
@@ -111,10 +112,12 @@ export function RichTextEditor({
       let textToEnhance = '';
       
       if (isSelection && selectedText) {
+        console.log('Enhancing selection:', selectedText);
         // For selections, we'll use plain text for now
         // TODO: In the future, we can implement HTML extraction for selections
         textToEnhance = selectedText;
       } else {
+        console.log('Enhancing full document');
         // For full document, send HTML to preserve formatting
         textToEnhance = editor.getHTML();
       }
@@ -133,12 +136,14 @@ export function RichTextEditor({
       }
       
       // Always show preview, whether it's selection or full document
-      setPreviewData({ 
+      const newPreviewData = { 
         original: textToEnhance, 
         enhanced, 
         improvements,
         isSelection: isSelection  // Don't check selectedText here - we already checked it above
-      });
+      };
+      console.log('Setting preview data:', newPreviewData);
+      setPreviewData(newPreviewData);
       setShowPreview(true);
     } catch (error) {
       // Error handling is done in the hook
@@ -147,6 +152,12 @@ export function RichTextEditor({
   };
 
   const acceptEnhancement = () => {
+    console.log('acceptEnhancement called:', { 
+      previewData, 
+      selectedRange,
+      hasEditor: !!editor 
+    });
+    
     if (!editor || !previewData.enhanced) return;
     
     const currentContent = editor.getHTML();
@@ -181,6 +192,11 @@ export function RichTextEditor({
       console.log('After enhancement:', editor.getText());
     } else {
       // Handle full document replacement
+      console.log('Treating as full document replacement because:', {
+        isSelection: previewData.isSelection,
+        hasSelectedRange: !!selectedRange,
+        selectedRange
+      });
       editor.chain().focus().setContent(previewData.enhanced).run();
     }
     
