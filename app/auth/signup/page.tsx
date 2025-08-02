@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { setupNewUser } from "@/lib/auth/setup-new-user";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -51,7 +52,15 @@ export default function SignupPage() {
       }
 
       // If we have a session, user is logged in (email confirmation is disabled)
-      if (data.session) {
+      if (data.session && data.user) {
+        // Set up the new user's profile and role
+        const setupResult = await setupNewUser(data.user.id, data.user.email!);
+        
+        if (!setupResult.success) {
+          console.error("Failed to set up user profile:", setupResult.error);
+          // Continue anyway - the user is created, just missing profile/role
+        }
+        
         router.push("/");
         router.refresh();
       }

@@ -83,7 +83,7 @@ npm install
 2. Set up Supabase:
 
 - Create project at [supabase.com](https://supabase.com)
-- Run schema from `/lib/supabase/schema.sql`
+- Run schema from `/scripts/complete-database-setup.sql`
 - Copy `.env.local.example` to `.env.local` and add your keys
 
 3. Run:
@@ -145,7 +145,7 @@ Data is stored in Supabase PostgreSQL with:
 
 ## Roadmap
 
-See [TODO.md](./TODO.md) for planned features and improvements.
+See [TODO.md](./docs/TODO.md) for planned features and improvements.
 
 ## License
 
