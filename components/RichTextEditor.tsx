@@ -104,7 +104,6 @@ export function RichTextEditor({
   }, [editor]);
 
   const handleEnhance = async (isSelection = false) => {
-    console.log('handleEnhance called:', { isSelection, selectedText, hasEditor: !!editor });
     if (!editor || isEnhancing) return;
     
     try {
@@ -112,17 +111,14 @@ export function RichTextEditor({
       let textToEnhance = '';
       
       if (isSelection && selectedText) {
-        console.log('Enhancing selection:', selectedText);
         // Store the current selection range NOW, before the modal opens
         const { from, to } = editor.state.selection;
         setSelectedRange({ from, to });
-        console.log('Storing selection range:', { from, to });
         
         // For selections, we'll use plain text for now
         // TODO: In the future, we can implement HTML extraction for selections
         textToEnhance = selectedText;
       } else {
-        console.log('Enhancing full document');
         // For full document, send HTML to preserve formatting
         textToEnhance = editor.getHTML();
       }
@@ -141,14 +137,12 @@ export function RichTextEditor({
       }
       
       // Always show preview, whether it's selection or full document
-      const newPreviewData = { 
+      setPreviewData({ 
         original: textToEnhance, 
         enhanced, 
         improvements,
         isSelection: isSelection  // Don't check selectedText here - we already checked it above
-      };
-      console.log('Setting preview data:', newPreviewData);
-      setPreviewData(newPreviewData);
+      });
       setShowPreview(true);
     } catch (error) {
       // Error handling is done in the hook
@@ -157,33 +151,16 @@ export function RichTextEditor({
   };
 
   const acceptEnhancement = () => {
-    console.log('acceptEnhancement called:', { 
-      previewData, 
-      selectedRange,
-      hasEditor: !!editor 
-    });
-    
     if (!editor || !previewData.enhanced) return;
     
     const currentContent = editor.getHTML();
     setContentHistory(prev => [...prev, currentContent]);
     
     if (previewData.isSelection && selectedRange) {
-      // Debug logging
-      console.log('Selection enhancement:', {
-        selectedRange,
-        originalText: previewData.original,
-        enhancedHTML: previewData.enhanced,
-        currentContent: editor.getText(),
-        contentLength: editor.getText().length
-      });
-      
       // For selection enhancement, extract plain text from enhanced HTML
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = previewData.enhanced;
       const enhancedText = tempDiv.textContent || tempDiv.innerText || '';
-      
-      console.log('Extracted enhanced text:', enhancedText);
       
       // Set selection and replace with plain text
       editor
@@ -193,15 +170,8 @@ export function RichTextEditor({
         .deleteSelection()
         .insertContent(enhancedText)
         .run();
-        
-      console.log('After enhancement:', editor.getText());
     } else {
       // Handle full document replacement
-      console.log('Treating as full document replacement because:', {
-        isSelection: previewData.isSelection,
-        hasSelectedRange: !!selectedRange,
-        selectedRange
-      });
       editor.chain().focus().setContent(previewData.enhanced).run();
     }
     
