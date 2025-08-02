@@ -2,11 +2,12 @@
 
 ## 🚀 Immediate Priorities
 
-### 1. Fix Data Loading on Login (Production)
+### 1. ~~Fix Data Loading on Login (Production)~~ ✅ FIXED
 
-- [ ] Folders don't load after login in production
-- [ ] Same issue we fixed in dev but still happening in prod
-- [ ] Need to ensure store initializes properly after auth
+- [x] Folders don't load after login in production
+- [x] Same issue we fixed in dev but still happening in prod
+- [x] Need to ensure store initializes properly after auth
+- [x] **FIXED**: Added auth state listener and retry logic (PR #1)
 
 ### 2. Implement Sharing Features
 
