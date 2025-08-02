@@ -1,12 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useInitializeStore } from './hooks'
+import { useStore } from './useStore'
 import { logger } from '@/lib/debug/logger'
+import { createClient } from '@/lib/supabase/client'
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isClient, setIsClient] = useState(false)
+  const [hasInitialized, setHasInitialized] = useState(false)
   const initializeStore = useInitializeStore()
+  const resetStore = useStore((state) => state.resetStore)
+  const initializationAttempts = useRef(0)
+  const maxRetries = 3
   
   useEffect(() => {
     setIsClient(true)
@@ -16,20 +22,70 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isClient) return
     
-    // Add a small delay to ensure auth state is ready after login redirect
-    const initTimer = setTimeout(() => {
-      logger.info('Initializing store...')
-      initializeStore()
-        .then(() => {
-          logger.info('Store initialized successfully')
-        })
-        .catch((error) => {
-          logger.error('Store initialization failed', error)
-        })
-    }, 100)
+    const supabase = createClient()
+    if (!supabase) {
+      logger.warn('Supabase client not available')
+      return
+    }
     
-    return () => clearTimeout(initTimer)
-  }, [isClient, initializeStore])
+    // Function to attempt store initialization
+    const attemptInitialization = async () => {
+      if (hasInitialized) {
+        logger.debug('Store already initialized, skipping')
+        return
+      }
+      
+      try {
+        // Check current auth state
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (session) {
+          logger.info(`Attempting store initialization (attempt ${initializationAttempts.current + 1}/${maxRetries})`)
+          await initializeStore()
+          setHasInitialized(true)
+          initializationAttempts.current = 0
+          logger.info('Store initialized successfully via auth listener')
+        } else {
+          logger.debug('No session found, waiting for auth')
+        }
+      } catch (error) {
+        initializationAttempts.current++
+        logger.error(`Store initialization failed (attempt ${initializationAttempts.current}/${maxRetries})`, error)
+        
+        // Retry with exponential backoff
+        if (initializationAttempts.current < maxRetries) {
+          const retryDelay = Math.min(1000 * Math.pow(2, initializationAttempts.current - 1), 5000)
+          logger.info(`Retrying initialization in ${retryDelay}ms`)
+          setTimeout(attemptInitialization, retryDelay)
+        } else {
+          logger.error('Max initialization attempts reached')
+        }
+      }
+    }
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      logger.info(`Auth state changed: ${event}`)
+      
+      if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
+        // Add a small delay to ensure cookies are set
+        setTimeout(() => {
+          attemptInitialization()
+        }, 100)
+      } else if (event === 'SIGNED_OUT') {
+        setHasInitialized(false)
+        initializationAttempts.current = 0
+        resetStore()
+      }
+    })
+    
+    // Initial attempt
+    attemptInitialization()
+    
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [isClient, initializeStore, hasInitialized, resetStore])
   
   // Don't render children until client-side to avoid hydration mismatch
   if (!isClient) {

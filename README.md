@@ -135,6 +135,28 @@ Data is stored in Supabase PostgreSQL with:
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Run TypeScript compiler
 
+### Testing in Production (Vercel)
+
+To test changes in production without committing to main:
+
+```bash
+# Create a preview branch and deploy
+git checkout -b preview/your-feature
+git add -A
+git commit -m "Test: your feature"
+git push origin preview/your-feature
+```
+
+Vercel automatically creates a preview URL for every branch. Check your Vercel dashboard or the GitHub PR for the preview link.
+
+After testing, clean up:
+
+```bash
+git checkout main
+git branch -D preview/your-feature
+git push origin --delete preview/your-feature
+```
+
 ### Contributing
 
 1. Fork the repository

@@ -3,13 +3,26 @@ import type { Folder, Notebook, Note, Quiz } from './types'
 import { logger, logApiCall } from '@/lib/debug/logger'
 import { handleSupabaseError } from './error-handler'
 
-// Helper to get Supabase client with null check
-function getSupabaseClient() {
+// Helper to get Supabase client with null check and session validation
+async function getSupabaseClient() {
   const supabase = createClient()
   if (!supabase) {
     logger.error('Supabase client not available - check environment variables')
     throw new Error('Supabase client not available')
   }
+  
+  // Ensure we have a valid session before making API calls
+  const { data: { session }, error } = await supabase.auth.getSession()
+  if (error) {
+    logger.error('Failed to get session:', error)
+    throw new Error(`Session error: ${error.message}`)
+  }
+  
+  if (!session) {
+    logger.warn('No active session when trying to make API call')
+    throw new Error('No active session')
+  }
+  
   return supabase
 }
 
@@ -17,7 +30,7 @@ export const foldersApi = {
   async getAll() {
     try {
       logApiCall('folders', 'GET')
-      const supabase = getSupabaseClient()
+      const supabase = await getSupabaseClient()
       const { data, error } = await supabase
         .from('folders')
         .select('*')
@@ -32,8 +45,8 @@ export const foldersApi = {
       return data as Folder[]
     } catch (error) {
       // Only return empty array if Supabase client is not available (dev mode)
-      if (error instanceof Error && error.message === 'Supabase client not available') {
-        logger.warn('Running without Supabase - returning empty folders')
+      if (error instanceof Error && (error.message === 'Supabase client not available' || error.message === 'No active session')) {
+        logger.warn('Running without valid session - returning empty folders')
         return []
       }
       throw error // Re-throw to be handled by store
@@ -43,7 +56,7 @@ export const foldersApi = {
   async create(folder: Omit<Folder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
     try {
       logApiCall('folders', 'POST', folder)
-      const supabase = getSupabaseClient()
+      const supabase = await getSupabaseClient()
       const { data, error } = await supabase
         .from('folders')
         .insert(folder)
@@ -64,7 +77,7 @@ export const foldersApi = {
   },
 
   async update(id: string, updates: Partial<Omit<Folder, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { data, error } = await supabase
       .from('folders')
       .update(updates)
@@ -77,7 +90,7 @@ export const foldersApi = {
   },
 
   async delete(id: string) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { error } = await supabase
       .from('folders')
       .delete()
@@ -90,7 +103,7 @@ export const foldersApi = {
 export const notebooksApi = {
   async getAll(includeArchived = false) {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = await getSupabaseClient()
       let query = supabase
         .from('notebooks')
         .select('*')
@@ -111,7 +124,7 @@ export const notebooksApi = {
   },
 
   async create(notebook: Omit<Notebook, 'id' | 'user_id' | 'created_at' | 'updated_at' | 'archived' | 'archived_at'>) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { data, error } = await supabase
       .from('notebooks')
       .insert({ ...notebook, archived: false, archived_at: null })
@@ -123,7 +136,7 @@ export const notebooksApi = {
   },
 
   async update(id: string, updates: Partial<Omit<Notebook, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { data, error } = await supabase
       .from('notebooks')
       .update(updates)
@@ -144,7 +157,7 @@ export const notebooksApi = {
   },
 
   async delete(id: string) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { error } = await supabase
       .from('notebooks')
       .delete()
@@ -157,7 +170,7 @@ export const notebooksApi = {
 export const notesApi = {
   async getAll() {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = await getSupabaseClient()
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -173,7 +186,7 @@ export const notesApi = {
 
   async getByNotebook(notebookId: string) {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = await getSupabaseClient()
       const { data, error } = await supabase
         .from('notes')
         .select('*')
@@ -189,7 +202,7 @@ export const notesApi = {
   },
 
   async create(note: Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { data, error } = await supabase
       .from('notes')
       .insert(note)
@@ -201,7 +214,7 @@ export const notesApi = {
   },
 
   async update(id: string, updates: Partial<Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { data, error } = await supabase
       .from('notes')
       .update(updates)
@@ -214,7 +227,7 @@ export const notesApi = {
   },
 
   async delete(id: string) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { error } = await supabase
       .from('notes')
       .delete()
@@ -227,7 +240,7 @@ export const notesApi = {
 export const quizzesApi = {
   async getAll() {
     try {
-      const supabase = getSupabaseClient()
+      const supabase = await getSupabaseClient()
       const { data, error } = await supabase
         .from('quizzes')
         .select('*')
@@ -242,7 +255,7 @@ export const quizzesApi = {
   },
 
   async create(quiz: Omit<Quiz, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { data, error } = await supabase
       .from('quizzes')
       .insert(quiz)
@@ -254,7 +267,7 @@ export const quizzesApi = {
   },
 
   async update(id: string, updates: Partial<Omit<Quiz, 'id' | 'user_id' | 'created_at' | 'updated_at'>>) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { data, error } = await supabase
       .from('quizzes')
       .update(updates)
@@ -267,7 +280,7 @@ export const quizzesApi = {
   },
 
   async delete(id: string) {
-    const supabase = getSupabaseClient()
+    const supabase = await getSupabaseClient()
     const { error } = await supabase
       .from('quizzes')
       .delete()
