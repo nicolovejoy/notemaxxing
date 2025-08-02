@@ -2,10 +2,11 @@
 
 ## 🚀 Immediate Priorities
 
-### 1. Fix AI Enhancement Selection Bug
+### 1. Fix Data Loading on Login (Production)
 
-- [ ] Enhanced text still replaces entire note instead of just selection
-- [ ] Verify the fix is working properly
+- [ ] Folders don't load after login in production
+- [ ] Same issue we fixed in dev but still happening in prod
+- [ ] Need to ensure store initializes properly after auth
 
 ### 2. Implement Sharing Features
 
@@ -55,6 +56,11 @@
 - [ ] Better error messages for users
 - [ ] Mobile UI needs optimization
 - [ ] Search could be faster
+
+## ✅ Recently Fixed
+
+- [x] AI Enhancement Selection Bug - Fixed by preserving selection range through modal lifecycle
+- [x] Enhance button positioning - Now stays within editor bounds
 
 ## 💡 Future Ideas
 
