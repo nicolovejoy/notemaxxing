@@ -67,7 +67,7 @@ export function RichTextEditor({
         const editorRect = editor.view.dom.getBoundingClientRect();
         
         setSelectedText(text);
-        setSelectedRange({ from, to });
+        // Don't set range here - we'll capture it when enhance is clicked
         setFullDocumentContent(editor.getHTML()); // Store full content
         setFloatingButton({
           x: coords.left - editorRect.left,
@@ -113,6 +113,11 @@ export function RichTextEditor({
       
       if (isSelection && selectedText) {
         console.log('Enhancing selection:', selectedText);
+        // Store the current selection range NOW, before the modal opens
+        const { from, to } = editor.state.selection;
+        setSelectedRange({ from, to });
+        console.log('Storing selection range:', { from, to });
+        
         // For selections, we'll use plain text for now
         // TODO: In the future, we can implement HTML extraction for selections
         textToEnhance = selectedText;
