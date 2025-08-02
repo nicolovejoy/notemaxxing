@@ -77,7 +77,7 @@ export function RichTextEditor({
       } else {
         setFloatingButton({ x: 0, y: 0, show: false });
         setSelectedText('');
-        setSelectedRange(null);
+        // Don't clear selectedRange here - we need it for the enhancement
         setFullDocumentContent('');
       }
     };
@@ -212,11 +212,11 @@ export function RichTextEditor({
     setShowUndo(true);
     setTimeout(() => setShowUndo(false), 10000);
     
-    // Close preview and reset
+    // Close preview and reset ALL selection state
     setShowPreview(false);
     setFloatingButton({ x: 0, y: 0, show: false });
     setSelectedText('');
-    setSelectedRange(null);
+    setSelectedRange(null);  // Clear range after enhancement is done
     setFullDocumentContent('');
   };
 
@@ -380,6 +380,10 @@ export function RichTextEditor({
         onClose={() => {
           setShowPreview(false);
           setFloatingButton({ x: 0, y: 0, show: false });
+          // Clear selection state when closing without accepting
+          setSelectedText('');
+          setSelectedRange(null);
+          setFullDocumentContent('');
         }}
         originalText={previewData.original}
         enhancedText={previewData.enhanced}
