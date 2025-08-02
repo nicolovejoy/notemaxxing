@@ -3,6 +3,11 @@ import { createClient } from '@/lib/supabase/client'
 export async function setupNewUser(userId: string, email: string) {
   const supabase = createClient()
   
+  if (!supabase) {
+    console.error('Supabase client not initialized')
+    return { success: false, error: 'Supabase client not initialized' }
+  }
+  
   try {
     // Create profile entry
     const { error: profileError } = await supabase
