@@ -137,7 +137,7 @@ export function RichTextEditor({
         original: textToEnhance, 
         enhanced, 
         improvements,
-        isSelection: isSelection && !!selectedText
+        isSelection: isSelection  // Don't check selectedText here - we already checked it above
       });
       setShowPreview(true);
     } catch (error) {
