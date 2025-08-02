@@ -63,6 +63,7 @@ interface AppState {
   clearOptimisticUpdate: (id: string) => void
   setSyncError: (error: string | null) => void
   initializeStore: () => Promise<void>
+  resetStore: () => void
   loadPreferences: () => void
   savePreferences: () => void
   seedInitialData: (templateId?: string) => Promise<{ success: boolean; error?: string }>
@@ -633,13 +634,31 @@ export const useStore = create<AppState>()(
           return
         }
         
-        const { data: { user } } = await supabase.auth.getUser()
+        // First check session to ensure auth cookies are set
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        if (sessionError) {
+          console.error('[Store] Error getting session:', sessionError)
+          throw new Error(`Failed to get session: ${sessionError.message}`)
+        }
+        
+        if (!session) {
+          console.log('[Store] No active session, skipping initialization')
+          return
+        }
+        
+        // Double-check with getUser for extra validation
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        if (userError) {
+          console.error('[Store] Error getting user:', userError)
+          throw new Error(`Failed to get user: ${userError.message}`)
+        }
+        
         if (!user) {
-          console.log('[Store] No authenticated user, skipping initialization')
+          console.log('[Store] No authenticated user found despite session')
           return
         }
 
-        console.log('[Store] Starting initialization...')
+        console.log(`[Store] Starting initialization for user: ${user.email}`)
         set((state) => {
           state.syncState.status = 'loading'
           state.syncState.error = null
@@ -650,12 +669,29 @@ export const useStore = create<AppState>()(
           get().loadPreferences()
           
           console.log('[Store] Loading all data...')
-          await Promise.all([
+          const results = await Promise.allSettled([
             get().loadFolders(),
             get().loadNotebooks(),
             get().loadNotes(),
             get().loadQuizzes(),
           ])
+          
+          // Check if any loads failed
+          const failures = results.filter(r => r.status === 'rejected')
+          if (failures.length > 0) {
+            const errorMessages = failures.map((f, i) => {
+              const errorMsg = (f as PromiseRejectedResult).reason?.message || 'Unknown error'
+              const dataType = ['folders', 'notebooks', 'notes', 'quizzes'][i]
+              return `${dataType}: ${errorMsg}`
+            }).join(', ')
+            
+            console.error('[Store] Some data failed to load:', errorMessages)
+            
+            // If critical data (folders/notebooks) failed, throw error
+            if (results[0].status === 'rejected' || results[1].status === 'rejected') {
+              throw new Error(`Critical data failed to load: ${errorMessages}`)
+            }
+          }
           
           set((state) => {
             state.initialized = true
@@ -671,6 +707,25 @@ export const useStore = create<AppState>()(
           console.error('[Store] Failed to initialize:', error)
           throw error // Re-throw to be caught by StoreProvider
         }
+      },
+      
+      resetStore: () => {
+        console.log('[Store] Resetting store state')
+        set((state) => {
+          state.folders = []
+          state.notebooks = []
+          state.notes = []
+          state.quizzes = []
+          state.selectedFolderId = null
+          state.selectedNotebookId = null
+          state.syncState = {
+            status: 'idle',
+            error: null,
+            lastSyncTime: null,
+          }
+          state.optimisticUpdates = []
+          state.initialized = false
+        })
       },
       
       loadPreferences: () => {

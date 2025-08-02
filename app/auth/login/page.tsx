@@ -39,15 +39,26 @@ export default function LoginPage() {
     }
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) throw error;
 
-      router.push("/");
-      router.refresh();
+      // Ensure session is properly established
+      if (data.session) {
+        // Small delay to ensure cookies are set
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Get the intended destination or default to home
+        const params = new URLSearchParams(window.location.search);
+        const redirectTo = params.get('redirectTo') || '/';
+        
+        // Use replace to avoid back button issues
+        router.replace(redirectTo);
+        router.refresh();
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
