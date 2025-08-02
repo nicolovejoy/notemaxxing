@@ -1,0 +1,61 @@
+import type { ShareInviteRequest, ShareListResponse, Permission, ResourceType } from '@/lib/types/sharing'
+
+const API_BASE = '/api/shares'
+
+export const sharingApi = {
+  async sendInvitation(data: ShareInviteRequest) {
+    const response = await fetch(`${API_BASE}/invite`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to send invitation')
+    }
+    
+    return response.json()
+  },
+
+  async acceptInvitation(invitationId: string) {
+    const response = await fetch(`${API_BASE}/accept`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ invitationId }),
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to accept invitation')
+    }
+    
+    return response.json()
+  },
+
+  async listShares(): Promise<ShareListResponse> {
+    const response = await fetch(`${API_BASE}/list`)
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to list shares')
+    }
+    
+    return response.json()
+  },
+
+  async revokePermission(permissionId: string) {
+    const response = await fetch(`${API_BASE}/revoke`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ permissionId }),
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to revoke permission')
+    }
+    
+    return response.json()
+  },
+}

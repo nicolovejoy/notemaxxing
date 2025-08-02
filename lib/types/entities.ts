@@ -14,6 +14,9 @@ export interface UserEntity extends BaseEntity {
 export interface Folder extends UserEntity {
   name: string;
   color: string;
+  // Sharing properties (optional, added at runtime)
+  shared?: boolean;
+  permission?: 'read' | 'write';
 }
 
 export interface Notebook extends UserEntity {
@@ -22,6 +25,9 @@ export interface Notebook extends UserEntity {
   color: string;
   archived: boolean;
   archived_at: string | null;
+  // Sharing properties (optional, added at runtime)
+  shared?: boolean;
+  permission?: 'read' | 'write';
 }
 
 export interface Note extends UserEntity {
