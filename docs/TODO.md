@@ -2,148 +2,64 @@
 
 ## 🚀 Immediate Priorities
 
-### 1. AI-Enhanced Rich Text Editor ✅ COMPLETED
+### 1. Fix AI Enhancement Selection Bug
 
-- [x] Install TipTap dependencies
-- [x] Replace textarea with TipTap editor in notes
-- [x] Add basic formatting toolbar (bold, italic, lists, headings)
-- [x] Implement auto-save on blur
-- [x] Create /api/ai/enhance endpoint with OpenAI
-- [x] Add "Enhance with AI" button to editor
-- [x] Simple rate limiting (50 requests/day)
-- [x] Test with existing notes
+- [ ] Enhanced text still replaces entire note instead of just selection
+- [ ] Verify the fix is working properly
 
-### 2. Re-implement Seed Data (Without Breaking Auth)
+### 2. Implement Sharing Features
 
-- [ ] Move seed RPC call to homepage after auth is established
-- [ ] Add "Initialize Account" button for new users
-- [ ] Test thoroughly before deploying
-- [ ] Document the new approach
+- [ ] Share folders with other users (read/write permissions)
+- [ ] Share individual notebooks
+- [ ] Share links that work without login (public access)
+- [ ] Manage shared permissions (revoke access)
 
-### 3. Security: Server-Side Admin Auth
+### 3. Add Encryption for Shared Content
 
-- [ ] Create `user_roles` table in Supabase
-- [ ] Add RPC function to check admin status
-- [ ] Move admin check to middleware/server
-- [ ] Update admin console to use server validation
+- [ ] Encrypt shared folders/notebooks
+- [ ] Key management for shared access
+- [ ] Ensure performance isn't impacted
 
-### 4. UX: Loading States ✅ COMPLETED
+### 4. Re-implement Seed Data (After Sharing)
 
-- [x] Add loading skeletons for folders list
-- [x] Add loading skeletons for notebooks grid
-- [x] Add loading skeletons for notes list
-- [x] Show spinners during save operations
-- [x] Fix markdown content display in note cards
-- [x] Make header logos clickable for navigation
+- [ ] Add starter content for new users
+- [ ] "Initialize Account" button on homepage
+- [ ] Tutorial notebooks with examples
 
-## 📋 Short Term Goals
+## 📋 Next Features
 
-### AI Features (After MVP)
+### Quiz Feature
 
-- [ ] Add more AI actions (summarize, expand, rephrase)
-- [ ] Streaming responses with Server-Sent Events
-- [ ] AI usage analytics dashboard
-- [ ] Keyboard shortcuts for AI actions
-- [ ] Custom AI prompts/templates
+- [ ] Generate quizzes from selected notes
+- [ ] Multiple choice and open-ended questions
+- [ ] Track scores and progress
+- [ ] Study mode with spaced repetition
 
-### UI/UX Improvements
+### Export & Import
 
-- [ ] Add loading skeletons
-- [ ] Improve empty states
-- [ ] Add success/error toasts
-- [ ] Keyboard shortcuts guide
+- [ ] Export notes to PDF/Markdown
+- [ ] Bulk export folders/notebooks
+- [ ] Import from other note apps
+- [ ] Backup/restore functionality
 
-### Features
+### Better Organization
 
-- [x] Search functionality (universal search across everything)
-- [ ] Export to PDF/Markdown
-- [ ] Bulk operations (select multiple)
-- [ ] Tags/categories for notes
-
-### Performance
-
-- [ ] Code splitting for routes
-- [ ] Image optimization
-- [ ] Lazy loading for large lists
-- [ ] Debounce search inputs
-
-## 🎯 Medium Term Goals
-
-### Collaboration
-
-- [ ] Share notebooks (read-only)
-- [ ] Public links for notes
-- [ ] Comments on shared content
-
-### Enhanced Features
-
-- [ ] Rich text editor (bold, italic, links)
-- [ ] Image uploads in notes
-- [ ] Voice notes
+- [ ] Tags for cross-folder organization
+- [ ] Smart folders (saved searches)
 - [ ] Note templates
+- [ ] Archive system improvements
 
-### Mobile Experience
+## 🐛 Known Issues
 
-- [ ] PWA support
-- [ ] Offline mode with sync
-- [ ] Mobile-optimized UI
-- [ ] Swipe gestures
+- [ ] Performance with large number of notes
+- [ ] Better error messages for users
+- [ ] Mobile UI needs optimization
+- [ ] Search could be faster
 
-## 🔮 Long Term Vision
+## 💡 Future Ideas
 
-### AI Integration
-
-- [ ] Smart note suggestions
-- [ ] Auto-tagging
-- [ ] Content summarization
-- [ ] Quiz generation from notes
-
-### Platform Expansion
-
-- [ ] Mobile apps (iOS/Android)
-- [ ] Desktop app (Electron)
-- [ ] Browser extension
-- [ ] API for third-party apps
-
-### Advanced Features
-
+- [ ] Voice notes
+- [ ] Drawing/sketching support
 - [ ] Real-time collaboration
-- [ ] Version history
-- [ ] Advanced search with filters
-- [ ] Analytics dashboard
-
-## 🐛 Known Issues to Fix
-
-### Minor Bugs
-
-- [ ] Large components need refactoring
-- [ ] Edge case handling for empty states
-- [ ] Better error messages
-- [ ] Form validation improvements
-
-### Technical Debt
-
-- [ ] Add comprehensive tests
-- [ ] Improve TypeScript types
-- [ ] Document component APIs
-- [ ] Performance monitoring
-
-## 📚 Documentation Needs
-
-- [ ] User guide
-- [ ] API documentation
-- [ ] Contributing guide
-- [ ] Deployment guide
-
-## 🎉 Celebration Points
-
-When we complete:
-
-- First 100 users ➜ Add testimonials section
-- 1000 notes created ➜ Launch blog
-- Mobile app ➜ Product Hunt launch
-- AI features ➜ Premium tier
-
----
-
-**Remember**: The app is now fully functional! These are enhancements to make it even better. 🚀
+- [ ] API for integrations
+- [ ] Mobile apps

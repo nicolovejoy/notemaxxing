@@ -25,8 +25,9 @@ export function RichTextEditor({
   const lastEnhancedContent = useRef<string | null>(null);
   const [floatingButton, setFloatingButton] = useState<{ x: number; y: number; show: boolean }>({ x: 0, y: 0, show: false });
   const [selectedText, setSelectedText] = useState('');
+  const [selectedRange, setSelectedRange] = useState<{ from: number; to: number } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewData, setPreviewData] = useState<{ original: string; enhanced: string; improvements: string[] }>({ original: '', enhanced: '', improvements: [] });
+  const [previewData, setPreviewData] = useState<{ original: string; enhanced: string; improvements: string[]; isSelection: boolean }>({ original: '', enhanced: '', improvements: [], isSelection: false });
   const floatingButtonRef = useRef<HTMLDivElement>(null);
 
   const editor = useEditor({
@@ -65,6 +66,7 @@ export function RichTextEditor({
         const editorRect = editor.view.dom.getBoundingClientRect();
         
         setSelectedText(text);
+        setSelectedRange({ from, to });
         setFloatingButton({
           x: coords.left - editorRect.left,
           y: coords.top - editorRect.top - 40, // Position above selection
@@ -73,6 +75,7 @@ export function RichTextEditor({
       } else {
         setFloatingButton({ x: 0, y: 0, show: false });
         setSelectedText('');
+        setSelectedRange(null);
       }
     };
 
@@ -130,7 +133,8 @@ export function RichTextEditor({
       setPreviewData({ 
         original: textToEnhance, 
         enhanced, 
-        improvements 
+        improvements,
+        isSelection: isSelection && !!selectedText
       });
       setShowPreview(true);
     } catch (error) {
@@ -144,20 +148,13 @@ export function RichTextEditor({
     
     const currentContent = editor.getHTML();
     
-    if (selectedText && floatingButton.show) {
-      // Handle selection replacement
-      const { from, to } = editor.state.selection;
-      
-      // Create a temporary div to parse the enhanced HTML and extract just the text content
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = previewData.enhanced;
-      const enhancedTextContent = tempDiv.innerHTML;
-      
+    if (previewData.isSelection && selectedRange) {
+      // Handle selection replacement - use stored range
       editor.chain()
         .focus()
-        .setTextSelection({ from, to })
+        .setTextSelection({ from: selectedRange.from, to: selectedRange.to })
         .deleteSelection()
-        .insertContent(enhancedTextContent)
+        .insertContent(previewData.enhanced)
         .run();
     } else {
       // Handle full document replacement
@@ -176,6 +173,7 @@ export function RichTextEditor({
     setShowPreview(false);
     setFloatingButton({ x: 0, y: 0, show: false });
     setSelectedText('');
+    setSelectedRange(null);
   };
 
   const handleUndo = () => {
