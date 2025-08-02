@@ -26,6 +26,7 @@ export function RichTextEditor({
   const [floatingButton, setFloatingButton] = useState<{ x: number; y: number; show: boolean }>({ x: 0, y: 0, show: false });
   const [selectedText, setSelectedText] = useState('');
   const [selectedRange, setSelectedRange] = useState<{ from: number; to: number } | null>(null);
+  const [fullDocumentContent, setFullDocumentContent] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<{ original: string; enhanced: string; improvements: string[]; isSelection: boolean }>({ original: '', enhanced: '', improvements: [], isSelection: false });
   const floatingButtonRef = useRef<HTMLDivElement>(null);
@@ -67,6 +68,7 @@ export function RichTextEditor({
         
         setSelectedText(text);
         setSelectedRange({ from, to });
+        setFullDocumentContent(editor.getHTML()); // Store full content
         setFloatingButton({
           x: coords.left - editorRect.left,
           y: coords.top - editorRect.top - 40, // Position above selection
@@ -76,6 +78,7 @@ export function RichTextEditor({
         setFloatingButton({ x: 0, y: 0, show: false });
         setSelectedText('');
         setSelectedRange(null);
+        setFullDocumentContent('');
       }
     };
 
@@ -147,15 +150,35 @@ export function RichTextEditor({
     if (!editor || !previewData.enhanced) return;
     
     const currentContent = editor.getHTML();
+    setContentHistory(prev => [...prev, currentContent]);
     
     if (previewData.isSelection && selectedRange) {
-      // Handle selection replacement - use stored range
-      editor.chain()
+      // Debug logging
+      console.log('Selection enhancement:', {
+        selectedRange,
+        originalText: previewData.original,
+        enhancedHTML: previewData.enhanced,
+        currentContent: editor.getText(),
+        contentLength: editor.getText().length
+      });
+      
+      // For selection enhancement, extract plain text from enhanced HTML
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = previewData.enhanced;
+      const enhancedText = tempDiv.textContent || tempDiv.innerText || '';
+      
+      console.log('Extracted enhanced text:', enhancedText);
+      
+      // Set selection and replace with plain text
+      editor
+        .chain()
         .focus()
         .setTextSelection({ from: selectedRange.from, to: selectedRange.to })
         .deleteSelection()
-        .insertContent(previewData.enhanced)
+        .insertContent(enhancedText)
         .run();
+        
+      console.log('After enhancement:', editor.getText());
     } else {
       // Handle full document replacement
       editor.chain().focus().setContent(previewData.enhanced).run();
@@ -163,9 +186,8 @@ export function RichTextEditor({
     
     onChange(editor.getHTML());
     
-    // Save to history
-    setContentHistory(prev => [...prev, currentContent]);
-    lastEnhancedContent.current = previewData.enhanced;
+    // Show undo button
+    lastEnhancedContent.current = editor.getHTML();
     setShowUndo(true);
     setTimeout(() => setShowUndo(false), 10000);
     
@@ -174,6 +196,7 @@ export function RichTextEditor({
     setFloatingButton({ x: 0, y: 0, show: false });
     setSelectedText('');
     setSelectedRange(null);
+    setFullDocumentContent('');
   };
 
   const handleUndo = () => {
