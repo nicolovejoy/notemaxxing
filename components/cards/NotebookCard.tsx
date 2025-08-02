@@ -1,5 +1,8 @@
 import React from 'react';
 import { BookOpen, Edit2, Archive, ArchiveRestore, Trash2, Check, X } from 'lucide-react';
+import { ShareButton } from '../ShareButton';
+import { SharedIndicator } from '../SharedIndicator';
+import type { Permission } from '@/lib/types/sharing';
 
 interface NotebookCardProps {
   id: string;
@@ -7,6 +10,8 @@ interface NotebookCardProps {
   color: string;
   noteCount: number;
   archived?: boolean;
+  shared?: boolean;
+  permission?: Permission;
   isEditing?: boolean;
   editingName?: string;
   onEditingNameChange?: (name: string) => void;
@@ -20,10 +25,13 @@ interface NotebookCardProps {
 }
 
 export function NotebookCard({
+  id,
   name,
   color,
   noteCount,
   archived = false,
+  shared = false,
+  permission,
   isEditing = false,
   editingName = '',
   onEditingNameChange,
@@ -84,10 +92,21 @@ export function NotebookCard({
               {name}
               {archived && " (Archived)"}
             </span>
+            {shared && (
+              <SharedIndicator shared={shared} permission={permission} className="ml-2" />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+              {!shared && !archived && (
+                <ShareButton
+                  resourceId={id}
+                  resourceType="notebook"
+                  resourceName={name}
+                  className="p-1 hover:bg-gray-200 rounded"
+                />
+              )}
               {onEdit && (
                 <button
                   onClick={(e) => {

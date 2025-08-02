@@ -13,6 +13,8 @@ import { InlineEdit } from "@/components/ui/InlineEdit";
 import { NotebookCard } from "@/components/cards/NotebookCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ShareButton } from "@/components/ShareButton";
+import { SharedIndicator } from "@/components/SharedIndicator";
 import { 
   useFolders, 
   useFolderActions,
@@ -482,6 +484,14 @@ export default function FoldersPage() {
                         onTitleClick={() => handleFolderClick(folder.id)}
                         actions={
                           <div className="flex gap-2">
+                            {!folder.shared && (
+                              <ShareButton
+                                resourceId={folder.id}
+                                resourceType="folder"
+                                resourceName={folder.name}
+                                className="p-1 hover:bg-white/20 rounded text-white"
+                              />
+                            )}
                             <button
                               onClick={() => {
                                 setEditingFolderId(folder.id);
@@ -500,6 +510,13 @@ export default function FoldersPage() {
                           </div>
                         }
                       />
+                    )}
+
+                    {/* Shared indicator below folder header */}
+                    {folder.shared && (
+                      <div className="bg-white px-4 py-2 -mt-4 rounded-b-lg">
+                        <SharedIndicator shared={folder.shared} permission={folder.permission} />
+                      </div>
                     )}
 
                     {/* Notebooks in Folder */}
@@ -563,6 +580,8 @@ export default function FoldersPage() {
                               color={notebook.color}
                               noteCount={noteCount}
                               archived={notebook.archived}
+                              shared={notebook.shared}
+                              permission={notebook.permission}
                               isEditing={editingNotebookId === notebook.id}
                               editingName={editNotebookName}
                               onEditingNameChange={setEditNotebookName}
