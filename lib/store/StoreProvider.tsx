@@ -16,14 +16,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isClient) return
     
-    logger.info('Initializing store...')
-    initializeStore()
-      .then(() => {
-        logger.info('Store initialized successfully')
-      })
-      .catch((error) => {
-        logger.error('Store initialization failed', error)
-      })
+    // Add a small delay to ensure auth state is ready after login redirect
+    const initTimer = setTimeout(() => {
+      logger.info('Initializing store...')
+      initializeStore()
+        .then(() => {
+          logger.info('Store initialized successfully')
+        })
+        .catch((error) => {
+          logger.error('Store initialization failed', error)
+        })
+    }, 100)
+    
+    return () => clearTimeout(initTimer)
   }, [isClient, initializeStore])
   
   // Don't render children until client-side to avoid hydration mismatch

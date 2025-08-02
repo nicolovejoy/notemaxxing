@@ -626,6 +626,19 @@ export const useStore = create<AppState>()(
           return
         }
 
+        // Check if we have an authenticated user
+        const supabase = createClient()
+        if (!supabase) {
+          console.log('[Store] No Supabase client available')
+          return
+        }
+        
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          console.log('[Store] No authenticated user, skipping initialization')
+          return
+        }
+
         console.log('[Store] Starting initialization...')
         set((state) => {
           state.syncState.status = 'loading'

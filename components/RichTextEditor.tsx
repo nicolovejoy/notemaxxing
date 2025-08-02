@@ -147,10 +147,17 @@ export function RichTextEditor({
     if (selectedText && floatingButton.show) {
       // Handle selection replacement
       const { from, to } = editor.state.selection;
+      
+      // Create a temporary div to parse the enhanced HTML and extract just the text content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = previewData.enhanced;
+      const enhancedTextContent = tempDiv.innerHTML;
+      
       editor.chain()
         .focus()
         .setTextSelection({ from, to })
-        .insertContent(previewData.enhanced)
+        .deleteSelection()
+        .insertContent(enhancedTextContent)
         .run();
     } else {
       // Handle full document replacement
