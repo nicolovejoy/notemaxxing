@@ -172,6 +172,11 @@ FOR INSERT WITH CHECK (
 -- 4. PERMISSIONS TABLE POLICIES
 -- ========================================
 
+-- Drop existing permissions policies
+DROP POLICY IF EXISTS "Users can view relevant permissions" ON permissions;
+DROP POLICY IF EXISTS "Resource owners can grant permissions" ON permissions;
+DROP POLICY IF EXISTS "Owners and users can revoke permissions" ON permissions;
+
 -- Users can view permissions for resources they own or have access to
 CREATE POLICY "Users can view relevant permissions" ON permissions
 FOR SELECT USING (
@@ -219,6 +224,12 @@ FOR DELETE USING (
 -- ========================================
 -- 5. SHARE INVITATIONS POLICIES
 -- ========================================
+
+-- Drop existing share_invitations policies
+DROP POLICY IF EXISTS "Users can view relevant invitations" ON share_invitations;
+DROP POLICY IF EXISTS "Resource owners can create invitations" ON share_invitations;
+DROP POLICY IF EXISTS "Recipients can accept invitations" ON share_invitations;
+DROP POLICY IF EXISTS "Users can delete relevant invitations" ON share_invitations;
 
 -- Users can view invitations they sent or received
 CREATE POLICY "Users can view relevant invitations" ON share_invitations
