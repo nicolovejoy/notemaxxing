@@ -30,6 +30,10 @@ export default function SharePage() {
     const checkAuthAndLoadInvitation = async () => {
       try {
         const supabase = createClient()
+        if (!supabase) {
+          throw new Error('Unable to initialize Supabase client')
+        }
+        
         const { data: { user } } = await supabase.auth.getUser()
         
         setIsAuthenticated(!!user)
