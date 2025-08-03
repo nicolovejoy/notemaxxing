@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, Users, Trash2, Check, AlertCircle, Copy } from 'lucide-react'
-import { Modal, Button } from './ui'
+import { X, Users, Trash2, Check, AlertCircle, Copy, Link } from 'lucide-react'
+import { Modal, Button, IconButton } from './ui'
 import { sharingApi } from '@/lib/api/sharing'
+import { createClient } from '@/lib/supabase/client'
 import type { ResourceType, Permission, SharedResource } from '@/lib/types/sharing'
 
 interface ShareDialogProps {
@@ -19,14 +20,17 @@ export function ShareDialog({
   resourceName,
   onClose
 }: ShareDialogProps) {
+  const [email, setEmail] = useState('')
   const [permission, setPermission] = useState<Permission>('read')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [sharedWith, setSharedWith] = useState<SharedResource[]>([])
   const [loadingShares, setLoadingShares] = useState(true)
-  const [shareLink, setShareLink] = useState<string | null>(null)
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
+  const [invitationLink, setInvitationLink] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [copiedText, setCopiedText] = useState(false)
 
   // Load shares function
   const loadShares = useCallback(async () => {
@@ -52,8 +56,22 @@ export function ShareDialog({
     loadShares()
   }, [loadShares])
 
+  // Get current user email
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      const supabase = createClient()
+      if (!supabase) return
+      
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.email) {
+        setCurrentUserEmail(user.email)
+      }
+    }
+    getCurrentUser()
+  }, [])
 
-  const handleGenerateLink = async () => {
+
+  const handleSendInvitation = async () => {
     setLoading(true)
     setError(null)
     setSuccess(null)
@@ -62,31 +80,47 @@ export function ShareDialog({
       const response = await sharingApi.generateShareLink({
         resourceType,
         resourceId,
-        permission
+        permission,
+        email
       })
 
       const link = `${window.location.origin}/share/${response.invitationId}`
-      setShareLink(link)
-      setSuccess('Share link generated!')
+      setInvitationLink(link)
+      setSuccess('Invitation link generated!')
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to generate share link')
+      setError(err instanceof Error ? err.message : 'Failed to generate invitation')
     } finally {
       setLoading(false)
     }
   }
 
+
   const handleCopyLink = async () => {
-    if (!shareLink) return
+    if (!invitationLink) return
     
     try {
-      await navigator.clipboard.writeText(shareLink)
+      await navigator.clipboard.writeText(invitationLink)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      setError('Failed to copy link to clipboard')
+      setError('Failed to copy link')
+    }
+  }
+
+  const handleCopyInvitationText = async () => {
+    if (!invitationLink || !email) return
+    
+    const invitationText = `I'm inviting you to share the ${resourceType} called "${resourceName}". Click this link to accept: ${invitationLink}`
+    
+    try {
+      await navigator.clipboard.writeText(invitationText)
+      setCopiedText(true)
+      setTimeout(() => setCopiedText(false), 2000)
+    } catch {
+      setError('Failed to copy invitation text')
     }
   }
 
@@ -108,84 +142,128 @@ export function ShareDialog({
       <div className="p-6 max-w-md w-full">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold">Share {resourceName}</h2>
-          <button
+          <IconButton
+            icon={X}
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+            size="sm"
+            variant="ghost"
+          />
         </div>
 
         {/* Share form */}
         <div className="space-y-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Permission level
-            </label>
-            <select
-              value={permission}
-              onChange={(e) => setPermission(e.target.value as Permission)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-              disabled={loading || !!shareLink}
-            >
-              <option value="read">Can view</option>
-              <option value="write">Can edit</option>
-            </select>
-          </div>
-
-          {!shareLink ? (
-            <Button
-              onClick={handleGenerateLink}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? 'Generating...' : 'Generate Share Link'}
-            </Button>
-          ) : (
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-50 rounded-lg">
+          {!invitationLink ? (
+            <>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Share link
+                  Email address
                 </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={shareLink}
-                    readOnly
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
-                  />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter email address"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  disabled={loading}
+                />
+                {email && currentUserEmail && email.toLowerCase() === currentUserEmail.toLowerCase() && (
+                  <p className="text-red-600 text-sm mt-1">You cannot share with yourself</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Permission level
+                </label>
+                <select
+                  value={permission}
+                  onChange={(e) => setPermission(e.target.value as Permission)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                  disabled={loading}
+                >
+                  <option value="read">Can view</option>
+                  <option value="write">Can edit</option>
+                </select>
+              </div>
+
+              <Button
+                onClick={handleSendInvitation}
+                disabled={loading || !email || !!(email && currentUserEmail && email.toLowerCase() === currentUserEmail.toLowerCase())}
+                className="w-full"
+              >
+                {loading ? 'Generating...' : 'Generate Invitation Link'}
+              </Button>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h3 className="text-sm font-medium text-gray-900 mb-2">Invitation for {email}</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Send this link to {email}. The invitation expires in 7 days.
+                </p>
+                
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Share link</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={invitationLink}
+                        readOnly
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
+                      />
+                      <Button
+                        onClick={handleCopyLink}
+                        size="sm"
+                        variant="secondary"
+                        className="flex items-center gap-1"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Link className="h-4 w-4" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
                   <Button
-                    onClick={handleCopyLink}
-                    size="sm"
+                    onClick={handleCopyInvitationText}
                     variant="secondary"
-                    className="flex items-center gap-1"
+                    className="w-full flex items-center justify-center gap-2"
                   >
-                    {copied ? (
+                    {copiedText ? (
                       <>
                         <Check className="h-4 w-4" />
-                        Copied!
+                        Invitation Copied!
                       </>
                     ) : (
                       <>
                         <Copy className="h-4 w-4" />
-                        Copy
+                        Copy Invitation Text
                       </>
                     )}
                   </Button>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Anyone with this link can access this {resourceType}
-                </p>
               </div>
+
               <Button
                 onClick={() => {
-                  setShareLink(null)
+                  setInvitationLink(null)
+                  setEmail('')
                   setPermission('read')
+                  loadShares()
                 }}
                 variant="secondary"
                 className="w-full"
               >
-                Generate New Link
+                Create Another Invitation
               </Button>
             </div>
           )}
@@ -233,13 +311,13 @@ export function ShareDialog({
                       {share.permission === 'write' ? 'Can edit' : 'Can view'}
                     </div>
                   </div>
-                  <button
+                  <IconButton
+                    icon={Trash2}
                     onClick={() => handleRevoke(share.id)}
-                    className="p-1 hover:bg-gray-200 rounded transition-colors"
+                    size="sm"
+                    variant="danger"
                     title="Revoke access"
-                  >
-                    <Trash2 className="h-4 w-4 text-gray-500 hover:text-red-600" />
-                  </button>
+                  />
                 </div>
               ))}
             </div>

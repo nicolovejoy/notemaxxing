@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
-import type { Folder, Notebook, Note, Quiz, QuizQuestion, SyncState, OptimisticUpdate } from './types'
-import { foldersApi, notebooksApi, notesApi, quizzesApi } from './supabase-helpers'
+import type { Folder, Notebook, Note, Quiz, QuizQuestion, SyncState, OptimisticUpdate, ShareInvitation, ResourcePermission } from './types'
+import { foldersApi, notebooksApi, notesApi, quizzesApi, sharesApi } from './supabase-helpers'
 import { SeedService } from '../seed-templates'
 import { createClient } from '../supabase/client'
 
@@ -12,6 +12,10 @@ interface AppState {
   notebooks: Notebook[]
   notes: Note[]
   quizzes: Quiz[]
+  
+  // Share Data
+  sharePermissions: Map<string, ResourcePermission[]>
+  shareInvitations: ShareInvitation[]
   
   // UI State
   selectedFolderId: string | null
@@ -53,6 +57,9 @@ interface AppState {
   updateQuiz: (id: string, updates: Partial<Quiz>) => Promise<void>
   deleteQuiz: (id: string) => Promise<void>
   
+  // Actions - Shares
+  loadShareMetadata: () => Promise<void>
+  
   // UI Actions
   setSelectedFolder: (id: string | null) => void
   setSelectedNotebook: (id: string | null) => void
@@ -77,6 +84,8 @@ export const useStore = create<AppState>()(
       notebooks: [],
       notes: [],
       quizzes: [],
+      sharePermissions: new Map(),
+      shareInvitations: [],
       selectedFolderId: null,
       selectedNotebookId: null,
       notebookSort: 'recent',
@@ -589,6 +598,33 @@ export const useStore = create<AppState>()(
         }
       },
 
+      // Share Actions
+      loadShareMetadata: async () => {
+        try {
+          const shareData = await sharesApi.getShareMetadata()
+          
+          // Process permissions into a Map for efficient lookup
+          const permissionsMap = new Map<string, ResourcePermission[]>()
+          if (shareData.permissions) {
+            shareData.permissions.forEach(permission => {
+              const key = `${permission.resource_type}:${permission.resource_id}`
+              if (!permissionsMap.has(key)) {
+                permissionsMap.set(key, [])
+              }
+              permissionsMap.get(key)!.push(permission)
+            })
+          }
+          
+          set((state) => {
+            state.sharePermissions = permissionsMap
+            state.shareInvitations = shareData.invitations || []
+          })
+        } catch (error) {
+          console.warn('Failed to load share metadata:', error)
+          // Don't set error state - sharing is non-critical
+        }
+      },
+
       // UI Actions
       setSelectedFolder: (id: string | null) => set((state) => {
         state.selectedFolderId = id
@@ -674,6 +710,7 @@ export const useStore = create<AppState>()(
             get().loadNotebooks(),
             get().loadNotes(),
             get().loadQuizzes(),
+            get().loadShareMetadata(),
           ])
           
           // Check if any loads failed
@@ -681,7 +718,7 @@ export const useStore = create<AppState>()(
           if (failures.length > 0) {
             const errorMessages = failures.map((f, i) => {
               const errorMsg = (f as PromiseRejectedResult).reason?.message || 'Unknown error'
-              const dataType = ['folders', 'notebooks', 'notes', 'quizzes'][i]
+              const dataType = ['folders', 'notebooks', 'notes', 'quizzes', 'shares'][i]
               return `${dataType}: ${errorMsg}`
             }).join(', ')
             
@@ -716,6 +753,8 @@ export const useStore = create<AppState>()(
           state.notebooks = []
           state.notes = []
           state.quizzes = []
+          state.sharePermissions = new Map()
+          state.shareInvitations = []
           state.selectedFolderId = null
           state.selectedNotebookId = null
           state.syncState = {

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Folder, Notebook, Note, Quiz } from './types'
+import type { Folder, Notebook, Note, Quiz, ShareInvitation, ResourcePermission } from './types'
 import { logger, logApiCall } from '@/lib/debug/logger'
 import { handleSupabaseError } from './error-handler'
 
@@ -406,5 +406,42 @@ export const quizzesApi = {
       .eq('id', id)
     
     if (error) throw error
+  }
+}
+
+export const sharesApi = {
+  async getShareMetadata() {
+    try {
+      const supabase = await getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No authenticated user')
+      
+      // Get all permissions for the user
+      const { data: permissions, error: permError } = await supabase
+        .from('permissions')
+        .select('*')
+        .or(`user_id.eq.${user.id},granted_by.eq.${user.id}`)
+      
+      if (permError) throw permError
+      
+      // Get share invitations created by the user
+      const { data: invitations, error: invError } = await supabase
+        .from('share_invitations')
+        .select('*')
+        .eq('invited_by', user.id)
+      
+      if (invError) throw invError
+      
+      return {
+        permissions: permissions as ResourcePermission[],
+        invitations: invitations as ShareInvitation[]
+      }
+    } catch {
+      // Silently fail - sharing metadata is optional
+      return {
+        permissions: [],
+        invitations: []
+      }
+    }
   }
 }

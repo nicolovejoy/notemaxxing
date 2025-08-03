@@ -6,6 +6,12 @@ export async function POST(request: NextRequest) {
     // Get authenticated client
     const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
     if (error) return error
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      )
+    }
 
     // Parse request body
     const body = await request.json()

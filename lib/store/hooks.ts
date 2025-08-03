@@ -212,3 +212,20 @@ export const useMostRecentNotebook = (folderId: string | null) => {
     return mostRecentNotebook
   }, [folderId, notebooks, notes])
 }
+
+// Share hooks
+export const useSharePermissions = (resourceType: 'folder' | 'notebook', resourceId: string) => {
+  const sharePermissions = useStore((state) => state.sharePermissions)
+  const key = `${resourceType}:${resourceId}`
+  return sharePermissions.get(key) || []
+}
+
+export const useShareInvitations = () => {
+  const shareInvitations = useStore((state) => state.shareInvitations)
+  return shareInvitations
+}
+
+export const useIsShared = (resourceType: 'folder' | 'notebook', resourceId: string) => {
+  const permissions = useSharePermissions(resourceType, resourceId)
+  return permissions.length > 0
+}

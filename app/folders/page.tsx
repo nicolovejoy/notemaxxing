@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Trash2, FolderOpen, Archive, SortAsc, Edit2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
@@ -25,7 +25,6 @@ import {
   useNotebookSort,
   useGlobalSearch
 } from "@/lib/store";
-import { useStore } from "@/lib/store/useStore";
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
 import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
 
@@ -37,8 +36,6 @@ export default function FoldersPage() {
   const { createFolder, updateFolder, deleteFolder } = useFolderActions();
   const { createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useNotebookActions();
   const { error, setSyncError } = useSyncState();
-  const { loadNotebooks } = useStore();
-  
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR);
@@ -54,13 +51,6 @@ export default function FoldersPage() {
   const { notebookSort, setNotebookSort } = useNotebookSort();
   const { globalSearch, setGlobalSearch } = useGlobalSearch();
   const navigateToRecentNotebook = useNavigateToRecentNotebook();
-
-  // Ensure notebooks are loaded
-  useEffect(() => {
-    if (folders.length > 0 && notebooks.length === 0 && !notebooksLoading) {
-      loadNotebooks(true);
-    }
-  }, [folders.length, notebooks.length, notebooksLoading, loadNotebooks]);
   
   // Filter folders based on search - now searches folder names, notebook names, and note content
   const filteredFolders = useMemo(() => {

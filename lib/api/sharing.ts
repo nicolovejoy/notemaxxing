@@ -18,7 +18,7 @@ export const sharingApi = {
     return response.json()
   },
 
-  async generateShareLink(data: { resourceType: ResourceType; resourceId: string; permission: Permission }) {
+  async generateShareLink(data: { resourceType: ResourceType; resourceId: string; permission: Permission; email: string }) {
     const response = await fetch(`${API_BASE}/generate-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

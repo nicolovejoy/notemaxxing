@@ -2,6 +2,15 @@
 
 ## 🚀 Immediate Priorities
 
+### 0. Refactor State Management Architecture 🆕
+
+- [ ] Move Zustand store outside React lifecycle
+- [ ] Load all user data (including shares) on initial login
+- [ ] Make React components stateless consumers
+- [ ] Add real-time sync capabilities
+
+**Why**: Current architecture blocks sharing and won't scale. Zustand lives inside React instead of being a proper external state manager.
+
 ### 1. ~~Fix Data Loading on Login (Production)~~ ✅ FIXED
 
 - [x] Folders don't load after login in production
@@ -9,12 +18,24 @@
 - [x] Need to ensure store initializes properly after auth
 - [x] **FIXED**: Added auth state listener and retry logic (PR #1)
 
-### 2. Implement Sharing Features
+### 2. ~~Implement Sharing Features~~ ⚠️ BLOCKED
 
-- [ ] Share folders with other users (read/write permissions)
-- [ ] Share individual notebooks
-- [ ] Share links that work without login (public access)
-- [ ] Manage shared permissions (revoke access)
+**Status**: UI built, but blocked by state architecture issues
+
+**What's Done**:
+
+- [x] Database tables (share_invitations, permissions)
+- [x] API endpoints (/api/shares/\*)
+- [x] ShareDialog UI component
+- [x] Share acceptance flow (/share/[id])
+
+**What's Broken**:
+
+- [ ] Can't create invitations (FK constraint to auth.users)
+- [ ] Share metadata doesn't load with initial data
+- [ ] State management needs refactoring
+
+**See**: ARCHITECTURE.md for technical details
 
 ### 3. Add Encryption for Shared Content
 

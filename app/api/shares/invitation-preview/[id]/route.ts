@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPublicSupabaseClient } from '@/lib/api/supabase-server-helpers'
 
+// Public endpoint - returns minimal invitation info for unauthenticated users
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -16,19 +17,19 @@ export async function GET(
     }
     
     const { id: invitationId } = await params
-    console.log('[Get Invitation] Looking for invitation:', invitationId)
-
-    // Get invitation details
+    console.log('[Invitation Preview] Looking for invitation:', invitationId)
+    
+    // Query invitation with minimal fields
     const { data: invitation, error: inviteError } = await supabase
       .from('share_invitations')
-      .select('*')
+      .select('resource_type, resource_id, invited_email, expires_at, accepted_at, invited_by')
       .eq('id', invitationId)
       .single()
 
     if (inviteError || !invitation) {
-      console.error('[Get Invitation] Error or not found:', inviteError)
+      console.error('[Invitation Preview] Error:', inviteError)
       return NextResponse.json(
-        { error: 'Invitation not found' },
+        { valid: false, error: 'Invitation not found' },
         { status: 404 }
       )
     }
@@ -36,7 +37,7 @@ export async function GET(
     // Check if invitation has expired
     if (new Date(invitation.expires_at) < new Date()) {
       return NextResponse.json(
-        { error: 'This invitation has expired' },
+        { valid: false, error: 'This invitation has expired' },
         { status: 410 }
       )
     }
@@ -44,12 +45,12 @@ export async function GET(
     // Check if already accepted
     if (invitation.accepted_at) {
       return NextResponse.json(
-        { error: 'This invitation has already been accepted' },
+        { valid: false, error: 'This invitation has already been accepted' },
         { status: 409 }
       )
     }
 
-    // Get resource details
+    // Get minimal resource details
     let resourceName = ''
     if (invitation.resource_type === 'folder') {
       const { data: folder } = await supabase
@@ -69,8 +70,8 @@ export async function GET(
       resourceName = notebook?.name || 'Unnamed notebook'
     }
 
-    // Get inviter's profile if we have invited_by
-    let inviterEmail = 'Unknown user'
+    // Get inviter's email (not the user ID)
+    let inviterEmail = 'Someone'
     if (invitation.invited_by) {
       const { data: inviterProfile } = await supabase
         .from('profiles')
@@ -83,21 +84,20 @@ export async function GET(
       }
     }
 
+    // Return minimal, safe information
     return NextResponse.json({
-      id: invitation.id,
+      valid: true,
       resourceType: invitation.resource_type,
-      resourceId: invitation.resource_id,
       resourceName,
-      permission: invitation.permission,
       invitedBy: inviterEmail,
-      invitedEmail: invitation.invited_email,
-      expiresAt: invitation.expires_at,
+      requiresEmail: invitation.invited_email,
+      expiresAt: invitation.expires_at
     })
 
   } catch (error) {
-    console.error('Unexpected error getting invitation:', error)
+    console.error('Unexpected error in invitation preview:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { valid: false, error: 'Internal server error' },
       { status: 500 }
     )
   }

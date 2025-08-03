@@ -1,14 +1,39 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedSupabaseClient } from '@/lib/api/supabase-server-helpers'
+
+// Type definitions
+interface PermissionItem {
+  id: string
+  resource_type: string
+  resource_id: string
+  user_id?: string
+  granted_by?: string
+  permission: string
+  created_at: string
+}
+
+interface InvitationItem {
+  id: string
+  resource_type: string
+  resource_id: string
+  invited_by?: string
+  invited_email: string
+  permission: string
+  created_at: string
+  expires_at: string
+  accepted_at?: string | null
+}
 
 export async function GET() {
   try {
-    const supabase = await createClient()
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get authenticated client
+    const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
+    if (error) return error
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      )
     }
 
     // Get user's email for pending invitations
@@ -19,70 +44,65 @@ export async function GET() {
       .single()
 
     // Get resources shared BY the user
-    const { data: sharedByUser, error: sharedByError } = await supabase
+    const { data: sharedByUser } = await supabase
       .from('permissions')
-      .select(`
-        id,
-        resource_type,
-        resource_id,
-        user_id,
-        permission,
-        created_at,
-        profiles!permissions_user_id_fkey (
-          email,
-          full_name
-        )
-      `)
+      .select('*')
       .eq('granted_by', user.id)
 
-    if (sharedByError) {
-      console.error('Error fetching shared by user:', sharedByError)
-    }
+    // Silently handle errors - sharing data is optional
 
     // Get resources shared WITH the user
-    const { data: sharedWithUser, error: sharedWithError } = await supabase
+    const { data: sharedWithUser } = await supabase
       .from('permissions')
-      .select(`
-        id,
-        resource_type,
-        resource_id,
-        permission,
-        created_at,
-        granted_by,
-        profiles!permissions_granted_by_fkey (
-          email,
-          full_name
-        )
-      `)
+      .select('*')
       .eq('user_id', user.id)
 
-    if (sharedWithError) {
-      console.error('Error fetching shared with user:', sharedWithError)
-    }
+    // Silently handle errors - sharing data is optional
 
     // Get pending invitations for the user
     let pendingInvitations = []
     if (profile?.email) {
       const { data: invitations, error: inviteError } = await supabase
         .from('share_invitations')
-        .select(`
-          id,
-          resource_type,
-          resource_id,
-          permission,
-          created_at,
-          expires_at,
-          profiles!share_invitations_invited_by_fkey (
-            email,
-            full_name
-          )
-        `)
+        .select('*')
         .eq('invited_email', profile.email)
         .is('accepted_at', null)
         .gt('expires_at', new Date().toISOString())
 
       if (!inviteError && invitations) {
         pendingInvitations = invitations
+      }
+    }
+
+    // Collect all user IDs we need profiles for
+    const userIds = new Set<string>()
+    
+    // Collect user IDs from permissions
+    ;(sharedByUser || []).forEach((item: PermissionItem) => {
+      if (item.user_id) userIds.add(item.user_id)
+    })
+    ;(sharedWithUser || []).forEach((item: PermissionItem) => {
+      if (item.granted_by) userIds.add(item.granted_by)
+    })
+    ;(pendingInvitations || []).forEach((item: InvitationItem) => {
+      if (item.invited_by) userIds.add(item.invited_by)
+    })
+    
+    // Fetch all user profiles at once
+    const userProfiles: Record<string, { email: string; full_name: string | null }> = {}
+    if (userIds.size > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .in('id', Array.from(userIds))
+      
+      if (profiles) {
+        profiles.forEach((profile: { id: string; email: string; full_name: string | null }) => {
+          userProfiles[profile.id] = {
+            email: profile.email,
+            full_name: profile.full_name
+          }
+        })
       }
     }
 
@@ -131,34 +151,8 @@ export async function GET() {
     }
 
     // Format response
-    interface SharedItem {
-      id: string
-      resource_type: string
-      resource_id: string
-      user_id?: string
-      granted_by?: string
-      permission: string
-      created_at: string
-      profiles?: {
-        email?: string
-        full_name?: string | null
-      }
-    }
 
-    interface InvitationItem {
-      id: string
-      resource_type: string
-      resource_id: string
-      permission: string
-      created_at: string
-      expires_at: string
-      profiles?: {
-        email?: string
-        full_name?: string | null
-      }
-    }
-
-    const formatSharedItem = (item: SharedItem, type: 'shared_by' | 'shared_with') => {
+    const formatSharedItem = (item: PermissionItem, type: 'shared_by' | 'shared_with') => {
       const resource = item.resource_type === 'folder' 
         ? folderDetails[item.resource_id]
         : notebookDetails[item.resource_id]
@@ -173,14 +167,14 @@ export async function GET() {
         permission: item.permission,
         user: type === 'shared_by' 
           ? {
-              id: item.user_id,
-              email: item.profiles?.email || '',
-              name: item.profiles?.full_name || ''
+              id: item.user_id || '',
+              email: userProfiles[item.user_id || '']?.email || '',
+              name: userProfiles[item.user_id || '']?.full_name || ''
             }
           : {
-              id: item.granted_by,
-              email: item.profiles?.email || '',
-              name: item.profiles?.full_name || ''
+              id: item.granted_by || '',
+              email: userProfiles[item.granted_by || '']?.email || '',
+              name: userProfiles[item.granted_by || '']?.full_name || ''
             },
         createdAt: item.created_at
       }
@@ -200,8 +194,8 @@ export async function GET() {
         resourceColor: resource?.color || '',
         permission: invitation.permission,
         invitedBy: {
-          email: invitation.profiles?.email || '',
-          name: invitation.profiles?.full_name || ''
+          email: userProfiles[invitation.invited_by || '']?.email || '',
+          name: userProfiles[invitation.invited_by || '']?.full_name || ''
         },
         createdAt: invitation.created_at,
         expiresAt: invitation.expires_at
@@ -209,8 +203,8 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      sharedByMe: (sharedByUser || []).map((item: SharedItem) => formatSharedItem(item, 'shared_by')),
-      sharedWithMe: (sharedWithUser || []).map((item: SharedItem) => formatSharedItem(item, 'shared_with')),
+      sharedByMe: (sharedByUser || []).map((item: PermissionItem) => formatSharedItem(item, 'shared_by')),
+      sharedWithMe: (sharedWithUser || []).map((item: PermissionItem) => formatSharedItem(item, 'shared_with')),
       pendingInvitations: pendingInvitations.map(formatInvitation)
     })
 
