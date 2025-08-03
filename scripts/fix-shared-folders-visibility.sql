@@ -3,10 +3,10 @@
 -- We need to add a policy that allows users to see folders they have permissions for
 
 -- Check existing policies on folders table
-SELECT polname, polcmd, qual 
+SELECT policyname, cmd, qual 
 FROM pg_policies 
 WHERE tablename = 'folders'
-ORDER BY polname;
+ORDER BY policyname;
 
 -- Create policy to allow users to view folders they have permissions for
 CREATE POLICY "Users can view shared folders" ON folders
@@ -20,10 +20,10 @@ CREATE POLICY "Users can view shared folders" ON folders
   );
 
 -- Similarly for notebooks - check if policy exists
-SELECT polname, polcmd, qual 
+SELECT policyname, cmd, qual 
 FROM pg_policies 
 WHERE tablename = 'notebooks'
-ORDER BY polname;
+ORDER BY policyname;
 
 -- Create policy to allow users to view notebooks they have permissions for
 CREATE POLICY "Users can view shared notebooks" ON notebooks
@@ -48,8 +48,8 @@ CREATE POLICY "Users can view notebooks in shared folders" ON notebooks
   );
 
 -- Verify the policies were created
-SELECT polname, polcmd, qual 
+SELECT policyname, cmd, qual 
 FROM pg_policies 
 WHERE tablename IN ('folders', 'notebooks')
-AND polname LIKE '%shared%'
-ORDER BY tablename, polname;
+AND policyname LIKE '%shared%'
+ORDER BY tablename, policyname;
