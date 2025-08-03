@@ -17,7 +17,7 @@ export default function SharePage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [invitationDetails, setInvitationDetails] = useState<{
-    resourceType: string
+    resourceType: 'folder' | 'notebook'
     resourceId: string
     resourceName: string
     permission: string
@@ -62,6 +62,12 @@ export default function SharePage() {
     if (!isAuthenticated) {
       // Redirect to login with return URL
       router.push(`/auth/login?redirect=/share/${invitationId}`)
+      return
+    }
+
+    // Early return if no invitation details
+    if (!invitationDetails) {
+      setError('Invitation details not loaded')
       return
     }
 
@@ -158,7 +164,7 @@ export default function SharePage() {
         <div className="space-y-3">
           <Button 
             onClick={handleAcceptInvitation} 
-            disabled={loading}
+            disabled={loading || !invitationDetails}
             className="w-full"
           >
             {loading ? 'Processing...' : (isAuthenticated ? 'Accept Invitation' : 'Sign in to Accept')}

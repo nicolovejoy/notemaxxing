@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getPublicSupabaseClient } from '@/lib/api/supabase-server-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient()
+    const { client: supabase, error } = await getPublicSupabaseClient()
+    if (error) return error
+    
     const { id: invitationId } = await params
 
     // Get invitation details
-    const { data: invitation, error } = await supabase
+    const { data: invitation, error: inviteError } = await supabase
       .from('share_invitations')
       .select(`
         *,
@@ -19,7 +21,7 @@ export async function GET(
       .eq('id', invitationId)
       .single()
 
-    if (error || !invitation) {
+    if (inviteError || !invitation) {
       return NextResponse.json(
         { error: 'Invitation not found' },
         { status: 404 }
