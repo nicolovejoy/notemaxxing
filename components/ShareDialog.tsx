@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { X, Mail, Users, Trash2, Check, AlertCircle } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { X, Users, Trash2, Check, AlertCircle, Copy } from 'lucide-react'
 import { Modal, Button } from './ui'
 import { sharingApi } from '@/lib/api/sharing'
 import type { ResourceType, Permission, SharedResource } from '@/lib/types/sharing'
@@ -19,20 +19,17 @@ export function ShareDialog({
   resourceName,
   onClose
 }: ShareDialogProps) {
-  const [email, setEmail] = useState('')
   const [permission, setPermission] = useState<Permission>('read')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [sharedWith, setSharedWith] = useState<SharedResource[]>([])
   const [loadingShares, setLoadingShares] = useState(true)
+  const [shareLink, setShareLink] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
 
-  // Load current shares
-  useEffect(() => {
-    loadShares()
-  }, [resourceId])
-
-  const loadShares = async () => {
+  // Load shares function
+  const loadShares = useCallback(async () => {
     try {
       setLoadingShares(true)
       const shares = await sharingApi.listShares()
@@ -48,40 +45,48 @@ export function ShareDialog({
     } finally {
       setLoadingShares(false)
     }
-  }
+  }, [resourceId, resourceType])
 
-  const handleShare = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!email.trim()) {
-      setError('Please enter an email address')
-      return
-    }
+  // Load current shares
+  useEffect(() => {
+    loadShares()
+  }, [loadShares])
 
+
+  const handleGenerateLink = async () => {
     setLoading(true)
     setError(null)
     setSuccess(null)
 
     try {
-      await sharingApi.sendInvitation({
+      const response = await sharingApi.generateShareLink({
         resourceType,
         resourceId,
-        invitedEmail: email.trim(),
         permission
       })
 
-      setSuccess(`Invitation sent to ${email}`)
-      setEmail('')
-      
-      // Reload shares
-      loadShares()
+      const link = `${window.location.origin}/share/${response.invitationId}`
+      setShareLink(link)
+      setSuccess('Share link generated!')
       
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send invitation')
+      setError(err instanceof Error ? err.message : 'Failed to generate share link')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCopyLink = async () => {
+    if (!shareLink) return
+    
+    try {
+      await navigator.clipboard.writeText(shareLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setError('Failed to copy link to clipboard')
     }
   }
 
@@ -93,8 +98,8 @@ export function ShareDialog({
     try {
       await sharingApi.revokePermission(permissionId)
       loadShares()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to revoke permission')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to revoke permission')
     }
   }
 
@@ -112,24 +117,7 @@ export function ShareDialog({
         </div>
 
         {/* Share form */}
-        <form onSubmit={handleShare} className="space-y-4 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email address
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter email to share with"
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={loading}
-              />
-            </div>
-          </div>
-
+        <div className="space-y-4 mb-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Permission level
@@ -137,13 +125,70 @@ export function ShareDialog({
             <select
               value={permission}
               onChange={(e) => setPermission(e.target.value as Permission)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={loading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+              disabled={loading || !!shareLink}
             >
               <option value="read">Can view</option>
               <option value="write">Can edit</option>
             </select>
           </div>
+
+          {!shareLink ? (
+            <Button
+              onClick={handleGenerateLink}
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? 'Generating...' : 'Generate Share Link'}
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Share link
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={shareLink}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
+                  />
+                  <Button
+                    onClick={handleCopyLink}
+                    size="sm"
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Anyone with this link can access this {resourceType}
+                </p>
+              </div>
+              <Button
+                onClick={() => {
+                  setShareLink(null)
+                  setPermission('read')
+                }}
+                variant="secondary"
+                className="w-full"
+              >
+                Generate New Link
+              </Button>
+            </div>
+          )}
 
           {error && (
             <div className="flex items-center gap-2 text-red-600 text-sm">
@@ -158,15 +203,7 @@ export function ShareDialog({
               {success}
             </div>
           )}
-
-          <Button
-            type="submit"
-            disabled={loading || !email.trim()}
-            className="w-full"
-          >
-            {loading ? 'Sending...' : 'Send invitation'}
-          </Button>
-        </form>
+        </div>
 
         {/* Current shares */}
         <div className="border-t pt-4">

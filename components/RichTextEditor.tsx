@@ -26,7 +26,6 @@ export function RichTextEditor({
   const [floatingButton, setFloatingButton] = useState<{ x: number; y: number; show: boolean }>({ x: 0, y: 0, show: false });
   const [selectedText, setSelectedText] = useState('');
   const [selectedRange, setSelectedRange] = useState<{ from: number; to: number } | null>(null);
-  const [fullDocumentContent, setFullDocumentContent] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<{ original: string; enhanced: string; improvements: string[]; isSelection: boolean }>({ original: '', enhanced: '', improvements: [], isSelection: false });
   const floatingButtonRef = useRef<HTMLDivElement>(null);

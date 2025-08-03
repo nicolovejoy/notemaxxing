@@ -36,18 +36,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if invitation is for this user
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', user.id)
-      .single()
+    // Check if invitation is for this user (skip for link-based invitations)
+    if (invitation.invited_email !== 'link@share.notemaxxing') {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single()
 
-    if (!profile || profile.email !== invitation.invited_email) {
-      return NextResponse.json(
-        { error: 'This invitation is not for you' },
-        { status: 403 }
-      )
+      if (!profile || profile.email !== invitation.invited_email) {
+        return NextResponse.json(
+          { error: 'This invitation is not for you' },
+          { status: 403 }
+        )
+      }
     }
 
     // Check if invitation is already accepted

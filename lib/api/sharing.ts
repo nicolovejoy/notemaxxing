@@ -18,6 +18,21 @@ export const sharingApi = {
     return response.json()
   },
 
+  async generateShareLink(data: { resourceType: ResourceType; resourceId: string; permission: Permission }) {
+    const response = await fetch(`${API_BASE}/generate-link`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to generate share link')
+    }
+    
+    return response.json()
+  },
+
   async acceptInvitation(invitationId: string) {
     const response = await fetch(`${API_BASE}/accept`, {
       method: 'POST',
