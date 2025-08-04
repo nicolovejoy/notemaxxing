@@ -16,26 +16,26 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { ShareButton } from "@/components/ShareButton";
 import { SharedIndicator } from "@/components/SharedIndicator";
 import { 
-  useFolders, 
-  useFolderActions,
+  useFolders,
   useNotebooks,
-  useNotebookActions,
   useNotes,
+  useDataActions,
   useSyncState,
   useNotebookSort,
-  useGlobalSearch
+  useGlobalSearch,
+  useUIActions
 } from "@/lib/store";
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
 import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
 
 export default function FoldersPage() {
   const router = useRouter();
-  const { folders, loading: foldersLoading } = useFolders();
-  const { notebooks, loading: notebooksLoading } = useNotebooks(null, true);
-  const { notes } = useNotes();
-  const { createFolder, updateFolder, deleteFolder } = useFolderActions();
-  const { createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useNotebookActions();
-  const { error, setSyncError } = useSyncState();
+  const folders = useFolders();
+  const notebooks = useNotebooks(true); // includeArchived = true
+  const notes = useNotes();
+  const { createFolder, updateFolder, deleteFolder, createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useDataActions();
+  const syncState = useSyncState();
+  const { setNotebookSort, setGlobalSearch } = useUIActions();
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR);
@@ -48,8 +48,8 @@ export default function FoldersPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [isCreatingFolderLoading, setIsCreatingFolderLoading] = useState(false);
   
-  const { notebookSort, setNotebookSort } = useNotebookSort();
-  const { globalSearch, setGlobalSearch } = useGlobalSearch();
+  const notebookSort = useNotebookSort();
+  const globalSearch = useGlobalSearch();
   const navigateToRecentNotebook = useNavigateToRecentNotebook();
   
   // Filter folders based on search - now searches folder names, notebook names, and note content
@@ -94,30 +94,21 @@ export default function FoldersPage() {
       setNewFolderColor(DEFAULT_FOLDER_COLOR);
     } catch (error) {
       console.error('Failed to create folder:', error);
-      setSyncError(
-        error instanceof Error 
-          ? error.message 
-          : 'Failed to create folder. Please check your connection and try again.'
-      );
     } finally {
       setIsCreatingFolderLoading(false);
     }
   };
 
-  const handleUpdateFolder = async (id: string) => {
-    if (!editFolderName.trim()) return;
+  const handleUpdateFolder = async (id: string, newName?: string) => {
+    const nameToUpdate = newName || editFolderName;
+    if (!nameToUpdate.trim()) return;
 
     try {
-      await updateFolder(id, { name: editFolderName });
+      await updateFolder(id, { name: nameToUpdate });
       setEditingFolderId(null);
       setEditFolderName("");
     } catch (error) {
       console.error('Failed to update folder:', error);
-      setSyncError(
-        error instanceof Error 
-          ? error.message 
-          : 'Failed to update folder. Please try again.'
-      );
     }
   };
 
@@ -291,7 +282,8 @@ export default function FoldersPage() {
     navigateToRecentNotebook(folderId);
   };
 
-  const loading = foldersLoading || notebooksLoading;
+  const loading = syncState.status === 'loading';
+  const error = syncState.error;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -328,7 +320,7 @@ export default function FoldersPage() {
           <p className="font-semibold">Error</p>
           <p>{error}</p>
           <button 
-            onClick={() => setSyncError(null)}
+            onClick={() => window.location.reload()}
             className="mt-2 text-sm underline"
           >
             Dismiss
@@ -456,7 +448,10 @@ export default function FoldersPage() {
                       <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
                         <InlineEdit
                           value={editFolderName}
-                          onSave={() => handleUpdateFolder(folder.id)}
+                          onSave={(newName) => {
+                            setEditFolderName(newName);
+                            handleUpdateFolder(folder.id, newName);
+                          }}
                           onCancel={() => {
                             setEditingFolderId(null);
                             setEditFolderName("");

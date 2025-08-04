@@ -12,21 +12,22 @@ import {
 import { UserMenu } from "@/components/user-menu";
 import { BuildTimestamp } from "@/components/build-timestamp";
 import { Logo } from "@/components/logo";
-import { useFolders, useNotebooks, useSeedData } from "@/lib/store/hooks";
+import { useFolders, useNotebooks, useSyncState, useDataActions } from "@/lib/store";
 import { Card, Button } from "@/components/ui";
 import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
 import { useState, useEffect } from "react";
 
 export default function Home() {
   const router = useRouter();
-  const { folders, loading: foldersLoading } = useFolders();
-  const { notebooks, loading: notebooksLoading } = useNotebooks();
+  const folders = useFolders();
+  const notebooks = useNotebooks();
+  const syncState = useSyncState();
+  const { seedInitialData } = useDataActions();
   const navigateToRecentNotebook = useNavigateToRecentNotebook();
-  const { seedInitialData, loading: seedLoading } = useSeedData();
   const [seedMessage, setSeedMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [showSeedButton, setShowSeedButton] = useState(false);
   
-  const loading = foldersLoading || notebooksLoading;
+  const loading = syncState.status === 'loading';
   
   // Check if user has no data and show seed button
   useEffect(() => {
@@ -93,11 +94,11 @@ export default function Home() {
             </p>
             <Button
               onClick={handleSeedData}
-              disabled={seedLoading}
+              disabled={false}
               className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 mx-auto"
             >
               <Sparkles className="h-5 w-5" />
-              {seedLoading ? 'Adding sample data...' : 'Add Starter Content'}
+              {'Add Starter Content'}
             </Button>
             {seedMessage && (
               <p className={`mt-4 text-sm ${

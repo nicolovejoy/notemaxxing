@@ -8,26 +8,21 @@ export const useNotebookSort = () => useStore(uiStore, (state) => state.notebook
 export const useGlobalSearch = () => useStore(uiStore, (state) => state.globalSearch)
 export const useSidebarCollapsed = () => useStore(uiStore, (state) => state.sidebarCollapsed)
 
-// UI actions
+// UI actions - return the store instance directly since actions are stable
 export const useUIActions = () => {
-  return useStore(uiStore, (state) => ({
-    setSelectedFolder: state.setSelectedFolder,
-    setSelectedNotebook: state.setSelectedNotebook,
-    setNotebookSort: state.setNotebookSort,
-    setGlobalSearch: state.setGlobalSearch,
-    setSidebarCollapsed: state.setSidebarCollapsed,
-    loadPreferences: state.loadPreferences,
-    savePreferences: state.savePreferences,
-  }))
+  return uiStore.getState()
 }
+
+// Stable selector for UI state
+const selectUIState = (state: ReturnType<typeof uiStore.getState>) => ({
+  selectedFolderId: state.selectedFolderId,
+  selectedNotebookId: state.selectedNotebookId,
+  notebookSort: state.notebookSort,
+  globalSearch: state.globalSearch,
+  sidebarCollapsed: state.sidebarCollapsed,
+})
 
 // Combined hook for common UI operations
 export const useUIState = () => {
-  return useStore(uiStore, (state) => ({
-    selectedFolderId: state.selectedFolderId,
-    selectedNotebookId: state.selectedNotebookId,
-    notebookSort: state.notebookSort,
-    globalSearch: state.globalSearch,
-    sidebarCollapsed: state.sidebarCollapsed,
-  }))
+  return useStore(uiStore, selectUIState)
 }

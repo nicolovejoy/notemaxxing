@@ -56,7 +56,7 @@ export const foldersApi = {
             .eq('user_id', user.id)
           
           if (!permError && sharedFolderIds && sharedFolderIds.length > 0) {
-            console.log('[FoldersAPI] Found shared folder permissions:', { count: sharedFolderIds.length, permissions: sharedFolderIds })
+            // Found shared folder permissions
             const folderIds = sharedFolderIds.map(p => p.resource_id)
             const { data: sharedFolders, error: sharedError } = await supabase
               .from('folders')
@@ -65,7 +65,7 @@ export const foldersApi = {
               .order('created_at', { ascending: true })
             
             if (!sharedError && sharedFolders) {
-              console.log('[FoldersAPI] Loaded shared folders:', { count: sharedFolders.length })
+              // Loaded shared folders
               // Mark shared folders
               const markedSharedFolders = sharedFolders.map(f => ({
                 ...f,
@@ -74,7 +74,7 @@ export const foldersApi = {
               }))
               allFolders = [...allFolders, ...markedSharedFolders]
             } else if (sharedError) {
-              console.error('[FoldersAPI] Error loading shared folders:', sharedError)
+              // Error loading shared folders
             }
           }
         }

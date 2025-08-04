@@ -1,16 +1,13 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useInitializeStore } from './hooks'
-import { useStore } from './useStore'
+import { dataManager } from './data-manager'
 import { logger } from '@/lib/debug/logger'
 import { createClient } from '@/lib/supabase/client'
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isClient, setIsClient] = useState(false)
   const [hasInitialized, setHasInitialized] = useState(false)
-  const initializeStore = useInitializeStore()
-  const resetStore = useStore((state) => state.resetStore)
   const initializationAttempts = useRef(0)
   const maxRetries = 3
   
@@ -41,7 +38,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         
         if (session) {
           logger.info(`Attempting store initialization (attempt ${initializationAttempts.current + 1}/${maxRetries})`)
-          await initializeStore()
+          await dataManager.initialize()
           setHasInitialized(true)
           initializationAttempts.current = 0
           logger.info('Store initialized successfully via auth listener')
@@ -75,7 +72,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } else if (event === 'SIGNED_OUT') {
         setHasInitialized(false)
         initializationAttempts.current = 0
-        resetStore()
+        // TODO: Add clearAll method to dataManager if needed
       }
     })
     
@@ -85,7 +82,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe()
     }
-  }, [isClient, initializeStore, hasInitialized, resetStore])
+  }, [isClient, hasInitialized])
   
   // Don't render children until client-side to avoid hydration mismatch
   if (!isClient) {

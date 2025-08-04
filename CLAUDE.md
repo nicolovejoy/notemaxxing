@@ -13,6 +13,7 @@
 - The user is always running the dev server - never attempt to start it
 - **ASK QUESTIONS instead of making assumptions** - When requirements are unclear, ask specific questions rather than inventing features or behaviors
 - **For SQL scripts** - If under 100 lines, show directly in console output instead of creating files
+- **ALWAYS ask before committing** - Check with user before running git commit unless explicitly pre-authorized
 
 ## Current Architecture
 
@@ -26,20 +27,24 @@
 - Invitation preview endpoint for unauthenticated users shows minimal info
 - Self-invitations prevented at both UI and API level
 
+### Store Architecture
+
+We use a clean Zustand store system:
+
+- **Data Store**: `/lib/store/data-store.ts` - Manages all app data (folders, notebooks, notes)
+- **UI Store**: `/lib/store/ui-store.ts` - Manages UI state (selections, preferences)
+- **Data Manager**: `/lib/store/data-manager.ts` - Handles all API operations
+
+**Key Features**:
+
+- All data loaded at app initialization for instant access
+- Full-text search works across all content
+- Optimistic updates for better UX
+- Clean hook API that returns raw data (no wrapper objects)
+
 ### Known Issues
 
-#### Folders Page for Regular Users
-
-- **BUG**: Regular users see blank folders page with loading skeletons
-- **NOT an RLS issue** - homepage successfully shows the same folders
-- User has folder "Unfolding, slowly" visible on homepage but not folders page
-- RLS policies are working correctly (folders load on homepage)
-- Issue is specific to folders page implementation:
-  - Folders page has useEffect calling `loadNotebooks(true)` (line 61)
-  - This doesn't exist on homepage
-  - Might be creating infinite loading loop keeping `notebooksLoading` true
-  - Loading state: `const loading = foldersLoading || notebooksLoading`
-- **Root cause**: Extra `loadNotebooks(true)` call in useEffect on folders page
+- **Fixed**: Folders page loading issue (resolved by removing extra loadNotebooks call)
 
 ### Key Components
 

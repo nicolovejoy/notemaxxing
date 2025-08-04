@@ -22,6 +22,13 @@ export interface DataState {
     notesByNotebook: Map<string, Set<string>>
   }
   
+  // Sync state
+  syncState: {
+    status: 'idle' | 'loading' | 'error'
+    error: string | null
+    lastSyncTime: Date | null
+  }
+  
   // Actions
   setFolders: (folders: Folder[]) => void
   setNotebooks: (notebooks: Notebook[]) => void
@@ -50,6 +57,11 @@ export interface DataState {
   getNotebooksInFolder: (folderId: string) => Notebook[]
   getNotesInNotebook: (notebookId: string) => Note[]
   
+  // Sync state actions
+  setSyncStatus: (status: 'idle' | 'loading' | 'error') => void
+  setSyncError: (error: string | null) => void
+  setSyncTime: (time: Date | null) => void
+  
   // Clear functions
   clearAll: () => void
 }
@@ -70,6 +82,12 @@ export const dataStore = createStore<DataState>((set, get) => ({
   indexes: {
     notebooksByFolder: new Map(),
     notesByNotebook: new Map(),
+  },
+  
+  syncState: {
+    status: 'idle',
+    error: null,
+    lastSyncTime: null,
   },
   
   // Bulk setters
@@ -404,6 +422,19 @@ export const dataStore = createStore<DataState>((set, get) => ({
       .map(id => state.entities.notes.get(id))
       .filter((n): n is Note => n !== undefined)
   },
+  
+  // Sync state actions
+  setSyncStatus: (status) => set((state) => ({
+    syncState: { ...state.syncState, status }
+  })),
+  
+  setSyncError: (error) => set((state) => ({
+    syncState: { ...state.syncState, error }
+  })),
+  
+  setSyncTime: (time) => set((state) => ({
+    syncState: { ...state.syncState, lastSyncTime: time }
+  })),
   
   clearAll: () => set(() => ({
     entities: {

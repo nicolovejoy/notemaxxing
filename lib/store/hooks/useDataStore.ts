@@ -58,36 +58,45 @@ export const useNotesInNotebook = (notebookId: string | null) => {
   }, [notesMap, noteIds, notebookId])
 }
 
-// Actions wrapped with data manager
-export const useDataActions = () => {
-  return {
-    // Folder actions
-    createFolder: dataManager.createFolder.bind(dataManager),
-    updateFolder: dataManager.updateFolder.bind(dataManager),
-    deleteFolder: dataManager.deleteFolder.bind(dataManager),
-    
-    // Notebook actions
-    createNotebook: dataManager.createNotebook.bind(dataManager),
-    updateNotebook: dataManager.updateNotebook.bind(dataManager),
-    deleteNotebook: dataManager.deleteNotebook.bind(dataManager),
-    archiveNotebook: (id: string) => dataManager.updateNotebook(id, { archived: true, archived_at: new Date().toISOString() }),
-    restoreNotebook: (id: string) => dataManager.updateNotebook(id, { archived: false, archived_at: null }),
-    
-    // Note actions
-    createNote: dataManager.createNote.bind(dataManager),
-    updateNote: dataManager.updateNote.bind(dataManager),
-    deleteNote: dataManager.deleteNote.bind(dataManager),
-    loadNotesForNotebook: dataManager.loadNotesForNotebook.bind(dataManager),
-    
-    // Utility actions
-    seedInitialData: dataManager.seedInitialData.bind(dataManager),
-  }
+export const useNotes = () => {
+  const notesMap = useStore(dataStore, (state) => state.entities.notes)
+  return useMemo(() => {
+    if (!notesMap) return []
+    return Array.from(notesMap.values())
+  }, [notesMap])
 }
 
-// Sync state from data manager - these need to be stable references
+// Actions wrapped with data manager - memoized to prevent recreation
+const dataActions = {
+  // Folder actions
+  createFolder: dataManager.createFolder.bind(dataManager),
+  updateFolder: dataManager.updateFolder.bind(dataManager),
+  deleteFolder: dataManager.deleteFolder.bind(dataManager),
+  
+  // Notebook actions
+  createNotebook: dataManager.createNotebook.bind(dataManager),
+  updateNotebook: dataManager.updateNotebook.bind(dataManager),
+  deleteNotebook: dataManager.deleteNotebook.bind(dataManager),
+  archiveNotebook: (id: string) => dataManager.updateNotebook(id, { archived: true, archived_at: new Date().toISOString() }),
+  restoreNotebook: (id: string) => dataManager.updateNotebook(id, { archived: false, archived_at: null }),
+  
+  // Note actions
+  createNote: dataManager.createNote.bind(dataManager),
+  updateNote: dataManager.updateNote.bind(dataManager),
+  deleteNote: dataManager.deleteNote.bind(dataManager),
+  loadNotesForNotebook: dataManager.loadNotesForNotebook.bind(dataManager),
+  
+  // Utility actions
+  seedInitialData: dataManager.seedInitialData.bind(dataManager),
+}
+
+export const useDataActions = () => {
+  return dataActions
+}
+
+// Sync state from store
 export const useSyncState = () => {
-  // This returns a stable object reference from dataManager
-  return useMemo(() => dataManager.getSyncState(), [])
+  return useStore(dataStore, (state) => state.syncState)
 }
 
 export const useIsInitialized = () => {

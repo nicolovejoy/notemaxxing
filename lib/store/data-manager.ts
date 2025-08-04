@@ -5,18 +5,12 @@ import { SeedService } from '../seed-templates'
 import type { Folder, Notebook, Note, OptimisticUpdate, SyncState } from './types'
 
 export interface DataManagerState {
-  syncState: SyncState
   optimisticUpdates: OptimisticUpdate<Folder | Notebook | Note>[]
   initialized: boolean
 }
 
 class DataManager {
   private state: DataManagerState = {
-    syncState: {
-      status: 'idle',
-      error: null,
-      lastSyncTime: null,
-    },
     optimisticUpdates: [],
     initialized: false,
   }
@@ -34,10 +28,6 @@ class DataManager {
   private constructor() {}
   
   // State getters
-  getSyncState() {
-    return this.state.syncState
-  }
-  
   isInitialized() {
     return this.state.initialized
   }
@@ -45,39 +35,42 @@ class DataManager {
   // Initialize all data
   async initialize(): Promise<void> {
     // Prevent duplicate initialization
-    if (this.state.initialized || this.state.syncState.status === 'loading') {
-      console.log('[DataManager] Skipping initialization - already initialized or loading')
+    const currentStatus = dataStore.getState().syncState.status
+    if (this.state.initialized || currentStatus === 'loading') {
+      // Already initialized or loading
       return
     }
     
     const supabase = createClient()
     if (!supabase) {
-      console.log('[DataManager] No Supabase client available')
+      // No Supabase client available
       return
     }
     
     // Check authentication
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
-      console.log('[DataManager] No active session, skipping initialization')
+      // No active session
       return
     }
     
-    console.log('[DataManager] Starting initialization')
-    this.state.syncState.status = 'loading'
-    this.state.syncState.error = null
+    // Starting initialization
+    dataStore.getState().setSyncStatus('loading')
+    dataStore.getState().setSyncError(null)
     
     try {
-      // Load metadata for all entities in parallel
-      const [folders, notebooks, shares] = await Promise.all([
-        foldersApi.getAll(),
+      // Load all entities in parallel
+      const [folders, notebooks, notes, shares] = await Promise.all([
+        foldersApi.getAll(true), // Include shared folders
         notebooksApi.getAll(true), // Include archived
+        notesApi.getAll(), // Load all notes upfront
         sharesApi.getShareMetadata(),
       ])
       
       // Update data store
       dataStore.getState().setFolders(folders)
       dataStore.getState().setNotebooks(notebooks)
+      dataStore.getState().setNotes(notes)
       
       // Process share metadata
       if (shares) {
@@ -101,13 +94,13 @@ class DataManager {
       }
       
       this.state.initialized = true
-      this.state.syncState.status = 'idle'
-      this.state.syncState.lastSyncTime = new Date()
+      dataStore.getState().setSyncStatus('idle')
+      dataStore.getState().setSyncTime(new Date())
       
-      console.log('[DataManager] Initialization complete')
+      // Initialization complete
     } catch (error) {
-      this.state.syncState.status = 'error'
-      this.state.syncState.error = error instanceof Error ? error.message : 'Failed to initialize'
+      dataStore.getState().setSyncStatus('error')
+      dataStore.getState().setSyncError(error instanceof Error ? error.message : 'Failed to initialize')
       console.error('[DataManager] Failed to initialize:', error)
       throw error
     }
@@ -174,13 +167,32 @@ class DataManager {
     const original = dataStore.getState().getFolder(id)
     if (!original) return
     
+    console.log('[DataManager] Updating folder:', { id, updates, original })
+    
     // Optimistic update
     dataStore.getState().updateFolder(id, updates)
     
     try {
       const updated = await foldersApi.update(id, updates)
-      dataStore.getState().updateFolder(id, updated)
+      console.log('[DataManager] API response:', updated)
+      
+      // Preserve shared and permission properties from original
+      const finalFolder = {
+        ...updated,
+        shared: original.shared,
+        permission: original.permission
+      }
+      console.log('[DataManager] Final folder:', finalFolder)
+      
+      try {
+        dataStore.getState().updateFolder(id, finalFolder)
+        console.log('[DataManager] Store updated successfully')
+      } catch (storeError) {
+        console.error('[DataManager] Store update error:', storeError)
+        throw storeError
+      }
     } catch (error) {
+      console.error('[DataManager] Update failed:', error)
       // Rollback
       dataStore.getState().updateFolder(id, original)
       throw error

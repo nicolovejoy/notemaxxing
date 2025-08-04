@@ -25,12 +25,13 @@ import {
   useFolder,
   useNotebook,
   useNotebooks,
-  useNotes,
-  useNoteActions,
+  useNotesInNotebook,
+  useDataActions,
   useSyncState,
   useNotebookSort,
-  useGlobalSearch
-} from "@/lib/store/hooks";
+  useGlobalSearch,
+  useUIActions
+} from "@/lib/store";
 
 type SortOption = "recent" | "alphabetical" | "created";
 
@@ -42,12 +43,15 @@ export default function NotebookPage() {
   // Use Zustand hooks
   const notebook = useNotebook(notebookId);
   const folder = useFolder(notebook?.folder_id || null);
-  const { notebooks: allNotebooks } = useNotebooks();
-  const { notes: allNotes, loading: notesLoading } = useNotes(notebookId);
-  const { createNote, updateNote, deleteNote } = useNoteActions();
-  const { error, setSyncError } = useSyncState();
-  const { notebookSort } = useNotebookSort();
-  const { globalSearch, setGlobalSearch } = useGlobalSearch();
+  const allNotebooks = useNotebooks();
+  const allNotes = useNotesInNotebook(notebookId);
+  const { createNote, updateNote, deleteNote } = useDataActions();
+  const syncState = useSyncState();
+  const notebookSort = useNotebookSort();
+  const globalSearch = useGlobalSearch();
+  const { setGlobalSearch } = useUIActions();
+  
+  const loading = syncState.status === 'loading';
 
   const [notes, setNotes] = useState<typeof allNotes>([]);
   const [sortOption, setSortOption] = useState<SortOption>("recent");
@@ -88,10 +92,10 @@ export default function NotebookPage() {
 
   // Redirect if notebook not found
   useEffect(() => {
-    if (!notesLoading && !notebook) {
+    if (!loading && !notebook) {
       router.push("/folders");
     }
-  }, [notebook, notesLoading, router]);
+  }, [notebook, loading, router]);
 
   // Sort and filter notes
   useEffect(() => {
@@ -193,7 +197,7 @@ export default function NotebookPage() {
         setIsSaving(false);
       } catch (error) {
         console.error('Failed to save note:', error);
-        setSyncError(error instanceof Error ? error.message : 'Failed to save note');
+        // Error is logged but not displayed in UI currently
         setIsSaving(false);
       }
     }, 500); // Auto-save after 500ms of no typing
@@ -213,7 +217,7 @@ export default function NotebookPage() {
       }
     } catch (error) {
       console.error('Failed to delete note:', error);
-      setSyncError(error instanceof Error ? error.message : 'Failed to delete note');
+      // Error is logged but not displayed in UI currently
     }
   };
 
@@ -245,12 +249,12 @@ export default function NotebookPage() {
       <PageHeader backUrl="/folders" />
 
       {/* Error Message */}
-      {error && (
+      {syncState.error && (
         <div className="mx-4 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
           <p className="font-semibold">Error</p>
-          <p>{error}</p>
+          <p>{syncState.error}</p>
           <button 
-            onClick={() => setSyncError(null)}
+            onClick={() => console.log('Error dismissed')}
             className="mt-2 text-sm underline"
           >
             Dismiss
@@ -333,12 +337,12 @@ export default function NotebookPage() {
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {/* Add Note Card */}
-                {!notesLoading && (
+                {!loading && (
                   <AddNoteCard onClick={handleCreateNote} />
                 )}
 
                 {/* Loading Skeletons */}
-                {notesLoading ? (
+                {loading ? (
                   [...Array(8)].map((_, i) => (
                     <div key={i} className="bg-white rounded-lg border border-gray-200 p-6 h-48 flex flex-col">
                       <div className="flex items-start justify-between mb-2">

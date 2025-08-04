@@ -4,10 +4,18 @@ import { useNotebooks, useNotes } from '@/lib/store';
 
 export function useNavigateToRecentNotebook() {
   const router = useRouter();
-  const { notebooks } = useNotebooks();
-  const { notes } = useNotes();
+  const notebooks = useNotebooks();
+  const notes = useNotes();
+  
+  console.log('useNavigateToRecentNotebook - notebooks:', notebooks, 'notes:', notes);
 
   const navigateToRecentNotebook = useCallback((folderId: string) => {
+    // Safety check
+    if (!notebooks || !notes) {
+      console.warn('Notebooks or notes not loaded yet');
+      return;
+    }
+    
     // Find the most recently edited notebook in this folder
     const folderNotebooks = notebooks.filter(n => n.folder_id === folderId && !n.archived);
     if (folderNotebooks.length === 0) return;
