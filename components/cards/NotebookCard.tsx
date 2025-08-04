@@ -11,6 +11,7 @@ interface NotebookCardProps {
   noteCount: number;
   archived?: boolean;
   shared?: boolean;
+  sharedByMe?: boolean;
   permission?: Permission;
   isEditing?: boolean;
   editingName?: string;
@@ -31,6 +32,7 @@ export function NotebookCard({
   noteCount,
   archived = false,
   shared = false,
+  sharedByMe = false,
   permission,
   isEditing = false,
   editingName = '',
@@ -94,8 +96,13 @@ export function NotebookCard({
               {name}
               {archived && " (Archived)"}
             </span>
-            {shared && (
-              <SharedIndicator shared={shared} permission={permission} className="ml-2" />
+            {(shared || sharedByMe) && (
+              <SharedIndicator 
+                shared={shared} 
+                sharedByMe={sharedByMe}
+                permission={permission} 
+                className="ml-2" 
+              />
             )}
           </div>
           <div className="flex items-center gap-2">

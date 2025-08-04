@@ -49,6 +49,26 @@ export const foldersApi = {
       if (includeShared) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
+          // First, check which of the user's own folders have been shared with others
+          if (ownFolders && ownFolders.length > 0) {
+            const ownFolderIds = ownFolders.map(f => f.id)
+            const { data: outgoingShares } = await supabase
+              .from('permissions')
+              .select('resource_id')
+              .eq('resource_type', 'folder')
+              .in('resource_id', ownFolderIds)
+              .neq('user_id', user.id) // Permissions for other users
+            
+            if (outgoingShares && outgoingShares.length > 0) {
+              const sharedByMeIds = new Set(outgoingShares.map(p => p.resource_id))
+              allFolders = allFolders.map(f => ({
+                ...f,
+                sharedByMe: sharedByMeIds.has(f.id)
+              }))
+            }
+          }
+          
+          // Then get folders shared with the user
           const { data: sharedFolderIds, error: permError } = await supabase
             .from('permissions')
             .select('resource_id, permission')
@@ -164,6 +184,24 @@ export const notebooksApi = {
       if (includeShared) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
+          // First, check which of the user's own notebooks have been shared with others
+          if (ownNotebooks && ownNotebooks.length > 0) {
+            const ownNotebookIds = ownNotebooks.map(n => n.id)
+            const { data: outgoingShares } = await supabase
+              .from('permissions')
+              .select('resource_id')
+              .eq('resource_type', 'notebook')
+              .in('resource_id', ownNotebookIds)
+              .neq('user_id', user.id) // Permissions for other users
+            
+            if (outgoingShares && outgoingShares.length > 0) {
+              const sharedByMeIds = new Set(outgoingShares.map(p => p.resource_id))
+              allNotebooks = allNotebooks.map(n => ({
+                ...n,
+                sharedByMe: sharedByMeIds.has(n.id)
+              }))
+            }
+          }
           // Get directly shared notebooks
           const { data: sharedNotebookPerms, error: notebookPermError } = await supabase
             .from('permissions')

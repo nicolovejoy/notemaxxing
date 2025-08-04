@@ -4,10 +4,12 @@ import type { Database } from '../supabase/database.types'
 // Entity types
 export type Folder = Database['public']['Tables']['folders']['Row'] & {
   shared?: boolean
+  sharedByMe?: boolean
   permission?: 'read' | 'write'
 }
 export type Notebook = Database['public']['Tables']['notebooks']['Row'] & {
   shared?: boolean
+  sharedByMe?: boolean
   permission?: 'read' | 'write'
 }
 export type Note = Database['public']['Tables']['notes']['Row']

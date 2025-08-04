@@ -508,9 +508,13 @@ export default function FoldersPage() {
                     )}
 
                     {/* Shared indicator below folder header */}
-                    {folder.shared && (
+                    {(folder.shared || folder.sharedByMe) && (
                       <div className="bg-white px-4 py-2 -mt-4 rounded-b-lg">
-                        <SharedIndicator shared={folder.shared} permission={folder.permission} />
+                        <SharedIndicator 
+                          shared={folder.shared} 
+                          sharedByMe={folder.sharedByMe}
+                          permission={folder.permission} 
+                        />
                       </div>
                     )}
 
@@ -576,6 +580,7 @@ export default function FoldersPage() {
                               noteCount={noteCount}
                               archived={notebook.archived}
                               shared={notebook.shared}
+                              sharedByMe={notebook.sharedByMe}
                               permission={notebook.permission}
                               isEditing={editingNotebookId === notebook.id}
                               editingName={editNotebookName}
