@@ -39,22 +39,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is trying to share with themselves
-    console.log('[Generate Link] Checking self-invitation for user:', user.id)
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', user.id)
-      .single()
+    console.log('[Generate Link] Checking self-invitation for user:', user.id, 'user email:', user.email)
     
-    if (profileError) {
-      console.error('[Generate Link] Error fetching profile:', profileError)
-    }
-    
-    if (profile?.email && profile.email.toLowerCase() === email.toLowerCase()) {
+    // First try to use the email from the auth user object
+    if (user.email && user.email.toLowerCase() === email.toLowerCase()) {
       return NextResponse.json(
         { error: 'You cannot share with yourself' },
         { status: 400 }
       )
+    }
+    
+    // If no email on user object, try profiles table (might not exist)
+    try {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single()
+      
+      if (!profileError && profile?.email && profile.email.toLowerCase() === email.toLowerCase()) {
+        return NextResponse.json(
+          { error: 'You cannot share with yourself' },
+          { status: 400 }
+        )
+      }
+    } catch (e) {
+      // Profiles table might not exist, continue anyway
+      console.log('[Generate Link] Profiles table not available, using auth email only')
     }
 
     if (!['folder', 'notebook'].includes(resourceType)) {
