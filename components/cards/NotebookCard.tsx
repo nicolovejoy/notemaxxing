@@ -20,7 +20,7 @@ interface NotebookCardProps {
   onArchive?: () => void;
   onRestore?: () => void;
   onDelete?: () => void;
-  onUpdate?: () => void;
+  onUpdate?: (newName: string) => void;
   onCancelEdit?: () => void;
 }
 
@@ -57,15 +57,17 @@ export function NotebookCard({
             className="flex-1 px-2 py-1 border border-gray-300 rounded text-gray-900"
             autoFocus
             onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                onUpdate?.();
+              if (e.key === 'Enter' && editingName) {
+                onUpdate?.(editingName);
               }
             }}
           />
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onUpdate?.();
+              if (editingName) {
+                onUpdate?.(editingName);
+              }
             }}
             className="p-1 hover:bg-gray-200 rounded"
           >
@@ -107,7 +109,8 @@ export function NotebookCard({
                   className="p-1 hover:bg-gray-200 rounded"
                 />
               )}
-              {onEdit && (
+              {/* Only show edit button if user owns the notebook or has write permission */}
+              {onEdit && (!shared || permission === 'write') && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -118,7 +121,8 @@ export function NotebookCard({
                   <Edit2 className="h-4 w-4 text-gray-600" />
                 </button>
               )}
-              {(onArchive || onRestore) && (
+              {/* Only show archive/restore for owned notebooks (not shared) */}
+              {(onArchive || onRestore) && !shared && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -138,7 +142,8 @@ export function NotebookCard({
                   )}
                 </button>
               )}
-              {archived && onDelete && (
+              {/* Only show delete for owned archived notebooks */}
+              {archived && onDelete && !shared && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

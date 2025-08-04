@@ -19,13 +19,14 @@
 
 ### Sharing System
 
-- Database already has `permissions` and `share_invitations` tables
-- Existing `has_permission(resource_type, resource_id, user_id, permission)` function handles access control
-- RLS policies use this function - no need to recreate policies
+- Database has `permissions` and `share_invitations` tables
+- `has_permission(resource_type, resource_id, user_id, permission)` function handles access control
+- RLS policies use this function for access control
 - Sharing works for both folders and notebooks with permission inheritance
 - Email-specific invitations (not public links) with 7-day expiry
 - Invitation preview endpoint for unauthenticated users shows minimal info
 - Self-invitations prevented at both UI and API level
+- Read-only permissions properly reflected in UI (no edit/delete buttons shown)
 
 ### Store Architecture
 
@@ -42,9 +43,20 @@ We use a clean Zustand store system:
 - Optimistic updates for better UX
 - Clean hook API that returns raw data (no wrapper objects)
 
-### Known Issues
+### Known Issues & Bugs
 
-- **Fixed**: Folders page loading issue (resolved by removing extra loadNotebooks call)
+- Need to refresh after accepting share invitation to see shared resources
+- Need to refresh after login to see folders
+- Real-time sync not implemented - changes don't appear in other accounts without refresh
+- Folder card UI has overlapping icons with title
+- Accept invitation page shows "unnamed folder" instead of actual resource name
+
+### Notebook Management
+
+- **Archive**: Available on regular notebooks (puts them in archived state)
+- **Delete**: Only available on archived notebooks (permanent deletion)
+- **Restore**: Available on archived notebooks (returns to regular state)
+- To see archived notebooks: Toggle "Show archived" on folders page
 
 ### Key Components
 

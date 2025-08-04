@@ -8,7 +8,7 @@ interface NoteCardProps {
   content: string;
   updatedAt: string;
   onClick: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
   formatDate: (date: string) => string;
 }
 
@@ -27,15 +27,17 @@ export function NoteCard({
     >
       <div className="flex items-start justify-between mb-2">
         <FileText className="h-5 w-5 text-gray-400" />
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
+        {onDelete && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        )}
       </div>
       <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
         {title}

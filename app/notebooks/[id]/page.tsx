@@ -20,6 +20,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { NoteCard, AddNoteCard } from "@/components/cards/NoteCard";
+import { SharedIndicator } from "@/components/SharedIndicator";
 import { toHTML, toPlainText } from "@/lib/utils/content";
 import {
   useFolder,
@@ -306,7 +307,12 @@ export default function NotebookPage() {
         <div className="flex-1 flex flex-col">
           {/* Content Header */}
           <div className="bg-white border-b border-gray-200 p-4">
-            <h2 className="text-2xl font-semibold mb-3">{notebook.name}</h2>
+            <div className="flex items-center gap-3 mb-3">
+              <h2 className="text-2xl font-semibold">{notebook.name}</h2>
+              {notebook.shared && (
+                <SharedIndicator shared={notebook.shared} permission={notebook.permission} />
+              )}
+            </div>
             <div className="flex items-center gap-4">
               <SearchInput
                 value={globalSearch}
@@ -336,8 +342,8 @@ export default function NotebookPage() {
           {!selectedNote ? (
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {/* Add Note Card */}
-                {!loading && (
+                {/* Add Note Card - only show if user can write */}
+                {!loading && (!notebook.shared || notebook.permission === 'write') && (
                   <AddNoteCard onClick={handleCreateNote} />
                 )}
 
@@ -367,9 +373,10 @@ export default function NotebookPage() {
                         setSelectedNote(note);
                         setEditingNoteTitle(note.title);
                         setEditingNoteContent(toHTML(note.content));
-                        setIsEditingNote(true);
+                        // Only allow editing if user has write permission
+                        setIsEditingNote(!notebook.shared || notebook.permission === 'write');
                       }}
-                      onDelete={() => handleDeleteNote(note.id)}
+                      onDelete={(!notebook.shared || notebook.permission === 'write') ? () => handleDeleteNote(note.id) : undefined}
                       formatDate={formatDate}
                     />
                   ))
@@ -390,7 +397,8 @@ export default function NotebookPage() {
                   <ArrowLeft className="h-5 w-5 text-gray-800" />
                 </button>
                 <div className="flex items-center gap-2">
-                  {!isEditingNote && (
+                  {/* Only show edit button if user has write permission */}
+                  {!isEditingNote && (!notebook.shared || notebook.permission === 'write') && (
                     <button
                       onClick={() => setIsEditingNote(true)}
                       className="p-2 rounded-md hover:bg-gray-100"
@@ -403,12 +411,15 @@ export default function NotebookPage() {
                       {isSaving ? "Saving..." : "Saved"}
                     </span>
                   )}
-                  <button
-                    onClick={() => handleDeleteNote(selectedNote.id)}
-                    className="p-2 rounded-md hover:bg-gray-100 text-red-500"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
+                  {/* Only show delete button if user has write permission */}
+                  {(!notebook.shared || notebook.permission === 'write') && (
+                    <button
+                      onClick={() => handleDeleteNote(selectedNote.id)}
+                      className="p-2 rounded-md hover:bg-gray-100 text-red-500"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="p-8">

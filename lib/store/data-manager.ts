@@ -2,7 +2,7 @@ import { dataStore } from './data-store'
 import { foldersApi, notebooksApi, notesApi, sharesApi } from './supabase-helpers'
 import { createClient } from '../supabase/client'
 import { SeedService } from '../seed-templates'
-import type { Folder, Notebook, Note, OptimisticUpdate, SyncState } from './types'
+import type { Folder, Notebook, Note, OptimisticUpdate } from './types'
 
 export interface DataManagerState {
   optimisticUpdates: OptimisticUpdate<Folder | Notebook | Note>[]

@@ -46,26 +46,42 @@ useUIActions() => store instance with all UI actions
 useSyncState() => { status: 'idle' | 'loading' | 'error', error, lastSyncTime }
 ```
 
+## Recent Fixes (August 2025)
+
+### Sharing System Fixed
+
+- Added `has_permission` function to database
+- Fixed RLS policies for shared resources
+- Fixed folder/notebook rename bug (wasn't using InlineEdit value)
+- Added proper UI permission handling (read-only users don't see edit buttons)
+- Shared resources now show permission indicators
+
 ## Known Issues
 
-### Nested Button HTML Error
+### UI/UX Issues
 
-- **Location**: Admin Console (`/components/admin-console.tsx`)
-- **Issue**: Buttons inside collapsible section headers (which are also buttons)
-- **Error**: "In HTML, <button> cannot be a descendant of <button>"
-- **Lines**: ~528-536, ~578-586 (Trash and Refresh buttons inside section headers)
-- **Fix needed**: Either change outer element to div or restructure UI pattern
+- **Nested Button HTML Error**: Admin Console has buttons inside buttons (~lines 528-536, 578-586)
+- **Folder Card UI**: Icons overlap with title text
+- **Accept Invitation Page**: Shows "unnamed folder" instead of actual resource name
+- **No Real-time Sync**: Changes require manual refresh to appear in other accounts
+- **Login/Share Refresh**: Need to refresh after login or accepting invitations
+
+### Notebook Management Clarification
+
+- **Archive**: Soft delete - moves notebook to archived state (available on regular notebooks)
+- **Delete**: Hard delete - permanently removes notebook (only on archived notebooks)
+- **Restore**: Unarchive - returns notebook to regular state
+- **View Archived**: Use "Show archived" toggle on folders page
 
 ## Next Steps
 
-1. **Test sharing functionality**:
-   - Create folder share invitation
-   - Accept with other account
-   - Verify permissions created
-   - Check if shared folders appear
-2. **Fix UI issues**:
-   - Fix nested button issue in admin console
-   - Test hydration errors
+1. **Continue testing sharing**:
+   - Test notebook-specific sharing
+   - Test revoke access functionality
+2. **Fix remaining UI issues**:
+   - Fix refresh issues after login/share accept
+   - Add real-time sync for shared resources
+   - Fix overlapping icons in folder cards
 
 ## SQL to Run (if not done)
 

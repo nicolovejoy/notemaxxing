@@ -138,11 +138,12 @@ export default function FoldersPage() {
     }
   };
 
-  const handleUpdateNotebook = async (id: string) => {
-    if (!editNotebookName.trim()) return;
+  const handleUpdateNotebook = async (id: string, newName?: string) => {
+    const nameToUpdate = newName || editNotebookName;
+    if (!nameToUpdate.trim()) return;
 
     try {
-      await updateNotebook(id, { name: editNotebookName });
+      await updateNotebook(id, { name: nameToUpdate });
       setEditingNotebookId(null);
       setEditNotebookName("");
     } catch (error) {
@@ -167,12 +168,15 @@ export default function FoldersPage() {
   };
 
   const handleDeleteNotebook = async (notebookId: string) => {
+    console.log('[DEBUG] Attempting to delete notebook:', notebookId);
+    
     if (!confirm("Are you sure you want to permanently delete this notebook? All notes inside will be deleted. Consider archiving instead.")) {
       return;
     }
 
     try {
       await deleteNotebook(notebookId);
+      console.log('[DEBUG] Notebook deleted successfully');
     } catch (error) {
       console.error('Failed to delete notebook:', error);
     }
@@ -477,21 +481,27 @@ export default function FoldersPage() {
                                 className="p-1 hover:bg-white/20 rounded text-white"
                               />
                             )}
-                            <button
-                              onClick={() => {
-                                setEditingFolderId(folder.id);
-                                setEditFolderName(folder.name);
-                              }}
-                              className="p-1 hover:bg-white/20 rounded"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteFolder(folder.id)}
-                              className="p-1 hover:bg-white/20 rounded"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {/* Only show edit button if user owns the folder or has write permission */}
+                            {(!folder.shared || folder.permission === 'write') && (
+                              <button
+                                onClick={() => {
+                                  setEditingFolderId(folder.id);
+                                  setEditFolderName(folder.name);
+                                }}
+                                className="p-1 hover:bg-white/20 rounded"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                            )}
+                            {/* Only show delete button if user owns the folder (not shared) */}
+                            {!folder.shared && (
+                              <button
+                                onClick={() => handleDeleteFolder(folder.id)}
+                                className="p-1 hover:bg-white/20 rounded"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
                         }
                       />
@@ -578,7 +588,7 @@ export default function FoldersPage() {
                               onArchive={() => handleArchiveNotebook(notebook.id)}
                               onRestore={() => handleRestoreNotebook(notebook.id)}
                               onDelete={() => handleDeleteNotebook(notebook.id)}
-                              onUpdate={() => handleUpdateNotebook(notebook.id)}
+                              onUpdate={(newName) => handleUpdateNotebook(notebook.id, newName)}
                               onCancelEdit={() => {
                                 setEditingNotebookId(null);
                                 setEditNotebookName("");
