@@ -356,12 +356,9 @@ class DataManager {
   // Utility methods
   reset(): void {
     dataStore.getState().clearAll()
+    dataStore.getState().setSyncStatus('idle')
+    dataStore.getState().setSyncError(null)
     this.state = {
-      syncState: {
-        status: 'idle',
-        error: null,
-        lastSyncTime: null,
-      },
       optimisticUpdates: [],
       initialized: false,
     }

@@ -5,16 +5,20 @@ import Link from 'next/link'
 import { ArrowLeft, Timer, RotateCcw, BookOpen, Check, Sparkles, FileText, ChevronRight } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { UserMenu } from '@/components/user-menu'
-import { useNotebooks, useNotes } from '@/lib/store/hooks'
+import { useNotebooks, useNotesInNotebook, useSyncState } from '@/lib/store'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { toPlainText } from '@/lib/utils/content'
 
 type Step = 'select-notebook' | 'select-notes' | 'configure' | 'typing' | 'results'
 
 export default function TypingPage() {
-  const { notebooks, loading: notebooksLoading } = useNotebooks()
+  const notebooks = useNotebooks()
+  const syncState = useSyncState()
   const [selectedNotebook, setSelectedNotebook] = useState<string | null>(null)
-  const { notes, loading: notesLoading } = useNotes(selectedNotebook)
+  const notes = useNotesInNotebook(selectedNotebook || '')
+  
+  const notebooksLoading = syncState.status === 'loading'
+  const notesLoading = syncState.status === 'loading'
   
   const [currentStep, setCurrentStep] = useState<Step>('select-notebook')
   const [selectedNotes, setSelectedNotes] = useState<string[]>([])

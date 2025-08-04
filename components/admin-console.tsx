@@ -602,11 +602,11 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                   ))}
                 </div>
                 <button
-                  onClick={() => copyToClipboard(JSON.stringify(storeState, null, 2))}
+                  onClick={() => copyToClipboard(JSON.stringify(getStoreStats(), null, 2))}
                   className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy full state
+                  Copy store stats
                 </button>
               </div>
             )}
