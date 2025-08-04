@@ -5,21 +5,37 @@ export async function POST(request: NextRequest) {
   try {
     console.log('[Generate Link] Starting request')
     
+    // Parse request body first to check what we're receiving
+    let body;
+    try {
+      body = await request.json()
+      console.log('[Generate Link] Raw request body:', JSON.stringify(body))
+    } catch (parseError) {
+      console.error('[Generate Link] Failed to parse request body:', parseError)
+      return NextResponse.json(
+        { error: 'Invalid request body' },
+        { status: 400 }
+      )
+    }
+    
+    const { resourceType, resourceId, permission, email } = body
+    console.log('[Generate Link] Parsed values:', { resourceType, resourceId, permission, email })
+    
     // Get authenticated client
     const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
-    if (error) return error
+    if (error) {
+      console.error('[Generate Link] Auth error:', error)
+      return error
+    }
     if (!supabase) {
+      console.error('[Generate Link] No supabase client')
       return NextResponse.json(
         { error: 'Service temporarily unavailable' },
         { status: 503 }
       )
     }
-
-    // Parse request body
-    const body = await request.json()
-    const { resourceType, resourceId, permission, email } = body
     
-    console.log('[Generate Link] Request body:', { resourceType, resourceId, permission, email })
+    console.log('[Generate Link] Authenticated user:', user.id, user.email)
 
     // Validate input
     if (!resourceType || !resourceId || !permission || !email) {
@@ -43,29 +59,32 @@ export async function POST(request: NextRequest) {
     
     // First try to use the email from the auth user object
     if (user.email && user.email.toLowerCase() === email.toLowerCase()) {
+      console.log('[Generate Link] User trying to share with themselves (auth email match)')
       return NextResponse.json(
         { error: 'You cannot share with yourself' },
         { status: 400 }
       )
     }
     
-    // If no email on user object, try profiles table (might not exist)
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', user.id)
-        .single()
-      
-      if (!profileError && profile?.email && profile.email.toLowerCase() === email.toLowerCase()) {
-        return NextResponse.json(
-          { error: 'You cannot share with yourself' },
-          { status: 400 }
-        )
-      }
-    } catch (e) {
-      // Profiles table might not exist, continue anyway
-      console.log('[Generate Link] Profiles table not available, using auth email only')
+    // Also check profiles table
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', user.id)
+      .single()
+    
+    if (profileError) {
+      console.error('[Generate Link] Error fetching profile:', profileError)
+    } else {
+      console.log('[Generate Link] Profile found:', profile)
+    }
+    
+    if (profile?.email && profile.email.toLowerCase() === email.toLowerCase()) {
+      console.log('[Generate Link] User trying to share with themselves (profile email match)')
+      return NextResponse.json(
+        { error: 'You cannot share with yourself' },
+        { status: 400 }
+      )
     }
 
     if (!['folder', 'notebook'].includes(resourceType)) {
@@ -139,6 +158,34 @@ export async function POST(request: NextRequest) {
 
     if (inviteError) {
       console.error('[Generate Link] Error creating invitation:', inviteError)
+      
+      // Check if it's a duplicate invitation error
+      if (inviteError.code === '23505' && inviteError.message.includes('share_invitations_resource_id_invited_email_key')) {
+        // Check if there's an existing active invitation
+        const { data: existingInvitation } = await supabase
+          .from('share_invitations')
+          .select('*')
+          .eq('resource_type', resourceType)
+          .eq('resource_id', resourceId)
+          .eq('invited_email', email.toLowerCase())
+          .gte('expires_at', new Date().toISOString())
+          .single()
+        
+        if (existingInvitation) {
+          return NextResponse.json({
+            success: true,
+            invitationId: existingInvitation.id,
+            expiresAt: existingInvitation.expires_at,
+            existing: true
+          })
+        }
+        
+        return NextResponse.json(
+          { error: 'An invitation already exists for this email and resource' },
+          { status: 409 }
+        )
+      }
+      
       return NextResponse.json(
         { error: 'Failed to create invitation' },
         { status: 500 }
