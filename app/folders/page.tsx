@@ -473,7 +473,7 @@ export default function FoldersPage() {
                         onTitleClick={() => handleFolderClick(folder.id)}
                         actions={
                           <div className="flex gap-2">
-                            {!folder.shared && (
+                            {!folder.shared && !folder.sharedNotebookOnly && (
                               <ShareButton
                                 resourceId={folder.id}
                                 resourceType="folder"
@@ -482,7 +482,7 @@ export default function FoldersPage() {
                               />
                             )}
                             {/* Only show edit button if user owns the folder or has write permission */}
-                            {(!folder.shared || folder.permission === 'write') && (
+                            {(!folder.shared || folder.permission === 'write') && !folder.sharedNotebookOnly && (
                               <button
                                 onClick={() => {
                                   setEditingFolderId(folder.id);
@@ -494,7 +494,7 @@ export default function FoldersPage() {
                               </button>
                             )}
                             {/* Only show delete button if user owns the folder (not shared) */}
-                            {!folder.shared && (
+                            {!folder.shared && !folder.sharedNotebookOnly && (
                               <button
                                 onClick={() => handleDeleteFolder(folder.id)}
                                 className="p-1 hover:bg-white/20 rounded"
@@ -508,13 +508,20 @@ export default function FoldersPage() {
                     )}
 
                     {/* Shared indicator below folder header */}
-                    {(folder.shared || folder.sharedByMe) && (
+                    {(folder.shared || folder.sharedByMe || folder.sharedNotebookOnly) && (
                       <div className="bg-white px-4 py-2 -mt-4 rounded-b-lg">
-                        <SharedIndicator 
-                          shared={folder.shared} 
-                          sharedByMe={folder.sharedByMe}
-                          permission={folder.permission} 
-                        />
+                        {folder.sharedNotebookOnly ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <FolderOpen className="h-4 w-4" />
+                            <span>Contains shared notebook(s)</span>
+                          </div>
+                        ) : (
+                          <SharedIndicator 
+                            shared={folder.shared} 
+                            sharedByMe={folder.sharedByMe}
+                            permission={folder.permission} 
+                          />
+                        )}
                       </div>
                     )}
 

@@ -97,6 +97,59 @@ export const foldersApi = {
               // Error loading shared folders
             }
           }
+          
+          // NEW: Get folders that contain directly shared notebooks
+          // This ensures users can see the folder structure for notebooks shared with them
+          const { data: directlySharedNotebooks } = await supabase
+            .from('permissions')
+            .select('resource_id')
+            .eq('resource_type', 'notebook')
+            .eq('user_id', user.id)
+          
+          console.log('[DEBUG] Directly shared notebooks permissions:', directlySharedNotebooks)
+          
+          if (directlySharedNotebooks && directlySharedNotebooks.length > 0) {
+            // Get the notebooks to find their folder_ids
+            const notebookIds = directlySharedNotebooks.map(p => p.resource_id)
+            const { data: notebooks } = await supabase
+              .from('notebooks')
+              .select('id, folder_id')
+              .in('id', notebookIds)
+            
+            console.log('[DEBUG] Notebooks with folder_ids:', notebooks)
+            
+            if (notebooks) {
+              // Get unique folder IDs that aren't already in our list
+              const existingFolderIds = new Set(allFolders.map(f => f.id))
+              const newFolderIds = [...new Set(notebooks
+                .map(n => n.folder_id)
+                .filter(fId => fId && !existingFolderIds.has(fId))
+              )]
+              
+              console.log('[DEBUG] Existing folder IDs:', Array.from(existingFolderIds))
+              console.log('[DEBUG] New folder IDs to fetch:', newFolderIds)
+              
+              if (newFolderIds.length > 0) {
+                // Fetch these parent folders
+                const { data: parentFolders } = await supabase
+                  .from('folders')
+                  .select('*')
+                  .in('id', newFolderIds)
+                
+                if (parentFolders) {
+                  // Add these folders as read-only virtual folders
+                  const virtualFolders = parentFolders.map(f => ({
+                    ...f,
+                    shared: true,
+                    permission: 'read',
+                    virtual: true, // Mark as virtual to potentially show different UI
+                    sharedNotebookOnly: true // Indicates this is only visible due to notebook sharing
+                  }))
+                  allFolders = [...allFolders, ...virtualFolders]
+                }
+              }
+            }
+          }
         }
       }
       
