@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { dataManager } from "@/lib/store/data-manager";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -50,6 +51,9 @@ export default function LoginPage() {
       if (data.session) {
         // Small delay to ensure cookies are set
         await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Refresh data store to load user's data
+        await dataManager.refresh();
         
         // Get the intended destination or default to home
         const params = new URLSearchParams(window.location.search);

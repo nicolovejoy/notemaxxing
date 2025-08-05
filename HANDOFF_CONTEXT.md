@@ -109,20 +109,37 @@ CREATE POLICY "Users can view shared folders" ON folders
   );
 ```
 
+## Current Branch Work (fix/data-refresh-issues)
+
+✅ Fixed data refresh issues:
+
+- Added `refresh()` method to DataManager that forces complete data reload
+- Data now refreshes automatically after login
+- Data now refreshes automatically after accepting share invitations
+- Fixed nested button HTML error in admin console
+
 ## Remaining Tasks
+
+### Critical Issues
+
+1. **Directly shared notebooks have no UI** - When sharing notebook without folder access, recipient can't see it anywhere
+   - Option 4 (show parent folder read-only) seems best
+   - Requires modifying folder query to include folders containing shared notebooks
+2. ~~**Data refresh issues**~~ - ✅ FIXED - Data now refreshes automatically after login/accepting invitations
+3. **Share dialog not showing existing shares** - "People with access" section empty despite permissions existing
 
 ### High Priority
 
-1. **Data refresh issues** - Need manual refresh after login/accepting invitations
+1. **Implement Supabase Realtime** - Architecture planned, ~4-5 hours for basic implementation
 2. **Accept invitation page** - Shows "unnamed folder" instead of resource name
-3. **Test notebook sharing** - Direct notebook shares (not via folder)
-4. **Test revoke access** - Ensure permissions are properly removed
+3. **Test revoke access** - Ensure permissions are properly removed
 
 ### Medium Priority
 
-1. **Real-time sync** - Changes don't appear in other accounts without refresh
-2. **Folder card UI** - Icons overlap with title text
-3. **Create note button** - Add on notebooks page for easier note creation
+1. **Admin console data tools broken** - Reset/seed functions don't work with new store architecture
+2. **Share dialog blinking** - Modal flickers when mouse leaves browser window
+3. **Folder card UI** - Icons overlap with title text
+4. **Create note button** - Add on notebooks page for easier note creation
 
 ### Low Priority
 
@@ -138,5 +155,17 @@ CREATE POLICY "Users can view shared folders" ON folders
 - [x] Shared folders appear for recipient
 - [x] "Shared by you" indicator shows for owners
 - [x] Read-only permissions properly disable edit UI
-- [ ] Direct notebook sharing works
+- [x] Direct notebook sharing creates permissions
+- [ ] Direct notebook sharing UI (notebooks have nowhere to appear)
 - [ ] Revoke access removes permissions
+
+## Key Decisions Needed
+
+1. **Where should directly shared notebooks appear?**
+   - Option 4: Show parent folder as read-only container (recommended)
+   - Requires modifying folder queries to include folders with shared notebooks
+
+2. **Realtime sync approach**
+   - Basic implementation ready (~4-5 hours)
+   - Start with Phase 1: own resources only, simple replacement
+   - Add shared resources and conflict resolution later

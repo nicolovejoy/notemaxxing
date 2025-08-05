@@ -162,7 +162,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const refreshStore = async () => {
     logger.info('Manually refreshing store...')
-    await dataManager.initialize()
+    await dataManager.refresh()
   }
 
   // Admin functions
@@ -525,15 +525,15 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
             >
               <span className="font-medium">Logs ({logs.length})</span>
               <div className="flex items-center gap-2">
-                <button
+                <div
                   onClick={(e) => {
                     e.stopPropagation()
                     clearLogs()
                   }}
-                  className="p-1 hover:bg-gray-200 rounded"
+                  className="p-1 hover:bg-gray-200 rounded cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </div>
                 {expandedSections.logs ? (
                   <ChevronDown className="w-4 h-4" />
                 ) : (
@@ -575,15 +575,15 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
             >
               <span className="font-medium">Store State</span>
               <div className="flex items-center gap-2">
-                <button
+                <div
                   onClick={(e) => {
                     e.stopPropagation()
                     refreshStore()
                   }}
-                  className="p-1 hover:bg-gray-200 rounded"
+                  className="p-1 hover:bg-gray-200 rounded cursor-pointer"
                 >
                   <RefreshCw className="w-4 h-4" />
-                </button>
+                </div>
                 {expandedSections.store ? (
                   <ChevronDown className="w-4 h-4" />
                 ) : (

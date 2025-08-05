@@ -364,6 +364,25 @@ class DataManager {
     }
   }
   
+  // Force refresh all data
+  async refresh(): Promise<void> {
+    console.log('[DataManager] Forcing data refresh')
+    
+    // Temporarily set initialized to false to force reload
+    const wasInitialized = this.state.initialized
+    this.state.initialized = false
+    
+    try {
+      await this.initialize()
+      console.log('[DataManager] Data refresh completed')
+    } catch (error) {
+      console.error('[DataManager] Data refresh failed:', error)
+      // Restore initialized state on error
+      this.state.initialized = wasInitialized
+      throw error
+    }
+  }
+  
   async seedInitialData(templateId?: string): Promise<{ success: boolean; error?: string }> {
     try {
       const supabase = createClient()
