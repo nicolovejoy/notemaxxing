@@ -1,28 +1,38 @@
-# Handoff Context - New Store Architecture Complete
+# Handoff Context - Sharing System Complete
 
-## Current Status
+## Current Status (January 2025)
 
-### Clean Zustand Store Implementation
+### ✅ Sharing System Working
 
-1. ✅ All pages use the new clean store API
-2. ✅ No compatibility layers or wrappers
-3. ✅ All data loaded upfront for instant access
-4. ✅ Full-text search works across all content
-5. ✅ Hooks return raw data (arrays, not wrapper objects)
+- Email-based invitations with 7-day expiry
+- Folder and notebook sharing with permission inheritance
+- Read/write permission levels
+- "Shared by you" indicators for owners
+- Proper UI handling for read-only users
 
-### Store Architecture
+### ✅ Clean Zustand Store Implementation
 
-- Data and UI concerns separated into different stores
-- Clean hook API with predictable returns
-- Optimistic updates for better UX
-- Ready for real-time sync when needed
+1. All pages use the new clean store API
+2. No compatibility layers or wrappers
+3. All data loaded upfront for instant access
+4. Full-text search works across all content
+5. Hooks return raw data (arrays, not wrapper objects)
 
-## Key Files
+## Architecture
+
+### Store System
 
 - `/lib/store/data-store.ts` - Data store with Maps for O(1) lookups
 - `/lib/store/ui-store.ts` - UI state management
 - `/lib/store/data-manager.ts` - Handles all API operations
 - `/lib/store/hooks/` - Clean hooks that return raw data
+
+### Sharing System
+
+- `/api/shares/*` - API routes for sharing operations
+- `ShareButton`, `ShareDialog`, `SharedIndicator` - UI components
+- Email-specific invitations (not public links)
+- `has_permission()` database function for access control
 
 ## Hook API Reference
 
@@ -46,15 +56,16 @@ useUIActions() => store instance with all UI actions
 useSyncState() => { status: 'idle' | 'loading' | 'error', error, lastSyncTime }
 ```
 
-## Recent Fixes (August 2025)
+## Recent Fixes (January 2025)
 
-### Sharing System Fixed
+### Sharing System Implementation
 
-- Added `has_permission` function to database
-- Fixed RLS policies for shared resources
+- Added `has_permission` function and RLS policies to database
 - Fixed folder/notebook rename bug (wasn't using InlineEdit value)
 - Added proper UI permission handling (read-only users don't see edit buttons)
-- Shared resources now show permission indicators
+- Implemented "Shared by you" indicators for resource owners
+- Fixed duplicate invitation handling
+- Fixed TypeScript/build errors in unrelated files
 
 ## Known Issues
 
@@ -98,10 +109,34 @@ CREATE POLICY "Users can view shared folders" ON folders
   );
 ```
 
+## Remaining Tasks
+
+### High Priority
+
+1. **Data refresh issues** - Need manual refresh after login/accepting invitations
+2. **Accept invitation page** - Shows "unnamed folder" instead of resource name
+3. **Test notebook sharing** - Direct notebook shares (not via folder)
+4. **Test revoke access** - Ensure permissions are properly removed
+
+### Medium Priority
+
+1. **Real-time sync** - Changes don't appear in other accounts without refresh
+2. **Folder card UI** - Icons overlap with title text
+3. **Create note button** - Add on notebooks page for easier note creation
+
+### Low Priority
+
+1. **Auto-focus cursor** - Focus in note editor when opening
+2. **Admin console** - Fix nested button HTML warnings
+
 ## Testing Checklist
 
-- [ ] Folders page loads without errors
-- [ ] Share button visible on own folders
-- [ ] Can create share invitation
-- [ ] Invitation accepted creates permission record
-- [ ] Shared folders appear for recipient
+- [x] Folders page loads without errors
+- [x] Share button visible on own folders
+- [x] Can create share invitation
+- [x] Invitation accepted creates permission record
+- [x] Shared folders appear for recipient
+- [x] "Shared by you" indicator shows for owners
+- [x] Read-only permissions properly disable edit UI
+- [ ] Direct notebook sharing works
+- [ ] Revoke access removes permissions
