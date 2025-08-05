@@ -26,7 +26,6 @@ export function RichTextEditor({
   const [floatingButton, setFloatingButton] = useState<{ x: number; y: number; show: boolean }>({ x: 0, y: 0, show: false });
   const [selectedText, setSelectedText] = useState('');
   const [selectedRange, setSelectedRange] = useState<{ from: number; to: number } | null>(null);
-  const [fullDocumentContent, setFullDocumentContent] = useState('');
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<{ original: string; enhanced: string; improvements: string[]; isSelection: boolean }>({ original: '', enhanced: '', improvements: [], isSelection: false });
   const floatingButtonRef = useRef<HTMLDivElement>(null);
@@ -78,7 +77,6 @@ export function RichTextEditor({
         
         setSelectedText(text);
         // Don't set range here - we'll capture it when enhance is clicked
-        setFullDocumentContent(editor.getHTML()); // Store full content
         setFloatingButton({
           x,
           y: Math.max(10, coords.top - editorRect.top - 40), // Position above selection, min 10px from top
@@ -88,7 +86,6 @@ export function RichTextEditor({
         setFloatingButton({ x: 0, y: 0, show: false });
         setSelectedText('');
         // Don't clear selectedRange here - we need it for the enhancement
-        setFullDocumentContent('');
       }
     };
 
@@ -197,7 +194,6 @@ export function RichTextEditor({
     setFloatingButton({ x: 0, y: 0, show: false });
     setSelectedText('');
     setSelectedRange(null);  // Clear range after enhancement is done
-    setFullDocumentContent('');
   };
 
   const handleUndo = () => {
@@ -363,8 +359,7 @@ export function RichTextEditor({
           // Clear selection state when closing without accepting
           setSelectedText('');
           setSelectedRange(null);
-          setFullDocumentContent('');
-        }}
+          }}
         originalText={previewData.original}
         enhancedText={previewData.enhanced}
         improvements={previewData.improvements}

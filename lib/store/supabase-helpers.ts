@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Folder, Notebook, Note, Quiz } from './types'
+import type { Folder, Notebook, Note, Quiz, ShareInvitation, ResourcePermission } from './types'
 import { logger, logApiCall } from '@/lib/debug/logger'
 import { handleSupabaseError } from './error-handler'
 
@@ -27,22 +27,81 @@ async function getSupabaseClient() {
 }
 
 export const foldersApi = {
-  async getAll() {
+  async getAll(includeShared = true) {
     try {
       logApiCall('folders', 'GET')
       const supabase = await getSupabaseClient()
-      const { data, error } = await supabase
+      
+      // Get user's own folders
+      const { data: ownFolders, error: ownError } = await supabase
         .from('folders')
         .select('*')
         .order('created_at', { ascending: true })
       
-      if (error) {
-        logApiCall('folders', 'GET', null, error)
-        handleSupabaseError(error, 'fetch folders')
+      if (ownError) {
+        logApiCall('folders', 'GET', null, ownError)
+        handleSupabaseError(ownError, 'fetch own folders')
       }
       
-      logApiCall('folders', 'GET', { count: data?.length || 0 })
-      return data as Folder[]
+      let allFolders = ownFolders || []
+      
+      // Get shared folders if requested
+      if (includeShared) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          // First, check which of the user's own folders have been shared with others
+          if (ownFolders && ownFolders.length > 0) {
+            const ownFolderIds = ownFolders.map(f => f.id)
+            const { data: outgoingShares } = await supabase
+              .from('permissions')
+              .select('resource_id')
+              .eq('resource_type', 'folder')
+              .in('resource_id', ownFolderIds)
+              .neq('user_id', user.id) // Permissions for other users
+            
+            if (outgoingShares && outgoingShares.length > 0) {
+              const sharedByMeIds = new Set(outgoingShares.map(p => p.resource_id))
+              allFolders = allFolders.map(f => ({
+                ...f,
+                sharedByMe: sharedByMeIds.has(f.id)
+              }))
+            }
+          }
+          
+          // Then get folders shared with the user
+          const { data: sharedFolderIds, error: permError } = await supabase
+            .from('permissions')
+            .select('resource_id, permission')
+            .eq('resource_type', 'folder')
+            .eq('user_id', user.id)
+          
+          if (!permError && sharedFolderIds && sharedFolderIds.length > 0) {
+            // Found shared folder permissions
+            const folderIds = sharedFolderIds.map(p => p.resource_id)
+            const { data: sharedFolders, error: sharedError } = await supabase
+              .from('folders')
+              .select('*')
+              .in('id', folderIds)
+              .order('created_at', { ascending: true })
+            
+            if (!sharedError && sharedFolders) {
+              // Loaded shared folders
+              // Mark shared folders
+              const markedSharedFolders = sharedFolders.map(f => ({
+                ...f,
+                shared: true,
+                permission: sharedFolderIds.find(p => p.resource_id === f.id)?.permission || 'read'
+              }))
+              allFolders = [...allFolders, ...markedSharedFolders]
+            } else if (sharedError) {
+              // Error loading shared folders
+            }
+          }
+        }
+      }
+      
+      logApiCall('folders', 'GET', { count: allFolders.length })
+      return allFolders as Folder[]
     } catch (error) {
       // Only return empty array if Supabase client is not available (dev mode)
       if (error instanceof Error && (error.message === 'Supabase client not available' || error.message === 'No active session')) {
@@ -101,9 +160,11 @@ export const foldersApi = {
 }
 
 export const notebooksApi = {
-  async getAll(includeArchived = false) {
+  async getAll(includeArchived = false, includeShared = true) {
     try {
       const supabase = await getSupabaseClient()
+      
+      // Get user's own notebooks
       let query = supabase
         .from('notebooks')
         .select('*')
@@ -113,10 +174,110 @@ export const notebooksApi = {
         query = query.eq('archived', false)
       }
       
-      const { data, error } = await query
+      const { data: ownNotebooks, error: ownError } = await query
       
-      if (error) throw error
-      return data as Notebook[]
+      if (ownError) throw ownError
+      
+      let allNotebooks = ownNotebooks || []
+      
+      // Get shared notebooks if requested
+      if (includeShared) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          // First, check which of the user's own notebooks have been shared with others
+          if (ownNotebooks && ownNotebooks.length > 0) {
+            const ownNotebookIds = ownNotebooks.map(n => n.id)
+            const { data: outgoingShares } = await supabase
+              .from('permissions')
+              .select('resource_id')
+              .eq('resource_type', 'notebook')
+              .in('resource_id', ownNotebookIds)
+              .neq('user_id', user.id) // Permissions for other users
+            
+            if (outgoingShares && outgoingShares.length > 0) {
+              const sharedByMeIds = new Set(outgoingShares.map(p => p.resource_id))
+              allNotebooks = allNotebooks.map(n => ({
+                ...n,
+                sharedByMe: sharedByMeIds.has(n.id)
+              }))
+            }
+          }
+          // Get directly shared notebooks
+          const { data: sharedNotebookPerms, error: notebookPermError } = await supabase
+            .from('permissions')
+            .select('resource_id, permission')
+            .eq('resource_type', 'notebook')
+            .eq('user_id', user.id)
+          
+          // Get notebooks in shared folders
+          const { data: sharedFolderPerms, error: folderPermError } = await supabase
+            .from('permissions')
+            .select('resource_id, permission')
+            .eq('resource_type', 'folder')
+            .eq('user_id', user.id)
+          
+          const notebookIds: string[] = []
+          const permissions: Record<string, string> = {}
+          
+          // Collect directly shared notebook IDs
+          if (!notebookPermError && sharedNotebookPerms) {
+            sharedNotebookPerms.forEach(p => {
+              notebookIds.push(p.resource_id)
+              permissions[p.resource_id] = p.permission
+            })
+          }
+          
+          // Get notebooks from shared folders
+          if (!folderPermError && sharedFolderPerms && sharedFolderPerms.length > 0) {
+            const folderIds = sharedFolderPerms.map(p => p.resource_id)
+            let folderQuery = supabase
+              .from('notebooks')
+              .select('id, folder_id')
+              .in('folder_id', folderIds)
+            
+            if (!includeArchived) {
+              folderQuery = folderQuery.eq('archived', false)
+            }
+            
+            const { data: notebooksInSharedFolders } = await folderQuery
+            
+            if (notebooksInSharedFolders) {
+              notebooksInSharedFolders.forEach(n => {
+                if (!notebookIds.includes(n.id)) {
+                  notebookIds.push(n.id)
+                  // Inherit folder permission
+                  const folderPerm = sharedFolderPerms.find(
+                    p => p.resource_id === n.folder_id
+                  )
+                  if (folderPerm) {
+                    permissions[n.id] = folderPerm.permission
+                  }
+                }
+              })
+            }
+          }
+          
+          // Fetch all shared notebooks
+          if (notebookIds.length > 0) {
+            const { data: sharedNotebooks, error: sharedError } = await supabase
+              .from('notebooks')
+              .select('*')
+              .in('id', notebookIds)
+              .order('created_at', { ascending: true })
+            
+            if (!sharedError && sharedNotebooks) {
+              const markedSharedNotebooks = sharedNotebooks.map(n => ({
+                ...n,
+                shared: true,
+                permission: permissions[n.id] || 'read'
+              }))
+              allNotebooks = [...allNotebooks, ...markedSharedNotebooks]
+            }
+          }
+        }
+      }
+      
+      return allNotebooks as Notebook[]
     } catch (error) {
       console.warn('Failed to fetch notebooks:', error)
       return []
@@ -287,5 +448,42 @@ export const quizzesApi = {
       .eq('id', id)
     
     if (error) throw error
+  }
+}
+
+export const sharesApi = {
+  async getShareMetadata() {
+    try {
+      const supabase = await getSupabaseClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('No authenticated user')
+      
+      // Get all permissions for the user
+      const { data: permissions, error: permError } = await supabase
+        .from('permissions')
+        .select('*')
+        .or(`user_id.eq.${user.id},granted_by.eq.${user.id}`)
+      
+      if (permError) throw permError
+      
+      // Get share invitations created by the user
+      const { data: invitations, error: invError } = await supabase
+        .from('share_invitations')
+        .select('*')
+        .eq('invited_by', user.id)
+      
+      if (invError) throw invError
+      
+      return {
+        permissions: permissions as ResourcePermission[],
+        invitations: invitations as ShareInvitation[]
+      }
+    } catch {
+      // Silently fail - sharing metadata is optional
+      return {
+        permissions: [],
+        invitations: []
+      }
+    }
   }
 }

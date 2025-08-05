@@ -6,88 +6,125 @@
 - **State**: Zustand 5.0 with Immer middleware
 - **Database**: Supabase (PostgreSQL with RLS)
 - **Styling**: Tailwind CSS 4
-- **Icons**: Lucide React + Custom Logo
 - **Rich Text**: TipTap 3.0 editor
-- **AI**: OpenAI GPT-3.5 for text enhancement
-- **Markdown**: marked 16.1 for content conversion
+- **AI**: Anthropic Claude for text enhancement
 
-## Data Model
+## State Management Strategy (Updated)
 
-```
-Users → Folders → Notebooks → Notes
-Users → Quizzes
-```
+After evaluating the current scale (~50 notebooks, ~1000 notes) and single-developer scenario, we're taking a pragmatic approach rather than a full architectural rewrite.
 
-### Database Schema
+### Current Issues (Actual vs Theoretical)
 
-All tables have:
+**Actual Problems:**
 
-- `user_id` (auto-set to `auth.uid()`)
-- Row Level Security (RLS) policies
-- Automatic timestamps
+- Share metadata not loading upfront (causes dialog delays)
+- Loading ALL notes on startup (slow initial load)
+- No caching between sessions (full reload each time)
 
-See `/lib/supabase/schema.sql` for details.
+**Theoretical Problems (not critical at current scale):**
 
-## Architecture Patterns
+- Store inside React (Zustand handles this fine)
+- Mixed concerns (manageable at 800 LOC)
+- Array lookups (microseconds with 50 items)
 
-### State Management
+### Implementation Plan: Selective Improvements
 
-- Zustand store with optimistic updates
-- All API calls through `supabase-helpers.ts`
-- Error handling with toast notifications
-- TypeScript interfaces in `/lib/types/`
+#### Phase 1: Share Metadata (Ship Immediately)
 
-### Authentication
+```typescript
+// Add to existing store
+sharePermissions: Map<string, Permission[]>
+shareInvitations: ShareInvitation[]
 
-- Middleware-based auth (`middleware.ts`)
-- Protected routes: `/folders`, `/notebooks/*`, `/quizzing`
-- Public routes: `/`, `/auth/*`
-
-### RLS Strategy
-
-```sql
--- INSERT: Any authenticated user
-WITH CHECK (auth.uid() IS NOT NULL)
-
--- SELECT/UPDATE/DELETE: Own data only
-USING (auth.uid() = user_id)
+// Load with initial data
+await Promise.all([
+  loadFolders(),
+  loadNotebooks(),
+  loadShareMetadata() // NEW - fixes dialog delays
+])
 ```
 
-## Admin System
+#### Phase 2: Lazy Note Loading (Ship Next Week)
 
-**Current**: Client-side email check (dev only)
-**TODO**: Server-side RBAC with audit logs
+```typescript
+// Track what's loaded
+notesLoadedForNotebooks: Set<notebookId>
 
-See admin console with 'd' key 3x.
+// Load on demand when notebook opened
+loadNotesForNotebook: async (notebookId) => {
+  if (already loaded) return
+  const notes = await notesApi.getByNotebook(notebookId)
+  // Add to existing notes array
+}
+```
+
+#### Phase 3: Simple Caching (If Needed)
+
+```typescript
+// Only if users complain about reload times
+saveToCache: () => localStorage.setItem('notemaxxing-cache', ...)
+loadFromCache: () => { /* on startup */ }
+```
+
+### Why This Approach?
+
+1. **Solves Real Problems**: Fixes actual user-facing issues
+2. **Minimal Risk**: Small changes to working code
+3. **Fast Delivery**: Each phase ships in days
+4. **Appropriate Complexity**: Matches current app scale
+
+### State Architecture (Migration Complete!)
+
+The new Zustand state architecture is now fully deployed:
+
+- **Data Store**: Separated data/UI stores with Maps for O(1) lookups
+- **Data Manager**: External state manager with optimistic updates
+- **Full Data Loading**: All data (folders, notebooks, notes) loaded at initialization
+- **Instant Search**: Full-text search works across all content immediately
+
+**Architecture Benefits:**
+
+- No loading delays when navigating
+- Instant search across everything
+- Clean separation of concerns
+- Ready for real-time sync when needed
+
+## Database Schema
+
+### Core Tables
+
+- `profiles` - User profiles
+- `folders` - User's folders
+- `notebooks` - Notebooks in folders
+- `notes` - Notes in notebooks
+- `quizzes` - Quiz data
+
+### Sharing Tables (Currently Blocked)
+
+- `share_invitations` - Pending share invites
+- `permissions` - Active share permissions
+
+**Issue**: Foreign key to `auth.users` causes permission errors. Needs removal.
 
 ## File Structure
 
 ```
 app/               # Pages & routes
-  api/            # API routes (AI enhancement)
-  auth/           # Authentication pages
+  api/            # API routes
+  auth/           # Authentication
   folders/        # Folder management
-  notebooks/[id]/ # Notebook & notes view
-  quizzing/       # Quiz feature (in development)
-  typemaxxing/    # Typing practice (in development)
+  notebooks/[id]/ # Notebook view
+  share/[id]/     # Share acceptance
 
-components/        # Shared UI components
-  forms/          # Form components (ColorPicker)
-  layouts/        # Layout components (EntityGrid)
-  ui/             # Atomic UI components
-
+components/        # UI components
 lib/
-  store/          # Zustand state management
-  supabase/       # DB client & SQL files
-  types/          # TypeScript definitions
-  hooks/          # Custom React hooks
-  utils/          # Utility functions
-  constants/      # App constants
+  store/          # Zustand state
+  supabase/       # DB client
+  api/            # API helpers
 ```
 
-## Recent Features
+## Security
 
-- **AI-Enhanced Notes**: Rich text editor with AI grammar/clarity enhancement
-- **Loading Skeletons**: Smooth loading states across all data fetching
-- **Content Conversion**: Automatic markdown to HTML conversion
-- **Reusable Components**: ColorPicker, EntityGrid, Skeleton components
+- Row Level Security (RLS) on all tables
+- Middleware-based auth protection
+- User can only access own data (except shares)

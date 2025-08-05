@@ -20,17 +20,19 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { NoteCard, AddNoteCard } from "@/components/cards/NoteCard";
+import { SharedIndicator } from "@/components/SharedIndicator";
 import { toHTML, toPlainText } from "@/lib/utils/content";
 import {
   useFolder,
   useNotebook,
   useNotebooks,
-  useNotes,
-  useNoteActions,
+  useNotesInNotebook,
+  useDataActions,
   useSyncState,
   useNotebookSort,
-  useGlobalSearch
-} from "@/lib/store/hooks";
+  useGlobalSearch,
+  useUIActions
+} from "@/lib/store";
 
 type SortOption = "recent" | "alphabetical" | "created";
 
@@ -42,12 +44,15 @@ export default function NotebookPage() {
   // Use Zustand hooks
   const notebook = useNotebook(notebookId);
   const folder = useFolder(notebook?.folder_id || null);
-  const { notebooks: allNotebooks } = useNotebooks();
-  const { notes: allNotes, loading: notesLoading } = useNotes(notebookId);
-  const { createNote, updateNote, deleteNote } = useNoteActions();
-  const { error, setSyncError } = useSyncState();
-  const { notebookSort } = useNotebookSort();
-  const { globalSearch, setGlobalSearch } = useGlobalSearch();
+  const allNotebooks = useNotebooks();
+  const allNotes = useNotesInNotebook(notebookId);
+  const { createNote, updateNote, deleteNote } = useDataActions();
+  const syncState = useSyncState();
+  const notebookSort = useNotebookSort();
+  const globalSearch = useGlobalSearch();
+  const { setGlobalSearch } = useUIActions();
+  
+  const loading = syncState.status === 'loading';
 
   const [notes, setNotes] = useState<typeof allNotes>([]);
   const [sortOption, setSortOption] = useState<SortOption>("recent");
@@ -88,10 +93,10 @@ export default function NotebookPage() {
 
   // Redirect if notebook not found
   useEffect(() => {
-    if (!notesLoading && !notebook) {
+    if (!loading && !notebook) {
       router.push("/folders");
     }
-  }, [notebook, notesLoading, router]);
+  }, [notebook, loading, router]);
 
   // Sort and filter notes
   useEffect(() => {
@@ -193,7 +198,7 @@ export default function NotebookPage() {
         setIsSaving(false);
       } catch (error) {
         console.error('Failed to save note:', error);
-        setSyncError(error instanceof Error ? error.message : 'Failed to save note');
+        // Error is logged but not displayed in UI currently
         setIsSaving(false);
       }
     }, 500); // Auto-save after 500ms of no typing
@@ -213,7 +218,7 @@ export default function NotebookPage() {
       }
     } catch (error) {
       console.error('Failed to delete note:', error);
-      setSyncError(error instanceof Error ? error.message : 'Failed to delete note');
+      // Error is logged but not displayed in UI currently
     }
   };
 
@@ -245,12 +250,12 @@ export default function NotebookPage() {
       <PageHeader backUrl="/folders" />
 
       {/* Error Message */}
-      {error && (
+      {syncState.error && (
         <div className="mx-4 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
           <p className="font-semibold">Error</p>
-          <p>{error}</p>
+          <p>{syncState.error}</p>
           <button 
-            onClick={() => setSyncError(null)}
+            onClick={() => console.log('Error dismissed')}
             className="mt-2 text-sm underline"
           >
             Dismiss
@@ -302,7 +307,12 @@ export default function NotebookPage() {
         <div className="flex-1 flex flex-col">
           {/* Content Header */}
           <div className="bg-white border-b border-gray-200 p-4">
-            <h2 className="text-2xl font-semibold mb-3">{notebook.name}</h2>
+            <div className="flex items-center gap-3 mb-3">
+              <h2 className="text-2xl font-semibold">{notebook.name}</h2>
+              {notebook.shared && (
+                <SharedIndicator shared={notebook.shared} permission={notebook.permission} />
+              )}
+            </div>
             <div className="flex items-center gap-4">
               <SearchInput
                 value={globalSearch}
@@ -332,13 +342,13 @@ export default function NotebookPage() {
           {!selectedNote ? (
             <div className="flex-1 p-6 overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {/* Add Note Card */}
-                {!notesLoading && (
+                {/* Add Note Card - only show if user can write */}
+                {!loading && (!notebook.shared || notebook.permission === 'write') && (
                   <AddNoteCard onClick={handleCreateNote} />
                 )}
 
                 {/* Loading Skeletons */}
-                {notesLoading ? (
+                {loading ? (
                   [...Array(8)].map((_, i) => (
                     <div key={i} className="bg-white rounded-lg border border-gray-200 p-6 h-48 flex flex-col">
                       <div className="flex items-start justify-between mb-2">
@@ -363,9 +373,10 @@ export default function NotebookPage() {
                         setSelectedNote(note);
                         setEditingNoteTitle(note.title);
                         setEditingNoteContent(toHTML(note.content));
-                        setIsEditingNote(true);
+                        // Only allow editing if user has write permission
+                        setIsEditingNote(!notebook.shared || notebook.permission === 'write');
                       }}
-                      onDelete={() => handleDeleteNote(note.id)}
+                      onDelete={(!notebook.shared || notebook.permission === 'write') ? () => handleDeleteNote(note.id) : undefined}
                       formatDate={formatDate}
                     />
                   ))
@@ -386,7 +397,8 @@ export default function NotebookPage() {
                   <ArrowLeft className="h-5 w-5 text-gray-800" />
                 </button>
                 <div className="flex items-center gap-2">
-                  {!isEditingNote && (
+                  {/* Only show edit button if user has write permission */}
+                  {!isEditingNote && (!notebook.shared || notebook.permission === 'write') && (
                     <button
                       onClick={() => setIsEditingNote(true)}
                       className="p-2 rounded-md hover:bg-gray-100"
@@ -399,12 +411,15 @@ export default function NotebookPage() {
                       {isSaving ? "Saving..." : "Saved"}
                     </span>
                   )}
-                  <button
-                    onClick={() => handleDeleteNote(selectedNote.id)}
-                    className="p-2 rounded-md hover:bg-gray-100 text-red-500"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </button>
+                  {/* Only show delete button if user has write permission */}
+                  {(!notebook.shared || notebook.permission === 'write') && (
+                    <button
+                      onClick={() => handleDeleteNote(selectedNote.id)}
+                      className="p-2 rounded-md hover:bg-gray-100 text-red-500"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </button>
+                  )}
                 </div>
               </div>
               <div className="p-8">

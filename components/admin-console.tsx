@@ -17,7 +17,15 @@ import {
   Loader,
 } from 'lucide-react'
 import { logger } from '@/lib/debug/logger'
-import { useStore } from '@/lib/store'
+import { 
+  useFolders, 
+  useNotebooks, 
+  useNotes, 
+  useSyncState, 
+  useIsInitialized,
+  useDataActions 
+} from '@/lib/store'
+import { dataManager } from '@/lib/store/data-manager'
 import { createClient } from '@/lib/supabase/client'
 
 // Admin emails who can access debug console
@@ -67,8 +75,13 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   const [allUsers, setAllUsers] = useState<UserData[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
 
-  // Get store state
-  const storeState = useStore()
+  // Get store state using new hooks
+  const folders = useFolders()
+  const notebooks = useNotebooks(true) // include archived
+  const notes = useNotes()
+  const syncState = useSyncState()
+  const isInitialized = useIsInitialized()
+  const { seedInitialData } = useDataActions()
 
   // Check if user is admin
   useEffect(() => {
@@ -149,7 +162,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const refreshStore = async () => {
     logger.info('Manually refreshing store...')
-    await storeState.initializeStore()
+    await dataManager.initialize()
   }
 
   // Admin functions
@@ -197,7 +210,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       alert('User data reset successfully')
 
       // Refresh store
-      await storeState.initializeStore()
+      await dataManager.initialize()
     } catch (error) {
       logger.error('Failed to reset user data', error)
       alert('Failed to reset user data: ' + (error as Error).message)
@@ -208,7 +221,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     try {
       // Check if it's the current user - use store method
       if (userId === currentUserId) {
-        const result = await storeState.seedInitialData('default-with-tutorials')
+        const result = await seedInitialData('default-with-tutorials')
         if (result.success) {
           logger.info('Seeded data for current user', { userId })
           alert('Starter content added successfully!')
@@ -223,7 +236,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       }
 
       // Refresh store
-      await storeState.initializeStore()
+      await dataManager.initialize()
     } catch (error) {
       logger.error('Failed to seed user data', error)
       alert('Failed to seed user data: ' + (error as Error).message)
@@ -317,14 +330,14 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const getStoreStats = () => {
     return {
-      folders: storeState.folders.length,
-      notebooks: storeState.notebooks.length,
-      notes: storeState.notes.length,
-      quizzes: storeState.quizzes.length,
-      initialized: storeState.initialized,
-      syncStatus: storeState.syncState.status,
-      syncError: storeState.syncState.error,
-      lastSync: storeState.syncState.lastSyncTime,
+      folders: folders.length,
+      notebooks: notebooks.length,
+      notes: notes.length,
+      quizzes: 0, // Quizzes not implemented in new store
+      initialized: isInitialized,
+      syncStatus: syncState.status,
+      syncError: syncState.error,
+      lastSync: syncState.lastSyncTime,
     }
   }
 
@@ -589,11 +602,11 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                   ))}
                 </div>
                 <button
-                  onClick={() => copyToClipboard(JSON.stringify(storeState, null, 2))}
+                  onClick={() => copyToClipboard(JSON.stringify(getStoreStats(), null, 2))}
                   className="text-xs text-blue-600 hover:underline flex items-center gap-1"
                 >
                   <Copy className="w-3 h-3" />
-                  Copy full state
+                  Copy store stats
                 </button>
               </div>
             )}

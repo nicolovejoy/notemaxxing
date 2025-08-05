@@ -1,116 +1,82 @@
-# Notemaxxing Development Guide
+# Development Guide
+
+## Recent Updates (August 2025)
+
+### Sharing System Implementation
+
+- Implemented email-specific invitation system (not public links)
+- Invitations expire after 7 days
+- Self-invitations prevented at UI and API level
+- Public preview endpoint for unauthenticated users shows minimal info
+- Uses existing `has_permission()` function and RLS policies
+
+### Known Issues
+
+- **Folders Page Bug**: Regular users see blank folders page with loading skeletons
+  - Root cause: `loadNotebooks(true)` in useEffect causing infinite loading
+  - Homepage works fine (doesn't have this extra call)
+  - Fix: Remove or fix the useEffect on folders page
 
 ## Quick Start
 
 ```bash
-# Install
 npm install
-
-# Environment
-cp .env.local.example .env.local
-# Add Supabase keys
-
-# Run
+cp .env.local.example .env.local  # Add Supabase keys
 npm run dev
 ```
 
 ## Commands
 
-- `npm run dev` - Start development
+- `npm run dev` - Development server
 - `npm run build` - Production build
-- `npm run lint` - Check code style
-- `npm run type-check` - TypeScript validation
+- `npm run lint` - Code linting
+- `npm run type-check` - TypeScript check
 
-## Current Status
+## Current Issues & Fixes
 
-✅ **Working Features:**
+### Sharing System Blocked
 
-- User auth & data persistence
-- Folders, notebooks, notes CRUD
-- Quizzing & typemaxxing
-- Admin console with user management (press 'd' 3x)
-- User deletion from admin console
+The sharing UI is built but fails due to database constraints:
 
-⚠️ **Known Issues:**
+```sql
+-- Problem: FK constraint to auth.users table
+-- Fix: Run in Supabase SQL Editor
+ALTER TABLE share_invitations DROP CONSTRAINT IF EXISTS share_invitations_invited_by_fkey;
+ALTER TABLE permissions DROP CONSTRAINT IF EXISTS permissions_granted_by_fkey;
+```
 
-- Seed data trigger breaks auth (currently disabled)
-- New users must be seeded manually via admin console
-- Admin auth is client-side only (security risk)
+### State Management Needs Refactor
 
-## Next Priorities
+- Zustand store should exist outside React
+- Load all data (including shares) on login
+- Make React components stateless
 
-1. **Fix Seed Data**: Re-implement without breaking auth
-2. **Security**: Move admin auth server-side
-3. **UX**: Add loading skeletons
-4. **Features**: Search functionality
+See TODO.md for priorities.
 
-## Development Tips
+## Adding Features
 
-### Adding Features
+1. **Update State**: Add to `/lib/store/useStore.ts`
+2. **Add API**: Create route in `/app/api/`
+3. **Update UI**: Build components in `/components/`
+4. **Test**: Run lint and type-check
 
-1. Update Zustand store in `/lib/store/useStore.ts`
-2. Add Supabase helpers in `supabase-helpers.ts`
-3. Create UI components with TypeScript
-4. Test with `npm run lint && npm run type-check`
+## Database Changes
 
-### Database Changes
-
-1. Update `/lib/supabase/schema.sql`
-2. Run migration in Supabase dashboard
+1. Update `/scripts/complete-database-setup.sql`
+2. Run in Supabase SQL Editor
 3. Update TypeScript types
 4. Test RLS policies
 
-### Common Issues
-
-- **RLS errors**: Check INSERT policies use `auth.uid() IS NOT NULL`
-- **Type errors**: Run `npm run type-check`
-- **Build fails**: Check `npm run lint` first
-
-## AI Integration (Simplified MVP)
-
-### Tech Stack
-
-```bash
-npm install @tiptap/react @tiptap/starter-kit openai
-```
-
-### Implementation Steps
-
-1. **Rich Text Editor**
-   - Replace textarea with TipTap
-   - Add formatting toolbar (bold, italic, lists, headings)
-   - Auto-save on blur
-
-2. **AI Enhancement**
-
-   ```typescript
-   // Simple API route at /api/ai/enhance
-   const response = await openai.chat.completions.create({
-     model: 'gpt-3.5-turbo',
-     messages: [
-       { role: 'system', content: 'Improve grammar and clarity...' },
-       { role: 'user', content: noteContent },
-     ],
-   })
-   ```
-
-3. **Rate Limiting**
-   - Simple in-memory counter: 50 requests/day per user
-   - Upgrade to Redis later if needed
-
-4. **UI Integration**
-   - Single "Enhance with AI ✨" button
-   - Loading state while processing
-   - Toast notifications for errors
-
-### Environment Variables
+## Environment Variables
 
 ```env
-ANTHROPIC_API_KEY=sk-ant-...
-ENABLE_AI=true
+NEXT_PUBLIC_SUPABASE_URL=your-project-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+ANTHROPIC_API_KEY=your-claude-key
 ```
 
 ## Deployment
 
-Automatic via Vercel on push to main branch.
-Live at: [notemaxxing.net](https://notemaxxing.net)
+- Automatic via Vercel on push to main
+- Preview deployments for all branches
+- Live at notemaxxing.net

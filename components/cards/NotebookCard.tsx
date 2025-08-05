@@ -1,5 +1,8 @@
 import React from 'react';
 import { BookOpen, Edit2, Archive, ArchiveRestore, Trash2, Check, X } from 'lucide-react';
+import { ShareButton } from '../ShareButton';
+import { SharedIndicator } from '../SharedIndicator';
+import type { Permission } from '@/lib/types/sharing';
 
 interface NotebookCardProps {
   id: string;
@@ -7,6 +10,9 @@ interface NotebookCardProps {
   color: string;
   noteCount: number;
   archived?: boolean;
+  shared?: boolean;
+  sharedByMe?: boolean;
+  permission?: Permission;
   isEditing?: boolean;
   editingName?: string;
   onEditingNameChange?: (name: string) => void;
@@ -15,15 +21,19 @@ interface NotebookCardProps {
   onArchive?: () => void;
   onRestore?: () => void;
   onDelete?: () => void;
-  onUpdate?: () => void;
+  onUpdate?: (newName: string) => void;
   onCancelEdit?: () => void;
 }
 
 export function NotebookCard({
+  id,
   name,
   color,
   noteCount,
   archived = false,
+  shared = false,
+  sharedByMe = false,
+  permission,
   isEditing = false,
   editingName = '',
   onEditingNameChange,
@@ -49,15 +59,17 @@ export function NotebookCard({
             className="flex-1 px-2 py-1 border border-gray-300 rounded text-gray-900"
             autoFocus
             onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                onUpdate?.();
+              if (e.key === 'Enter' && editingName) {
+                onUpdate?.(editingName);
               }
             }}
           />
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onUpdate?.();
+              if (editingName) {
+                onUpdate?.(editingName);
+              }
             }}
             className="p-1 hover:bg-gray-200 rounded"
           >
@@ -84,11 +96,28 @@ export function NotebookCard({
               {name}
               {archived && " (Archived)"}
             </span>
+            {(shared || sharedByMe) && (
+              <SharedIndicator 
+                shared={shared} 
+                sharedByMe={sharedByMe}
+                permission={permission} 
+                className="ml-2" 
+              />
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-              {onEdit && (
+              {!shared && !archived && (
+                <ShareButton
+                  resourceId={id}
+                  resourceType="notebook"
+                  resourceName={name}
+                  className="p-1 hover:bg-gray-200 rounded"
+                />
+              )}
+              {/* Only show edit button if user owns the notebook or has write permission */}
+              {onEdit && (!shared || permission === 'write') && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -99,7 +128,8 @@ export function NotebookCard({
                   <Edit2 className="h-4 w-4 text-gray-600" />
                 </button>
               )}
-              {(onArchive || onRestore) && (
+              {/* Only show archive/restore for owned notebooks (not shared) */}
+              {(onArchive || onRestore) && !shared && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -119,7 +149,8 @@ export function NotebookCard({
                   )}
                 </button>
               )}
-              {archived && onDelete && (
+              {/* Only show delete for owned archived notebooks */}
+              {archived && onDelete && !shared && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Trash2, FolderOpen, Archive, SortAsc, Edit2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
@@ -13,30 +13,29 @@ import { InlineEdit } from "@/components/ui/InlineEdit";
 import { NotebookCard } from "@/components/cards/NotebookCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { ShareButton } from "@/components/ShareButton";
+import { SharedIndicator } from "@/components/SharedIndicator";
 import { 
-  useFolders, 
-  useFolderActions,
+  useFolders,
   useNotebooks,
-  useNotebookActions,
   useNotes,
+  useDataActions,
   useSyncState,
   useNotebookSort,
-  useGlobalSearch
+  useGlobalSearch,
+  useUIActions
 } from "@/lib/store";
-import { useStore } from "@/lib/store/useStore";
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
 import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
 
 export default function FoldersPage() {
   const router = useRouter();
-  const { folders, loading: foldersLoading } = useFolders();
-  const { notebooks, loading: notebooksLoading } = useNotebooks(null, true);
-  const { notes } = useNotes();
-  const { createFolder, updateFolder, deleteFolder } = useFolderActions();
-  const { createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useNotebookActions();
-  const { error, setSyncError } = useSyncState();
-  const { loadNotebooks } = useStore();
-  
+  const folders = useFolders();
+  const notebooks = useNotebooks(true); // includeArchived = true
+  const notes = useNotes();
+  const { createFolder, updateFolder, deleteFolder, createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useDataActions();
+  const syncState = useSyncState();
+  const { setNotebookSort, setGlobalSearch } = useUIActions();
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR);
@@ -49,16 +48,9 @@ export default function FoldersPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [isCreatingFolderLoading, setIsCreatingFolderLoading] = useState(false);
   
-  const { notebookSort, setNotebookSort } = useNotebookSort();
-  const { globalSearch, setGlobalSearch } = useGlobalSearch();
+  const notebookSort = useNotebookSort();
+  const globalSearch = useGlobalSearch();
   const navigateToRecentNotebook = useNavigateToRecentNotebook();
-
-  // Ensure notebooks are loaded
-  useEffect(() => {
-    if (folders.length > 0 && notebooks.length === 0 && !notebooksLoading) {
-      loadNotebooks(true);
-    }
-  }, [folders.length, notebooks.length, notebooksLoading, loadNotebooks]);
   
   // Filter folders based on search - now searches folder names, notebook names, and note content
   const filteredFolders = useMemo(() => {
@@ -102,30 +94,21 @@ export default function FoldersPage() {
       setNewFolderColor(DEFAULT_FOLDER_COLOR);
     } catch (error) {
       console.error('Failed to create folder:', error);
-      setSyncError(
-        error instanceof Error 
-          ? error.message 
-          : 'Failed to create folder. Please check your connection and try again.'
-      );
     } finally {
       setIsCreatingFolderLoading(false);
     }
   };
 
-  const handleUpdateFolder = async (id: string) => {
-    if (!editFolderName.trim()) return;
+  const handleUpdateFolder = async (id: string, newName?: string) => {
+    const nameToUpdate = newName || editFolderName;
+    if (!nameToUpdate.trim()) return;
 
     try {
-      await updateFolder(id, { name: editFolderName });
+      await updateFolder(id, { name: nameToUpdate });
       setEditingFolderId(null);
       setEditFolderName("");
     } catch (error) {
       console.error('Failed to update folder:', error);
-      setSyncError(
-        error instanceof Error 
-          ? error.message 
-          : 'Failed to update folder. Please try again.'
-      );
     }
   };
 
@@ -155,11 +138,12 @@ export default function FoldersPage() {
     }
   };
 
-  const handleUpdateNotebook = async (id: string) => {
-    if (!editNotebookName.trim()) return;
+  const handleUpdateNotebook = async (id: string, newName?: string) => {
+    const nameToUpdate = newName || editNotebookName;
+    if (!nameToUpdate.trim()) return;
 
     try {
-      await updateNotebook(id, { name: editNotebookName });
+      await updateNotebook(id, { name: nameToUpdate });
       setEditingNotebookId(null);
       setEditNotebookName("");
     } catch (error) {
@@ -184,12 +168,15 @@ export default function FoldersPage() {
   };
 
   const handleDeleteNotebook = async (notebookId: string) => {
+    console.log('[DEBUG] Attempting to delete notebook:', notebookId);
+    
     if (!confirm("Are you sure you want to permanently delete this notebook? All notes inside will be deleted. Consider archiving instead.")) {
       return;
     }
 
     try {
       await deleteNotebook(notebookId);
+      console.log('[DEBUG] Notebook deleted successfully');
     } catch (error) {
       console.error('Failed to delete notebook:', error);
     }
@@ -299,7 +286,8 @@ export default function FoldersPage() {
     navigateToRecentNotebook(folderId);
   };
 
-  const loading = foldersLoading || notebooksLoading;
+  const loading = syncState.status === 'loading';
+  const error = syncState.error;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -336,7 +324,7 @@ export default function FoldersPage() {
           <p className="font-semibold">Error</p>
           <p>{error}</p>
           <button 
-            onClick={() => setSyncError(null)}
+            onClick={() => window.location.reload()}
             className="mt-2 text-sm underline"
           >
             Dismiss
@@ -464,7 +452,10 @@ export default function FoldersPage() {
                       <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
                         <InlineEdit
                           value={editFolderName}
-                          onSave={() => handleUpdateFolder(folder.id)}
+                          onSave={(newName) => {
+                            setEditFolderName(newName);
+                            handleUpdateFolder(folder.id, newName);
+                          }}
                           onCancel={() => {
                             setEditingFolderId(null);
                             setEditFolderName("");
@@ -482,24 +473,49 @@ export default function FoldersPage() {
                         onTitleClick={() => handleFolderClick(folder.id)}
                         actions={
                           <div className="flex gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingFolderId(folder.id);
-                                setEditFolderName(folder.name);
-                              }}
-                              className="p-1 hover:bg-white/20 rounded"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteFolder(folder.id)}
-                              className="p-1 hover:bg-white/20 rounded"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            {!folder.shared && (
+                              <ShareButton
+                                resourceId={folder.id}
+                                resourceType="folder"
+                                resourceName={folder.name}
+                                className="p-1 hover:bg-white/20 rounded text-white"
+                              />
+                            )}
+                            {/* Only show edit button if user owns the folder or has write permission */}
+                            {(!folder.shared || folder.permission === 'write') && (
+                              <button
+                                onClick={() => {
+                                  setEditingFolderId(folder.id);
+                                  setEditFolderName(folder.name);
+                                }}
+                                className="p-1 hover:bg-white/20 rounded"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                            )}
+                            {/* Only show delete button if user owns the folder (not shared) */}
+                            {!folder.shared && (
+                              <button
+                                onClick={() => handleDeleteFolder(folder.id)}
+                                className="p-1 hover:bg-white/20 rounded"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            )}
                           </div>
                         }
                       />
+                    )}
+
+                    {/* Shared indicator below folder header */}
+                    {(folder.shared || folder.sharedByMe) && (
+                      <div className="bg-white px-4 py-2 -mt-4 rounded-b-lg">
+                        <SharedIndicator 
+                          shared={folder.shared} 
+                          sharedByMe={folder.sharedByMe}
+                          permission={folder.permission} 
+                        />
+                      </div>
                     )}
 
                     {/* Notebooks in Folder */}
@@ -563,6 +579,9 @@ export default function FoldersPage() {
                               color={notebook.color}
                               noteCount={noteCount}
                               archived={notebook.archived}
+                              shared={notebook.shared}
+                              sharedByMe={notebook.sharedByMe}
+                              permission={notebook.permission}
                               isEditing={editingNotebookId === notebook.id}
                               editingName={editNotebookName}
                               onEditingNameChange={setEditNotebookName}
@@ -574,7 +593,7 @@ export default function FoldersPage() {
                               onArchive={() => handleArchiveNotebook(notebook.id)}
                               onRestore={() => handleRestoreNotebook(notebook.id)}
                               onDelete={() => handleDeleteNotebook(notebook.id)}
-                              onUpdate={() => handleUpdateNotebook(notebook.id)}
+                              onUpdate={(newName) => handleUpdateNotebook(notebook.id, newName)}
                               onCancelEdit={() => {
                                 setEditingNotebookId(null);
                                 setEditNotebookName("");
