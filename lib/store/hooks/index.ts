@@ -11,6 +11,7 @@ export {
   useDataActions,   // () => { createFolder, updateFolder, ... }
   useSyncState,     // () => { status, error, lastSyncTime }
   useIsInitialized, // () => boolean
+  useOrphanedSharedNotebooks, // () => Notebook[] (shared notebooks without folder access)
 } from './useDataStore'
 
 // UI store hooks

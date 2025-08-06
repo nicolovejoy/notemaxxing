@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Trash2, FolderOpen, Archive, SortAsc, Edit2 } from "lucide-react";
+import { Plus, Trash2, FolderOpen, Archive, SortAsc, Edit2, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { ColorPicker } from "@/components/forms/ColorPicker";
@@ -23,7 +23,8 @@ import {
   useSyncState,
   useNotebookSort,
   useGlobalSearch,
-  useUIActions
+  useUIActions,
+  useOrphanedSharedNotebooks
 } from "@/lib/store";
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
 import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
@@ -33,6 +34,7 @@ export default function FoldersPage() {
   const folders = useFolders();
   const notebooks = useNotebooks(true); // includeArchived = true
   const notes = useNotes();
+  const orphanedSharedNotebooks = useOrphanedSharedNotebooks();
   const { createFolder, updateFolder, deleteFolder, createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useDataActions();
   const syncState = useSyncState();
   const { setNotebookSort, setGlobalSearch } = useUIActions();
@@ -168,15 +170,12 @@ export default function FoldersPage() {
   };
 
   const handleDeleteNotebook = async (notebookId: string) => {
-    console.log('[DEBUG] Attempting to delete notebook:', notebookId);
-    
     if (!confirm("Are you sure you want to permanently delete this notebook? All notes inside will be deleted. Consider archiving instead.")) {
       return;
     }
 
     try {
       await deleteNotebook(notebookId);
-      console.log('[DEBUG] Notebook deleted successfully');
     } catch (error) {
       console.error('Failed to delete notebook:', error);
     }
@@ -613,6 +612,32 @@ export default function FoldersPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Shared with Me section */}
+          {orphanedSharedNotebooks.length > 0 && (
+            <div className="mt-12">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold text-gray-900">Shared with Me</h2>
+                <p className="text-sm text-gray-600 mt-1">Notebooks that have been shared with you</p>
+              </div>
+              
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+                   onClick={() => router.push('/shared-with-me')}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-purple-500 text-white rounded-lg">
+                      <FolderOpen className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">{orphanedSharedNotebooks.length} notebook{orphanedSharedNotebooks.length === 1 ? '' : 's'} shared directly with you</h3>
+                      <p className="text-sm text-gray-600">Click to view notebooks shared without folder access</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
             </div>
           )}
         </div>

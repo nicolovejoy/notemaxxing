@@ -219,11 +219,15 @@ export const notebooksApi = {
           const notebookIds: string[] = []
           const permissions: Record<string, string> = {}
           
+          // Track which notebooks are directly shared vs inherited from folder
+          const directlySharedNotebookIds = new Set<string>()
+          
           // Collect directly shared notebook IDs
           if (!notebookPermError && sharedNotebookPerms) {
             sharedNotebookPerms.forEach(p => {
               notebookIds.push(p.resource_id)
               permissions[p.resource_id] = p.permission
+              directlySharedNotebookIds.add(p.resource_id) // Mark as directly shared
             })
           }
           
@@ -268,7 +272,8 @@ export const notebooksApi = {
             if (!sharedError && sharedNotebooks) {
               const markedSharedNotebooks = sharedNotebooks.map(n => ({
                 ...n,
-                shared: true,
+                shared: true, // Kept for backwards compatibility
+                sharedDirectly: directlySharedNotebookIds.has(n.id), // NEW: explicit flag for direct shares
                 permission: permissions[n.id] || 'read'
               }))
               allNotebooks = [...allNotebooks, ...markedSharedNotebooks]

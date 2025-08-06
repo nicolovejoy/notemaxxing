@@ -7,6 +7,7 @@ import { sharingApi } from '@/lib/api/sharing'
 import { Button } from '@/components/ui'
 import { Check, AlertCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { dataManager } from '@/lib/store/data-manager'
 
 export default function SharePage() {
   const params = useParams()
@@ -105,6 +106,9 @@ export default function SharePage() {
     try {
       const result = await sharingApi.acceptInvitation(invitationId)
       setSuccess(true)
+      
+      // Refresh data store to load newly shared resources
+      await dataManager.refresh()
 
       // Redirect to the appropriate page after accepting
       setTimeout(() => {

@@ -304,7 +304,7 @@ export function ShareDialog({
                   className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
                 >
                   <div>
-                    <div className="text-sm font-medium">
+                    <div className="text-sm font-medium text-gray-900">
                       {share.user?.email}
                     </div>
                     <div className="text-xs text-gray-500">

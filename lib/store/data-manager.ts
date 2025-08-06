@@ -167,14 +167,11 @@ class DataManager {
     const original = dataStore.getState().getFolder(id)
     if (!original) return
     
-    console.log('[DataManager] Updating folder:', { id, updates, original })
-    
     // Optimistic update
     dataStore.getState().updateFolder(id, updates)
     
     try {
       const updated = await foldersApi.update(id, updates)
-      console.log('[DataManager] API response:', updated)
       
       // Preserve shared and permission properties from original
       const finalFolder = {
@@ -182,15 +179,8 @@ class DataManager {
         shared: original.shared,
         permission: original.permission
       }
-      console.log('[DataManager] Final folder:', finalFolder)
       
-      try {
-        dataStore.getState().updateFolder(id, finalFolder)
-        console.log('[DataManager] Store updated successfully')
-      } catch (storeError) {
-        console.error('[DataManager] Store update error:', storeError)
-        throw storeError
-      }
+      dataStore.getState().updateFolder(id, finalFolder)
     } catch (error) {
       console.error('[DataManager] Update failed:', error)
       // Rollback
@@ -361,6 +351,25 @@ class DataManager {
     this.state = {
       optimisticUpdates: [],
       initialized: false,
+    }
+  }
+  
+  // Force refresh all data
+  async refresh(): Promise<void> {
+    // console.log('[DataManager] Forcing data refresh')
+    
+    // Temporarily set initialized to false to force reload
+    const wasInitialized = this.state.initialized
+    this.state.initialized = false
+    
+    try {
+      await this.initialize()
+      // console.log('[DataManager] Data refresh completed')
+    } catch (error) {
+      console.error('[DataManager] Data refresh failed:', error)
+      // Restore initialized state on error
+      this.state.initialized = wasInitialized
+      throw error
     }
   }
   
