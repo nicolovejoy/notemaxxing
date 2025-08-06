@@ -103,3 +103,15 @@ export const useIsInitialized = () => {
   // This returns a primitive boolean, so it's stable
   return dataManager.isInitialized()
 }
+
+// Get directly shared notebooks (not through folder permissions)
+export const useOrphanedSharedNotebooks = () => {
+  const notebooks = useNotebooks()
+  const folders = useFolders()
+  
+  return useMemo(() => {
+    const accessibleFolderIds = new Set(folders.map(f => f.id))
+    // Only return notebooks that are DIRECTLY shared and whose folder is NOT accessible
+    return notebooks.filter(n => n.sharedDirectly && !accessibleFolderIds.has(n.folder_id))
+  }, [notebooks, folders])
+}

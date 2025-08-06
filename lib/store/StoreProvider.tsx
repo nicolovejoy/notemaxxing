@@ -13,7 +13,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     setIsClient(true)
-    logger.debug('StoreProvider mounted on client')
+    // logger.debug('StoreProvider mounted on client')
   }, [])
   
   useEffect(() => {
@@ -28,7 +28,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     // Function to attempt store initialization
     const attemptInitialization = async () => {
       if (hasInitialized) {
-        logger.debug('Store already initialized, skipping')
+        // logger.debug('Store already initialized, skipping')
         return
       }
       
@@ -37,13 +37,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession()
         
         if (session) {
-          logger.info(`Attempting store initialization (attempt ${initializationAttempts.current + 1}/${maxRetries})`)
+          // logger.info(`Attempting store initialization (attempt ${initializationAttempts.current + 1}/${maxRetries})`)
           await dataManager.initialize()
           setHasInitialized(true)
           initializationAttempts.current = 0
-          logger.info('Store initialized successfully via auth listener')
+          // logger.info('Store initialized successfully via auth listener')
         } else {
-          logger.debug('No session found, waiting for auth')
+          // logger.debug('No session found, waiting for auth')
         }
       } catch (error) {
         initializationAttempts.current++
@@ -52,7 +52,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // Retry with exponential backoff
         if (initializationAttempts.current < maxRetries) {
           const retryDelay = Math.min(1000 * Math.pow(2, initializationAttempts.current - 1), 5000)
-          logger.info(`Retrying initialization in ${retryDelay}ms`)
+          // logger.info(`Retrying initialization in ${retryDelay}ms`)
           setTimeout(attemptInitialization, retryDelay)
         } else {
           logger.error('Max initialization attempts reached')
@@ -62,7 +62,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      logger.info(`Auth state changed: ${event}`)
+      // logger.info(`Auth state changed: ${event}`)
       
       if (event === 'SIGNED_IN' || (event === 'INITIAL_SESSION' && session)) {
         // Add a small delay to ensure cookies are set

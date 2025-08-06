@@ -4,10 +4,9 @@
 
 - No superlatives
 - Do what has been asked; nothing more
-- Keep things simple. When there are multiple steps needed, describe the plan and get user feedback
-- ALWAYS prefer editing an existing file to creating a new one
+- Keep things simple. When there are multiple steps needed, describe the plan and get user feedback before beginning
 - NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User
-- Avoid positive affect or opinion
+- Avoid positive affect or opinion. Do not say "great idea!" ever again.
 - Be succinct
 - Review plans and options with user frequently
 - The user is always running the dev server - never attempt to start it
@@ -45,11 +44,10 @@ We use a clean Zustand store system:
 
 ### Known Issues & Bugs
 
-- Need to refresh after accepting share invitation to see shared resources
-- Need to refresh after login to see folders
 - Real-time sync not implemented - changes don't appear in other accounts without refresh
 - Folder card UI has overlapping icons with title
 - Accept invitation page shows "unnamed folder" instead of actual resource name
+- Revoke access returns "permission not found" error
 
 ### Notebook Management
 

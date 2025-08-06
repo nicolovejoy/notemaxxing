@@ -90,11 +90,13 @@ export function logApiCall(endpoint: string, method: string, data?: unknown, err
   if (error) {
     logger.error(`API call failed: ${method} ${endpoint}`, { data, error });
   } else {
-    logger.debug(`API call: ${method} ${endpoint}`, data);
+    // Commented out to reduce console noise
+    // logger.debug(`API call: ${method} ${endpoint}`, data);
   }
 }
 
 // Debug helper to log auth events
 export function logAuthEvent(event: string, data?: unknown) {
-  logger.info(`Auth event: ${event}`, data);
+  // Commented out to reduce console noise
+  // logger.info(`Auth event: ${event}`, data);
 }

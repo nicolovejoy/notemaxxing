@@ -53,6 +53,9 @@ export default function NotebookPage() {
   const { setGlobalSearch } = useUIActions();
   
   const loading = syncState.status === 'loading';
+  
+  // Check if this is a directly shared notebook (no folder access)
+  const isDirectlyShared = notebook?.sharedDirectly && !folder;
 
   const [notes, setNotes] = useState<typeof allNotes>([]);
   const [sortOption, setSortOption] = useState<SortOption>("recent");
@@ -236,7 +239,7 @@ export default function NotebookPage() {
     return d.toLocaleDateString();
   };
 
-  if (!notebook || !folder) {
+  if (!notebook) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <p className="text-gray-600">Loading notebook...</p>
@@ -264,20 +267,21 @@ export default function NotebookPage() {
       )}
 
       <div className="flex h-[calc(100vh-4rem)]}">
-        {/* Folder Sidebar */}
-        <div className="w-64 bg-white border-r border-gray-200 p-4">
-          <Link href="/folders" className="block">
-            <div className={`${folder.color} text-white rounded-lg p-3 mb-4 hover:opacity-90 transition-opacity cursor-pointer`}>
-              <div className="flex items-center gap-2">
-                <FolderOpen className="h-5 w-5" />
-                <span className="font-semibold">{folder.name}</span>
+        {/* Folder Sidebar - Only show if user has folder access */}
+        {!isDirectlyShared && folder && (
+          <div className="w-64 bg-white border-r border-gray-200 p-4">
+            <Link href="/folders" className="block">
+              <div className={`${folder.color} text-white rounded-lg p-3 mb-4 hover:opacity-90 transition-opacity cursor-pointer`}>
+                <div className="flex items-center gap-2">
+                  <FolderOpen className="h-5 w-5" />
+                  <span className="font-semibold">{folder.name}</span>
+                </div>
               </div>
-            </div>
-          </Link>
-          
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Notebooks</h3>
-          <div className="space-y-2">
-            {folderNotebooks.map((nb) => (
+            </Link>
+            
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Notebooks</h3>
+            <div className="space-y-2">
+              {folderNotebooks.map((nb) => (
               <button
                 key={nb.id}
                 onClick={() => router.push(`/notebooks/${nb.id}`)}
@@ -302,6 +306,39 @@ export default function NotebookPage() {
             ))}
           </div>
         </div>
+        )}
+        
+        {/* Simplified Sidebar for Directly Shared Notebooks */}
+        {isDirectlyShared && (
+          <div className="w-64 bg-white border-r border-gray-200 p-4">
+            <Link href="/shared-with-me" className="block">
+              <div className="bg-purple-500 text-white rounded-lg p-3 mb-4 hover:opacity-90 transition-opacity cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <ArrowLeft className="h-5 w-5" />
+                  <span className="font-semibold">Shared with Me</span>
+                </div>
+              </div>
+            </Link>
+            
+            <div className="bg-gray-50 rounded-lg p-3">
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Shared Notebook</h3>
+              <div className={`${notebook.color} rounded-lg p-3`}>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-gray-700" />
+                  <span className="text-sm font-medium text-gray-900">
+                    {notebook.name}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-3">
+                <SharedIndicator 
+                  shared={notebook.shared} 
+                  permission={notebook.permission} 
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
@@ -373,8 +410,8 @@ export default function NotebookPage() {
                         setSelectedNote(note);
                         setEditingNoteTitle(note.title);
                         setEditingNoteContent(toHTML(note.content));
-                        // Only allow editing if user has write permission
-                        setIsEditingNote(!notebook.shared || notebook.permission === 'write');
+                        // Never start in edit mode for read-only notebooks
+                        setIsEditingNote(false);
                       }}
                       onDelete={(!notebook.shared || notebook.permission === 'write') ? () => handleDeleteNote(note.id) : undefined}
                       formatDate={formatDate}
@@ -402,9 +439,16 @@ export default function NotebookPage() {
                     <button
                       onClick={() => setIsEditingNote(true)}
                       className="p-2 rounded-md hover:bg-gray-100"
+                      title="Edit note"
                     >
                       <Edit2 className="h-5 w-5 text-gray-800" />
                     </button>
+                  )}
+                  {/* Show view-only indicator for read-only notebooks */}
+                  {!isEditingNote && notebook.shared && notebook.permission === 'read' && (
+                    <span className="text-sm text-gray-500">
+                      View only
+                    </span>
                   )}
                   {isEditingNote && (
                     <span className="text-sm text-gray-500 italic">
@@ -440,7 +484,14 @@ export default function NotebookPage() {
                   </>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-semibold mb-4">{selectedNote.title}</h2>
+                    <div className="flex items-center gap-3 mb-4">
+                      <h2 className="text-2xl font-semibold">{selectedNote.title}</h2>
+                      {notebook.shared && notebook.permission === 'read' && (
+                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          Read-only
+                        </span>
+                      )}
+                    </div>
                     <div 
                       className="prose prose-sm max-w-none"
                       dangerouslySetInnerHTML={{ 

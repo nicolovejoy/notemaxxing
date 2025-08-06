@@ -6,11 +6,10 @@ export type Folder = Database['public']['Tables']['folders']['Row'] & {
   shared?: boolean
   sharedByMe?: boolean
   permission?: 'read' | 'write'
-  virtual?: boolean // Folder only visible due to shared notebook
-  sharedNotebookOnly?: boolean // True when folder is shown because it contains shared notebooks
 }
 export type Notebook = Database['public']['Tables']['notebooks']['Row'] & {
-  shared?: boolean
+  shared?: boolean // True if accessible through any permission (folder or direct)
+  sharedDirectly?: boolean // True only if directly shared (not through folder)
   sharedByMe?: boolean
   permission?: 'read' | 'write'
 }

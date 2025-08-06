@@ -1,6 +1,6 @@
 # Handoff Context - Sharing System Complete
 
-## Current Status (January 2025)
+## Current Status (August 2025)
 
 ### ✅ Sharing System Working
 
@@ -109,24 +109,25 @@ CREATE POLICY "Users can view shared folders" ON folders
   );
 ```
 
-## Current Branch Work (fix/data-refresh-issues)
+## Completed Work (fix/data-refresh-issues branch)
 
-✅ Fixed data refresh issues:
+✅ Fixed orphaned shared notebooks:
 
-- Added `refresh()` method to DataManager that forces complete data reload
-- Data now refreshes automatically after login
-- Data now refreshes automatically after accepting share invitations
-- Fixed nested button HTML error in admin console
+- Added `sharedDirectly` property to distinguish direct shares from folder inheritance
+- Created `/shared-with-me` page for directly shared notebooks
+- Smart detection in notebook page - shows simplified UI when no folder access
+
+✅ Fixed UX issues:
+
+- Read-only notebooks properly disable editing
+- Share dialog shows "People with access" with correct text color
+- Fixed NotebookCard props in shared-with-me page
 
 ## Remaining Tasks
 
 ### Critical Issues
 
-1. **Directly shared notebooks have no UI** - When sharing notebook without folder access, recipient can't see it anywhere
-   - Option 4 (show parent folder read-only) seems best
-   - Requires modifying folder query to include folders containing shared notebooks
-2. ~~**Data refresh issues**~~ - ✅ FIXED - Data now refreshes automatically after login/accepting invitations
-3. **Share dialog not showing existing shares** - "People with access" section empty despite permissions existing
+1. **Revoke access broken** - Returns "permission not found" error when trying to revoke
 
 ### High Priority
 
