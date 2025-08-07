@@ -1,8 +1,6 @@
-# Design System Documentation
+# Design System
 
-## Overview
-
-This document outlines the reusable UI components and patterns in our design system. Always use these components instead of creating new ones from scratch.
+Always use these components instead of creating new ones.
 
 ## Core Components
 
@@ -14,7 +12,6 @@ Universal input component with built-in label, error handling, and accessibility
 
 ```tsx
 import { FormField } from '@/components/ui/FormField'
-
 ;<FormField
   label="Email"
   type="email"
@@ -33,7 +30,6 @@ Dropdown select with consistent styling and error handling.
 
 ```tsx
 import { SelectField } from '@/components/ui/SelectField'
-
 ;<SelectField
   label="Permission"
   value={permission}
@@ -53,7 +49,6 @@ Button with built-in loading state and spinner.
 
 ```tsx
 import { LoadingButton } from '@/components/ui/LoadingButton'
-
 ;<LoadingButton
   loading={isSubmitting}
   loadingText="Saving..."
@@ -75,7 +70,6 @@ Consistent status messages with icons.
 
 ```tsx
 import { StatusMessage } from '@/components/ui/StatusMessage'
-
 ;<StatusMessage
   type="error" // error | success | warning | info
   message="Something went wrong"
@@ -91,7 +85,6 @@ Base modal with consistent styling and behavior.
 
 ```tsx
 import { Modal } from '@/components/ui/Modal'
-
 ;<Modal
   isOpen={showModal}
   onClose={() => setShowModal(false)}
@@ -108,7 +101,6 @@ Consistent footer for modal actions.
 
 ```tsx
 import { ModalFooter } from '@/components/ui/ModalFooter'
-
 ;<ModalFooter>
   <LoadingButton variant="secondary" onClick={onCancel}>
     Cancel
@@ -127,7 +119,6 @@ Container with consistent styling.
 
 ```tsx
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
-
 ;<Card hover onClick={handleClick}>
   <CardHeader>Title</CardHeader>
   <CardBody>Content</CardBody>
@@ -140,7 +131,6 @@ Consistent page header with navigation.
 
 ```tsx
 import { PageHeader } from '@/components/ui/PageHeader'
-
 ;<PageHeader backUrl="/folders" rightContent={<button>Action</button>} />
 ```
 
@@ -150,7 +140,6 @@ Placeholder for empty content.
 
 ```tsx
 import { EmptyState } from '@/components/ui/EmptyState'
-
 ;<EmptyState title="No items yet" description="Create your first item to get started" />
 ```
 
@@ -162,7 +151,6 @@ Icon-only button with consistent styling.
 
 ```tsx
 import { IconButton } from '@/components/ui/IconButton'
-
 ;<IconButton
   icon={TrashIcon}
   onClick={handleDelete}
@@ -178,7 +166,6 @@ Select dropdown with consistent styling.
 
 ```tsx
 import { Dropdown } from '@/components/ui/Dropdown'
-
 ;<Dropdown
   label="Sort by"
   icon={<SortIcon />}
@@ -197,7 +184,6 @@ Search field with icon and clear button.
 
 ```tsx
 import { SearchInput } from '@/components/ui/SearchInput'
-
 ;<SearchInput value={search} onChange={setSearch} placeholder="Search..." />
 ```
 
@@ -207,7 +193,6 @@ Inline editable text field.
 
 ```tsx
 import { InlineEdit } from '@/components/ui/InlineEdit'
-
 ;<InlineEdit value={name} onSave={handleSave} onCancel={handleCancel} />
 ```
 
@@ -247,13 +232,13 @@ import { InlineEdit } from '@/components/ui/InlineEdit'
 
 ## Best Practices
 
-1. **Always use existing components** - Check this document before creating new UI
-2. **Consistent spacing** - Use the spacing tokens, not arbitrary values
-3. **Consistent colors** - Use semantic colors (primary, danger, etc.)
-4. **Accessibility** - All interactive elements should have proper ARIA labels
-5. **Loading states** - Use LoadingButton for async actions
-6. **Error handling** - Use StatusMessage for all error/success feedback
-7. **Modal patterns** - Use Modal + ModalFooter for all dialogs
+1. Use existing components
+2. Use spacing tokens
+3. Use semantic colors
+4. Add ARIA labels
+5. Use LoadingButton for async
+6. Use StatusMessage for feedback
+7. Use Modal + ModalFooter
 
 ## Component Locations
 
@@ -273,18 +258,3 @@ All UI components are in `/components/ui/`:
 - SearchInput.tsx
 - InlineEdit.tsx
 - Skeleton.tsx
-
-## Adding to CLAUDE.md
-
-To ensure AI assistants use these components, add this to your CLAUDE.md:
-
-```markdown
-## Design System
-
-- ALWAYS use components from /components/ui/
-- See DESIGN_SYSTEM.md for component documentation
-- Never create duplicate form inputs, buttons, or modals
-- Use FormField for ALL input fields
-- Use LoadingButton for ALL async buttons
-- Use StatusMessage for ALL error/success messages
-```
