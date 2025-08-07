@@ -127,7 +127,7 @@ CREATE POLICY "Users can view shared folders" ON folders
 
 ### Critical Issues
 
-1. **Revoke access broken** - Returns "permission not found" error when trying to revoke
+1. **Revoke access API route** - Route file exists at `/app/api/shares/revoke/route.ts` but Next.js returns 404. May need cache clear or server restart.
 
 ### High Priority
 

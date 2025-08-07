@@ -27,7 +27,7 @@ import {
   useDataActions 
 } from '@/lib/store'
 import { dataManager } from '@/lib/store/data-manager'
-import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 // Admin emails who can access debug console
 const ADMIN_EMAILS = [
@@ -69,12 +69,47 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     env: false,
     database: false,
     users: false,
+    sharing: false,
   })
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [allUsers, setAllUsers] = useState<UserData[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
+  interface ShareInvitation {
+    id: string
+    resource_type: 'folder' | 'notebook'
+    resource_id: string
+    invited_email: string
+    invited_by: string
+    permission: 'read' | 'write'
+    created_at: string
+    expires_at: string
+    accepted_at: string | null
+  }
+
+  interface SharePermission {
+    id: string
+    resource_type: 'folder' | 'notebook'
+    resource_id: string
+    user_id: string
+    granted_by: string | null
+    permission: 'read' | 'write'
+    created_at: string
+  }
+
+  const [sharingData, setSharingData] = useState<{
+    invitations: ShareInvitation[]
+    permissions: SharePermission[]
+    resourceNames: Record<string, string>
+    userEmails: Record<string, string>
+  }>({ invitations: [], permissions: [], resourceNames: {}, userEmails: {} })
+  const [loadingSharing, setLoadingSharing] = useState(false)
+  const [selectedInvitations, setSelectedInvitations] = useState<Set<string>>(new Set())
+  const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set())
+
+  // Get auth state
+  const { user, client: supabase } = useAuth()
+  const userEmail = user?.email || null
+  const currentUserId = user?.id || null
+  const isAdmin = userEmail ? ADMIN_EMAILS.includes(userEmail) : false
 
   // Get store state using new hooks
   const folders = useFolders()
@@ -83,24 +118,6 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   const syncState = useSyncState()
   const isInitialized = useIsInitialized()
   const { seedInitialData } = useDataActions()
-
-  // Check if user is admin
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient()
-      if (!supabase) return
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user?.email) {
-        setUserEmail(user.email)
-        setCurrentUserId(user.id)
-        setIsAdmin(ADMIN_EMAILS.includes(user.email))
-      }
-    }
-    checkAuth()
-  }, [])
 
   // Listen for keyboard shortcut (triple press 'd')
   useEffect(() => {
@@ -170,7 +187,6 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   const loadAllUsers = async () => {
     setLoadingUsers(true)
     try {
-      const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
       // Get all users using our admin function
@@ -187,6 +203,132 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       logger.error('Failed to load users', error)
     } finally {
       setLoadingUsers(false)
+    }
+  }
+
+  const loadSharingData = async () => {
+    setLoadingSharing(true)
+    try {
+      if (!supabase) throw new Error('No Supabase client')
+
+      // Load all invitations (these aren't in local store)
+      const { data: invitations, error: inviteError } = await supabase
+        .from('share_invitations')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (inviteError) {
+        logger.error('Error loading invitations', inviteError)
+      }
+
+      // Load all permissions (these aren't in local store)
+      const { data: permissions, error: permError } = await supabase
+        .from('permissions')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (permError) {
+        logger.error('Error loading permissions', permError)
+      }
+
+      // Build resource names from local store
+      const resourceNames: Record<string, string> = {}
+      
+      // Use local folders data
+      folders.forEach(f => {
+        resourceNames[f.id] = f.name
+      })
+      
+      // Use local notebooks data
+      notebooks.forEach(n => {
+        resourceNames[n.id] = n.name
+      })
+
+      // Still need to fetch user emails as they're not in our store
+      const userIds = new Set<string>()
+      ;[...(invitations || []), ...(permissions || [])].forEach((item) => {
+        if (item.user_id) userIds.add(item.user_id)
+        if (item.granted_by) userIds.add(item.granted_by)
+        if (item.invited_by) userIds.add(item.invited_by)
+      })
+
+      const userEmails: Record<string, string> = {}
+      
+      if (userIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, email')
+          .in('id', Array.from(userIds))
+        
+        profiles?.forEach(p => {
+          userEmails[p.id] = p.email
+        })
+      }
+
+      setSharingData({
+        invitations: invitations || [],
+        permissions: permissions || [],
+        resourceNames,
+        userEmails
+      })
+
+      logger.info(`Loaded ${invitations?.length || 0} invitations and ${permissions?.length || 0} permissions`)
+    } catch (error) {
+      logger.error('Failed to load sharing data', error)
+    } finally {
+      setLoadingSharing(false)
+    }
+  }
+
+  const deleteSelectedInvitations = async () => {
+    if (selectedInvitations.size === 0) return
+    
+    if (!confirm(`Delete ${selectedInvitations.size} invitation(s)? This cannot be undone.`)) {
+      return
+    }
+
+    try {
+      if (!supabase) throw new Error('No Supabase client')
+      
+      const { error } = await supabase
+        .from('share_invitations')
+        .delete()
+        .in('id', Array.from(selectedInvitations))
+      
+      if (error) throw error
+      
+      logger.info(`Deleted ${selectedInvitations.size} invitations`)
+      setSelectedInvitations(new Set())
+      loadSharingData() // Reload
+    } catch (error) {
+      logger.error('Failed to delete invitations', error)
+      alert('Failed to delete invitations')
+    }
+  }
+
+  const deleteSelectedPermissions = async () => {
+    if (selectedPermissions.size === 0) return
+    
+    if (!confirm(`Delete ${selectedPermissions.size} permission(s)? This will revoke access. This cannot be undone.`)) {
+      return
+    }
+
+    try {
+      if (!supabase) throw new Error('No Supabase client')
+      
+      const { error } = await supabase
+        .from('permissions')
+        .delete()
+        .in('id', Array.from(selectedPermissions))
+      
+      if (error) throw error
+      
+      logger.info(`Deleted ${selectedPermissions.size} permissions`)
+      setSelectedPermissions(new Set())
+      loadSharingData() // Reload
+    } catch (error) {
+      logger.error('Failed to delete permissions', error)
+      alert('Failed to delete permissions')
     }
   }
 
@@ -263,7 +405,6 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const seedUserData = async (userId: string) => {
     try {
-      const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
       // Use the admin function to seed data for any user
@@ -304,7 +445,6 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const exportUserData = async (userId: string) => {
     try {
-      const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
       // Get all user data
@@ -352,7 +492,6 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     }
 
     try {
-      const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
       const { error } = await supabase.rpc('delete_user_admin', {
@@ -570,6 +709,175 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Sharing & Invitations Section */}
+          <div className="border rounded-lg">
+            <button
+              onClick={() => {
+                toggleSection('sharing')
+                if (!expandedSections.sharing) loadSharingData()
+              }}
+              className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50"
+            >
+              <span className="font-medium flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Sharing & Invitations
+              </span>
+              {expandedSections.sharing ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+            {expandedSections.sharing && (
+              <div className="p-4 space-y-4">
+                {loadingSharing ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader className="w-5 h-5 animate-spin" />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium">Invitations ({sharingData.invitations.length})</h3>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setSelectedInvitations(new Set(sharingData.invitations.map(i => i.id)))}
+                          >
+                            Select All
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={deleteSelectedInvitations}
+                            disabled={selectedInvitations.size === 0}
+                          >
+                            Delete Selected ({selectedInvitations.size})
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {sharingData.invitations.length === 0 ? (
+                          <p className="text-gray-500 text-sm">No active invitations</p>
+                        ) : (
+                          sharingData.invitations.map((invite) => (
+                            <div key={invite.id} className="border rounded p-2 text-xs">
+                              <div className="flex items-start gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedInvitations.has(invite.id)}
+                                  onChange={(e) => {
+                                    const newSelected = new Set(selectedInvitations)
+                                    if (e.target.checked) {
+                                      newSelected.add(invite.id)
+                                    } else {
+                                      newSelected.delete(invite.id)
+                                    }
+                                    setSelectedInvitations(newSelected)
+                                  }}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">{invite.invited_email}</span>
+                                    <span className={`px-2 py-1 rounded text-xs ${
+                                      invite.accepted_at ? 'bg-green-100 text-green-800' : 
+                                      new Date(invite.expires_at) < new Date() ? 'bg-red-100 text-red-800' :
+                                      'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                      {invite.accepted_at ? 'Accepted' : 
+                                       new Date(invite.expires_at) < new Date() ? 'Expired' : 'Pending'}
+                                    </span>
+                                  </div>
+                                  <div className="text-gray-600 mt-1">
+                                    <div className="font-medium text-black">
+                                      {invite.resource_type === 'folder' ? '📁' : '📓'} {sharingData.resourceNames[invite.resource_id] || 'Unknown'}
+                                    </div>
+                                    <div>Permission: {invite.permission}</div>
+                                    <div>Invited by: {sharingData.userEmails[invite.invited_by] || invite.invited_by}</div>
+                                    <div>Created: {new Date(invite.created_at).toLocaleString()}</div>
+                                    {invite.accepted_at && (
+                                      <div>Accepted: {new Date(invite.accepted_at).toLocaleString()}</div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <h3 className="font-medium">Permissions ({sharingData.permissions.length})</h3>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setSelectedPermissions(new Set(sharingData.permissions.map(p => p.id)))}
+                          >
+                            Select All
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            onClick={deleteSelectedPermissions}
+                            disabled={selectedPermissions.size === 0}
+                          >
+                            Delete Selected ({selectedPermissions.size})
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="space-y-2 max-h-60 overflow-y-auto">
+                        {sharingData.permissions.length === 0 ? (
+                          <p className="text-gray-500 text-sm">No active permissions</p>
+                        ) : (
+                          sharingData.permissions.map((perm) => (
+                            <div key={perm.id} className="border rounded p-2 text-xs">
+                              <div className="flex items-start gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedPermissions.has(perm.id)}
+                                  onChange={(e) => {
+                                    const newSelected = new Set(selectedPermissions)
+                                    if (e.target.checked) {
+                                      newSelected.add(perm.id)
+                                    } else {
+                                      newSelected.delete(perm.id)
+                                    }
+                                    setSelectedPermissions(newSelected)
+                                  }}
+                                  className="mt-1"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex justify-between">
+                                    <span className="font-medium">{sharingData.userEmails[perm.user_id] || perm.user_id}</span>
+                                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                      {perm.permission}
+                                    </span>
+                                  </div>
+                                  <div className="text-gray-600 mt-1">
+                                    <div className="font-medium text-black">
+                                      {perm.resource_type === 'folder' ? '📁' : '📓'} {sharingData.resourceNames[perm.resource_id] || 'Unknown'}
+                                    </div>
+                                    <div>Granted by: {sharingData.userEmails[perm.granted_by] || perm.granted_by || 'System'}</div>
+                                    <div>Created: {new Date(perm.created_at).toLocaleString()}</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             )}

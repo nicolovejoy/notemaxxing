@@ -144,11 +144,11 @@ export default function SharePage() {
 
   if (error && !invitationDetails) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-semibold mb-2">Invalid Invitation</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h1 className="text-2xl font-semibold mb-2 text-black">Invalid Invitation</h1>
+          <p className="text-gray-700 mb-4">{error}</p>
           <Button onClick={() => router.push('/')}>
             Go to Homepage
           </Button>

@@ -13,6 +13,23 @@
 - **ASK QUESTIONS instead of making assumptions** - When requirements are unclear, ask specific questions rather than inventing features or behaviors
 - **For SQL scripts** - If under 100 lines, show directly in console output instead of creating files
 - **ALWAYS ask before committing** - Check with user before running git commit unless explicitly pre-authorized
+- **USE LOCAL STATE WHEN AVAILABLE** - Always prefer data from the Zustand store (folders, notebooks, notes) over database queries when the data is already loaded locally
+
+## Recent Session Accomplishments (Jan 2025)
+
+### Admin Console Improvements
+
+- Fixed data deletion using service role key with password protection
+- UI now consistent with design system
+- Added Max (mlovejoy@scu.edu) as co-developer admin
+- Fixed modal flickering issue
+
+### Environment Variables Required
+
+```
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+ADMIN_PASSWORD=your_secure_password
+```
 
 ## Current Architecture
 
@@ -42,12 +59,18 @@ We use a clean Zustand store system:
 - Optimistic updates for better UX
 - Clean hook API that returns raw data (no wrapper objects)
 
+**What's in Local State vs Database**:
+
+- **In Local Store**: User's own folders, notebooks, notes (fully loaded on app start)
+- **NOT in Local Store**: Invitations, permissions, other users' data, profiles
+- **Pattern**: Always use local store data when available (e.g., folder/notebook names) instead of refetching from database
+
 ### Known Issues & Bugs
 
 - Real-time sync not implemented - changes don't appear in other accounts without refresh
 - Folder card UI has overlapping icons with title
 - Accept invitation page shows "unnamed folder" instead of actual resource name
-- Revoke access returns "permission not found" error
+- Revoke access API route exists but Next.js returns 404 (may need cache clear)
 
 ### Notebook Management
 
