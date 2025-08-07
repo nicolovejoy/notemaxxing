@@ -867,7 +867,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                                     <div className="font-medium text-black">
                                       {perm.resource_type === 'folder' ? '📁' : '📓'} {sharingData.resourceNames[perm.resource_id] || 'Unknown'}
                                     </div>
-                                    <div>Granted by: {sharingData.userEmails[perm.granted_by] || perm.granted_by || 'System'}</div>
+                                    <div>Granted by: {perm.granted_by ? sharingData.userEmails[perm.granted_by] || perm.granted_by : 'System'}</div>
                                     <div>Created: {new Date(perm.created_at).toLocaleString()}</div>
                                   </div>
                                 </div>
