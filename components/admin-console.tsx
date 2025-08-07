@@ -16,6 +16,7 @@ import {
   Users,
   Loader,
 } from 'lucide-react'
+import { Modal, Button, IconButton } from './ui'
 import { logger } from '@/lib/debug/logger'
 import { 
   useFolders, 
@@ -30,8 +31,8 @@ import { createClient } from '@/lib/supabase/client'
 
 // Admin emails who can access debug console
 const ADMIN_EMAILS = [
-  'nicholas.lovejoy@gmail.com', // Add your email here
-  'mlovejoy@scu.edu', // Add your email here
+  'nicholas.lovejoy@gmail.com', // Nico - Developer
+  'mlovejoy@scu.edu', // Max - UX Designer & Co-developer
   // Add other admin emails as needed
 ]
 
@@ -196,47 +197,105 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       return
     }
 
+    // Prompt for admin password
+    const adminPassword = prompt('Enter admin password to confirm deletion:')
+    if (!adminPassword) {
+      alert('Operation cancelled')
+      return
+    }
+
+    logger.info('Starting reset for user', { userId })
+    console.log('🔒 Using secure admin endpoint for user:', userId)
+    
     try {
-      const supabase = createClient()
-      if (!supabase) throw new Error('No Supabase client')
 
-      // Delete in order to respect foreign keys
-      await supabase.from('notes').delete().eq('user_id', userId)
-      await supabase.from('quizzes').delete().eq('user_id', userId)
-      await supabase.from('notebooks').delete().eq('user_id', userId)
-      await supabase.from('folders').delete().eq('user_id', userId)
+      // Call the secure admin API endpoint
+      const response = await fetch('/api/admin/reset-user-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          targetUserId: userId,
+          adminPassword: adminPassword
+        })
+      })
 
-      logger.info('Reset data for user', { userId })
-      alert('User data reset successfully')
+      const result = await response.json()
+      
+      console.log('📥 API Response:', { status: response.status, result })
 
-      // Refresh store
-      await dataManager.initialize()
+      if (!response.ok) {
+        if (response.status === 403 && result.error === 'Invalid admin password') {
+          throw new Error('Invalid admin password')
+        }
+        throw new Error(result.error || 'Failed to reset user data')
+      }
+
+      // Success!
+      logger.info('Reset successful via admin API', { userId, result })
+      console.log('✅ Successfully deleted:', result.deleted)
+      console.log('📊 Remaining (should be 0):', result.remaining)
+      
+      if (result.remaining.folders > 0 || result.remaining.notebooks > 0 || result.remaining.notes > 0) {
+        alert(`Warning: Some data may remain. Check console for details.`)
+      } else {
+        alert(`User data reset successfully!\n\nDeleted:\n- ${result.deleted.folders} folders\n- ${result.deleted.notebooks} notebooks\n- ${result.deleted.notes} notes`)
+      }
+
+      // Refresh store if it's the current user
+      if (userId === currentUserId) {
+        await dataManager.refresh()
+      }
+      
+      // Refresh user list to update counts
+      await loadAllUsers()
     } catch (error) {
-      logger.error('Failed to reset user data', error)
-      alert('Failed to reset user data: ' + (error as Error).message)
+      logger.error('Failed to reset user data', { 
+        error, 
+        message: (error as Error).message,
+        stack: (error as Error).stack 
+      })
+      console.error('Full error object:', error)
+      alert('Failed to reset user data: ' + (error as Error).message + '\n\nCheck console for details.')
     }
   }
 
   const seedUserData = async (userId: string) => {
     try {
-      // Check if it's the current user - use store method
-      if (userId === currentUserId) {
-        const result = await seedInitialData('default-with-tutorials')
-        if (result.success) {
-          logger.info('Seeded data for current user', { userId })
-          alert('Starter content added successfully!')
+      const supabase = createClient()
+      if (!supabase) throw new Error('No Supabase client')
+
+      // Use the admin function to seed data for any user
+      const { error } = await supabase.rpc('create_starter_content_for_specific_user', {
+        target_user_id: userId
+      })
+
+      if (error) {
+        // If the function doesn't exist or fails, fall back to current user only
+        if (userId === currentUserId) {
+          const result = await seedInitialData('default-with-tutorials')
+          if (result.success) {
+            logger.info('Seeded data for current user', { userId })
+            alert('Starter content added successfully!')
+          } else {
+            throw new Error(result.error || 'Failed to seed data')
+          }
         } else {
-          throw new Error(result.error || 'Failed to seed data')
+          throw new Error('Cannot seed data for other users')
         }
       } else {
-        // For other users, we need to implement admin seeding
-        // For now, show a message
-        alert('Admin seeding for other users coming soon. Users can seed their own data from the homepage.')
-        return
+        logger.info('Seeded data for user', { userId })
+        alert('Starter content added successfully!')
       }
 
-      // Refresh store
-      await dataManager.initialize()
+      // Refresh store if it's the current user
+      if (userId === currentUserId) {
+        await dataManager.refresh()
+      }
+      
+      // Refresh user list to update counts
+      await loadAllUsers()
     } catch (error) {
       logger.error('Failed to seed user data', error)
       alert('Failed to seed user data: ' + (error as Error).message)
@@ -341,35 +400,28 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     }
   }
 
-  if (!isOpen) {
-    return null
-  }
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-end justify-end p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl h-[80vh] flex flex-col">
+    <Modal isOpen={isOpen} onClose={() => onClose ? onClose() : setIsOpen(false)} size="lg">
+      <div className="h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="text-lg font-semibold">Admin Console</h2>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">{userEmail}</span>
-            <button
-              onClick={() => {
-                if (onClose) {
-                  onClose()
-                } else {
-                  setIsOpen(false)
-                }
-              }}
-              className="p-1 hover:bg-gray-100 rounded"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        <div className="flex items-center justify-between pb-4 border-b">
+          <div>
+            <h2 className="text-xl font-semibold">Admin Console</h2>
+            <p className="text-sm text-gray-500 mt-1">Logged in as: {userEmail}</p>
+            {!isAdmin && (
+              <p className="text-sm text-red-600 mt-1">⚠️ You are not an admin</p>
+            )}
           </div>
+          <IconButton
+            icon={X}
+            onClick={() => onClose ? onClose() : setIsOpen(false)}
+            size="sm"
+            variant="ghost"
+          />
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto py-4 space-y-4">
           {/* Database Management Section */}
           <div className="border rounded-lg">
             <button
@@ -391,27 +443,30 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium">Quick Actions</h4>
                   <div className="flex gap-2">
-                    <button
+                    <Button
                       onClick={() => currentUserId && seedUserData(currentUserId)}
-                      className="text-sm bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+                      variant="primary"
+                      size="sm"
                       disabled={!currentUserId}
                     >
                       Add Starter Content
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => currentUserId && resetUserData(currentUserId)}
-                      className="text-sm bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                      variant="danger"
+                      size="sm"
                       disabled={!currentUserId}
                     >
                       Reset My Data
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => currentUserId && exportUserData(currentUserId)}
-                      className="text-sm bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+                      variant="secondary"
+                      size="sm"
                       disabled={!currentUserId}
                     >
                       Export My Data
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <div className="text-xs text-gray-500">
@@ -463,13 +518,13 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                               </div>
                             )}
                           </div>
-                          <button
+                          <IconButton
+                            icon={Trash2}
                             onClick={() => deleteUser(user.id, user.email)}
-                            className="p-1 hover:bg-red-100 rounded text-red-600"
+                            size="sm"
+                            variant="danger"
                             title="Delete user"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          />
                         </div>
                         <div className="grid grid-cols-4 gap-2 mt-2">
                           <div className="text-center">
@@ -490,24 +545,27 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                           </div>
                         </div>
                         <div className="flex gap-2 mt-2">
-                          <button
+                          <Button
                             onClick={() => exportUserData(user.id)}
-                            className="text-xs text-blue-600 hover:underline"
+                            variant="ghost"
+                            size="sm"
                           >
-                            Export Data
-                          </button>
-                          <button
+                            Export
+                          </Button>
+                          <Button
                             onClick={() => seedUserData(user.id)}
-                            className="text-xs text-green-600 hover:underline"
+                            variant="ghost"
+                            size="sm"
                           >
-                            Add Starter Content
-                          </button>
-                          <button
+                            Add Starter
+                          </Button>
+                          <Button
                             onClick={() => resetUserData(user.id)}
-                            className="text-xs text-orange-600 hover:underline"
+                            variant="ghost"
+                            size="sm"
                           >
                             Clear Data
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -525,15 +583,15 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
             >
               <span className="font-medium">Logs ({logs.length})</span>
               <div className="flex items-center gap-2">
-                <div
+                <IconButton
+                  icon={Trash2}
                   onClick={(e) => {
                     e.stopPropagation()
                     clearLogs()
                   }}
-                  className="p-1 hover:bg-gray-200 rounded cursor-pointer"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </div>
+                  size="sm"
+                  variant="ghost"
+                />
                 {expandedSections.logs ? (
                   <ChevronDown className="w-4 h-4" />
                 ) : (
@@ -575,15 +633,15 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
             >
               <span className="font-medium">Store State</span>
               <div className="flex items-center gap-2">
-                <div
+                <IconButton
+                  icon={RefreshCw}
                   onClick={(e) => {
                     e.stopPropagation()
                     refreshStore()
                   }}
-                  className="p-1 hover:bg-gray-200 rounded cursor-pointer"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </div>
+                  size="sm"
+                  variant="ghost"
+                />
                 {expandedSections.store ? (
                   <ChevronDown className="w-4 h-4" />
                 ) : (
@@ -601,23 +659,24 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                     </div>
                   ))}
                 </div>
-                <button
+                <Button
                   onClick={() => copyToClipboard(JSON.stringify(getStoreStats(), null, 2))}
-                  className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                  variant="ghost"
+                  size="sm"
+                  icon={Copy}
                 >
-                  <Copy className="w-3 h-3" />
                   Copy store stats
-                </button>
+                </Button>
               </div>
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t text-xs text-gray-500">
-          Press &apos;d&apos; 3 times to toggle • Admin mode for {userEmail}
+        <div className="pt-4 border-t text-xs text-gray-500">
+          Press &apos;d&apos; 3 times to toggle • Admin mode
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

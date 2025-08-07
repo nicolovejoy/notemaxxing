@@ -36,13 +36,16 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onMouseLeave={(e) => e.stopPropagation()}
+    >
       <div 
-        className="absolute inset-0 bg-black bg-opacity-50"
+        className="fixed inset-0 bg-black bg-opacity-50"
         onClick={onClose}
       />
       <div 
-        className={`relative bg-white rounded-lg p-6 w-full mx-auto my-8 ${sizeClasses[size]} max-h-[90vh] overflow-y-auto`}
+        className={`relative bg-white rounded-lg p-6 w-full mx-auto ${sizeClasses[size]} max-h-[90vh] overflow-y-auto shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
         {title && (
