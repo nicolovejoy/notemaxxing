@@ -658,7 +658,13 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                             </div>
                             {user.last_sign_in_at && (
                               <div className="text-xs text-gray-500">
-                                Last login: {new Date(user.last_sign_in_at).toLocaleDateString()}
+                                Last login: {new Date(user.last_sign_in_at).toLocaleString('en-US', { 
+                                  month: 'short', 
+                                  day: 'numeric', 
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
                               </div>
                             )}
                           </div>
