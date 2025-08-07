@@ -60,11 +60,13 @@ export const foldersApi = {
               .neq('user_id', user.id) // Permissions for other users
             
             if (outgoingShares && outgoingShares.length > 0) {
+              console.log('Found folders shared by me:', outgoingShares)
               const sharedByMeIds = new Set(outgoingShares.map(p => p.resource_id))
               allFolders = allFolders.map(f => ({
                 ...f,
                 sharedByMe: sharedByMeIds.has(f.id)
               }))
+              console.log('Marked folders with sharedByMe:', allFolders.filter(f => f.sharedByMe))
             }
           }
           
@@ -76,7 +78,7 @@ export const foldersApi = {
             .eq('user_id', user.id)
           
           if (!permError && sharedFolderIds && sharedFolderIds.length > 0) {
-            // Found shared folder permissions
+            console.log('Found shared folder permissions:', sharedFolderIds)
             const folderIds = sharedFolderIds.map(p => p.resource_id)
             const { data: sharedFolders, error: sharedError } = await supabase
               .from('folders')
@@ -85,7 +87,7 @@ export const foldersApi = {
               .order('created_at', { ascending: true })
             
             if (!sharedError && sharedFolders) {
-              // Loaded shared folders
+              console.log('Loaded shared folders:', sharedFolders)
               // Mark shared folders
               const markedSharedFolders = sharedFolders.map(f => ({
                 ...f,
@@ -94,7 +96,7 @@ export const foldersApi = {
               }))
               allFolders = [...allFolders, ...markedSharedFolders]
             } else if (sharedError) {
-              // Error loading shared folders
+              console.error('Error loading shared folders:', sharedError)
             }
           }
         }

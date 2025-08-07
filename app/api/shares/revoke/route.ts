@@ -1,19 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedSupabaseClient } from '@/lib/api/supabase-server-helpers'
+
+export async function POST(request: NextRequest) {
+  return handleRevoke(request)
+}
 
 export async function DELETE(request: NextRequest) {
+  return handleRevoke(request)
+}
+
+async function handleRevoke(request: NextRequest) {
   try {
-    const supabase = await createClient()
-    
-    // Check authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get authenticated client
+    const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
+    if (error) return error
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      )
     }
 
     // Parse request body
     const body = await request.json()
     const { permissionId } = body
+
+    console.log('[Revoke API] Received request with permissionId:', permissionId)
 
     if (!permissionId) {
       return NextResponse.json(
@@ -22,45 +34,61 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Get permission details
+    // Get permission details - first try without the join to see if permission exists
+    const { data: basicPermission, error: basicError } = await supabase
+      .from('permissions')
+      .select('*')
+      .eq('id', permissionId)
+      .single()
+    
+    console.log('[Revoke API] Basic permission lookup:', { basicPermission, error: basicError })
+
+    if (basicError || !basicPermission) {
+      console.error('[Revoke API] Permission not found:', { permissionId, error: basicError })
+      return NextResponse.json(
+        { error: 'Permission not found', details: basicError?.message },
+        { status: 404 }
+      )
+    }
+
+    // Now get with profile info
     const { data: permission, error: permError } = await supabase
       .from('permissions')
       .select('*, profiles!permissions_user_id_fkey(email)')
       .eq('id', permissionId)
       .single()
+    
+    console.log('[Revoke API] Full permission lookup result:', { permission, error: permError })
 
-    if (permError || !permission) {
-      return NextResponse.json(
-        { error: 'Permission not found' },
-        { status: 404 }
-      )
-    }
+    // Use basic permission if the join failed
+    const permissionData = permission || basicPermission
 
     // Check if user is authorized to revoke
-    // User can revoke if they granted the permission OR if they're revoking their own access
-    if (permission.granted_by !== user.id && permission.user_id !== user.id) {
+    // For now, only check if user owns the resource (granted_by might not exist)
+    {
       // Additional check: is the user the owner of the resource?
       let isOwner = false
       
-      if (permission.resource_type === 'folder') {
+      if (permissionData.resource_type === 'folder') {
         const { data: folder } = await supabase
           .from('folders')
           .select('user_id')
-          .eq('id', permission.resource_id)
+          .eq('id', permissionData.resource_id)
           .single()
         
         isOwner = folder?.user_id === user.id
-      } else if (permission.resource_type === 'notebook') {
+      } else if (permissionData.resource_type === 'notebook') {
         const { data: notebook } = await supabase
           .from('notebooks')
           .select('user_id')
-          .eq('id', permission.resource_id)
+          .eq('id', permissionData.resource_id)
           .single()
         
         isOwner = notebook?.user_id === user.id
       }
 
       if (!isOwner) {
+        console.log('[Revoke API] User not authorized:', { userId: user.id, resourceOwnerId: isOwner })
         return NextResponse.json(
           { error: 'You are not authorized to revoke this permission' },
           { status: 403 }
@@ -83,12 +111,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Also delete any pending invitations for the same resource/user combination
-    if (permission.profiles?.email) {
+    if (permission?.profiles?.email) {
       await supabase
         .from('share_invitations')
         .delete()
-        .eq('resource_type', permission.resource_type)
-        .eq('resource_id', permission.resource_id)
+        .eq('resource_type', permissionData.resource_type)
+        .eq('resource_id', permissionData.resource_id)
         .eq('invited_email', permission.profiles.email)
         .is('accepted_at', null)
     }
@@ -97,9 +125,9 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Permission revoked successfully',
       revokedPermission: {
-        resourceType: permission.resource_type,
-        resourceId: permission.resource_id,
-        userEmail: permission.profiles?.email
+        resourceType: permissionData.resource_type,
+        resourceId: permissionData.resource_id,
+        userEmail: permission?.profiles?.email
       }
     })
 

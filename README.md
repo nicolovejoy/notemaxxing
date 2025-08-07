@@ -10,8 +10,7 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 
 - Create custom folders with names and colors
 - Rename folders inline
-- Delete folders with cascade deletion
-- Visual organization with color coding
+- Delete folders with cascade deletion (not sure what this means - nico - let's discuss)
 
 ### 📓 Smart Notebooks
 
