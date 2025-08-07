@@ -60,11 +60,21 @@ export const sharingApi = {
   },
 
   async revokePermission(permissionId: string) {
-    const response = await fetch(`${API_BASE}/revoke`, {
+    // Try DELETE first, fallback to POST if 404
+    let response = await fetch(`${API_BASE}/revoke`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ permissionId }),
     })
+    
+    // If DELETE returns 404, try POST as fallback
+    if (response.status === 404) {
+      response = await fetch(`${API_BASE}/revoke`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissionId }),
+      })
+    }
     
     if (!response.ok) {
       const error = await response.json()
