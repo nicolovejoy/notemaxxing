@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
+import type { PostgrestError } from '@supabase/supabase-js'
 
 // Admin emails allowed to use this endpoint
 const ADMIN_EMAILS = [
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
     // Note: We delete in reverse dependency order
     const deleteOperations: Array<{
       table: string
-      result: { error: Error | null; data: unknown }
+      result: { error: PostgrestError | null; data: unknown }
       optional?: boolean
     }> = []
     
