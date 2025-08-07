@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthenticatedSupabaseClient } from '@/lib/api/supabase-server-helpers';
 
 // Simple in-memory rate limiting (upgrade to Redis later)
 const rateLimits = new Map<string, number>();
@@ -33,15 +33,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
+    // Get authenticated client
+    const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
+    if (error) return error
+    if (!supabase) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+        { error: 'Service temporarily unavailable' },
+        { status: 503 }
+      )
     }
 
     // Check rate limit
