@@ -37,8 +37,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user is authorized to revoke
-    // User can revoke if they granted the permission OR if they're revoking their own access
-    if (permission.granted_by !== user.id && permission.user_id !== user.id) {
+    // For now, only check if user owns the resource (granted_by might not exist)
+    {
       // Additional check: is the user the owner of the resource?
       let isOwner = false
       
