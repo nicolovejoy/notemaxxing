@@ -1,10 +1,14 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { X, Users, Trash2, Check, AlertCircle, Copy, Link } from 'lucide-react'
+import { Users, Trash2, Check, Copy, Link } from 'lucide-react'
 import { Modal, Button, IconButton } from './ui'
 import { sharingApi } from '@/lib/api/sharing'
 import { createClient } from '@/lib/supabase/client'
+import { FormField } from '@/components/ui/FormField'
+import { SelectField } from '@/components/ui/SelectField'
+import { StatusMessage } from '@/components/ui/StatusMessage'
+import { LoadingButton } from '@/components/ui/LoadingButton'
 import type { ResourceType, Permission, SharedResource } from '@/lib/types/sharing'
 
 interface ShareDialogProps {
@@ -14,12 +18,7 @@ interface ShareDialogProps {
   onClose: () => void
 }
 
-export function ShareDialog({
-  resourceId,
-  resourceType,
-  resourceName,
-  onClose
-}: ShareDialogProps) {
+export function ShareDialog({ resourceId, resourceType, resourceName, onClose }: ShareDialogProps) {
   const [email, setEmail] = useState('')
   const [permission, setPermission] = useState<Permission>('read')
   const [loading, setLoading] = useState(false)
@@ -37,12 +36,12 @@ export function ShareDialog({
     try {
       setLoadingShares(true)
       const shares = await sharingApi.listShares()
-      
+
       // Filter to only show shares for this resource
       const relevantShares = shares.sharedByMe.filter(
-        share => share.resourceId === resourceId && share.resourceType === resourceType
+        (share) => share.resourceId === resourceId && share.resourceType === resourceType
       )
-      
+
       setSharedWith(relevantShares)
     } catch (err) {
       console.error('Failed to load shares:', err)
@@ -61,15 +60,16 @@ export function ShareDialog({
     const getCurrentUser = async () => {
       const supabase = createClient()
       if (!supabase) return
-      
-      const { data: { user } } = await supabase.auth.getUser()
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (user?.email) {
         setCurrentUserEmail(user.email)
       }
     }
     getCurrentUser()
   }, [])
-
 
   const handleSendInvitation = async () => {
     setLoading(true)
@@ -81,13 +81,13 @@ export function ShareDialog({
         resourceType,
         resourceId,
         permission,
-        email
+        email,
       })
 
       const link = `${window.location.origin}/share/${response.invitationId}`
       setInvitationLink(link)
       setSuccess('Invitation link generated!')
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
@@ -97,10 +97,9 @@ export function ShareDialog({
     }
   }
 
-
   const handleCopyLink = async () => {
     if (!invitationLink) return
-    
+
     try {
       await navigator.clipboard.writeText(invitationLink)
       setCopied(true)
@@ -112,9 +111,9 @@ export function ShareDialog({
 
   const handleCopyInvitationText = async () => {
     if (!invitationLink || !email) return
-    
+
     const invitationText = `I'm inviting you to share the ${resourceType} called "${resourceName}". Click this link to accept: ${invitationLink}`
-    
+
     try {
       await navigator.clipboard.writeText(invitationText)
       setCopiedText(true)
@@ -138,61 +137,56 @@ export function ShareDialog({
   }
 
   return (
-    <Modal isOpen={true} onClose={onClose}>
-      <div className="p-6 max-w-md w-full">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">Share {resourceName}</h2>
-          <IconButton
-            icon={X}
-            onClick={onClose}
-            size="sm"
-            variant="ghost"
-          />
-        </div>
-
+    <Modal isOpen={true} onClose={onClose} title={`Share ${resourceName}`} size="md">
+      <div className="space-y-6">
         {/* Share form */}
-        <div className="space-y-4 mb-6">
+        <div className="space-y-4">
           {!invitationLink ? (
             <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email address
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter email address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                  disabled={loading}
-                />
-                {email && currentUserEmail && email.toLowerCase() === currentUserEmail.toLowerCase() && (
-                  <p className="text-red-600 text-sm mt-1">You cannot share with yourself</p>
-                )}
-              </div>
+              <FormField
+                label="Email address"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter email address"
+                disabled={loading}
+                error={
+                  email &&
+                  currentUserEmail &&
+                  email.toLowerCase() === currentUserEmail.toLowerCase()
+                    ? 'You cannot share with yourself'
+                    : undefined
+                }
+              />
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Permission level
-                </label>
-                <select
-                  value={permission}
-                  onChange={(e) => setPermission(e.target.value as Permission)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
-                  disabled={loading}
-                >
-                  <option value="read">Can view</option>
-                  <option value="write">Can edit</option>
-                </select>
-              </div>
+              <SelectField
+                label="Permission level"
+                value={permission}
+                onChange={(value) => setPermission(value as Permission)}
+                options={[
+                  { value: 'read', label: 'Can view' },
+                  { value: 'write', label: 'Can edit' }
+                ]}
+                disabled={loading}
+              />
 
-              <Button
+              <LoadingButton
                 onClick={handleSendInvitation}
-                disabled={loading || !email || !!(email && currentUserEmail && email.toLowerCase() === currentUserEmail.toLowerCase())}
-                className="w-full"
+                disabled={
+                  !email ||
+                  !!(
+                    email &&
+                    currentUserEmail &&
+                    email.toLowerCase() === currentUserEmail.toLowerCase()
+                  )
+                }
+                loading={loading}
+                loadingText="Generating..."
+                fullWidth
+                variant="primary"
               >
-                {loading ? 'Generating...' : 'Generate Invitation Link'}
-              </Button>
+                Generate Invitation Link
+              </LoadingButton>
             </>
           ) : (
             <div className="space-y-4">
@@ -201,10 +195,12 @@ export function ShareDialog({
                 <p className="text-sm text-gray-600 mb-3">
                   Send this link to {email}. The invitation expires in 7 days.
                 </p>
-                
+
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Share link</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                      Share link
+                    </label>
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
@@ -268,19 +264,8 @@ export function ShareDialog({
             </div>
           )}
 
-          {error && (
-            <div className="flex items-center gap-2 text-red-600 text-sm">
-              <AlertCircle className="h-4 w-4" />
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="flex items-center gap-2 text-green-600 text-sm">
-              <Check className="h-4 w-4" />
-              {success}
-            </div>
-          )}
+          {error && <StatusMessage type="error" message={error} />}
+          {success && <StatusMessage type="success" message={success} />}
         </div>
 
         {/* Current shares */}
@@ -293,9 +278,7 @@ export function ShareDialog({
           {loadingShares ? (
             <div className="text-gray-500 text-sm">Loading...</div>
           ) : sharedWith.length === 0 ? (
-            <div className="text-gray-500 text-sm">
-              Not shared with anyone yet
-            </div>
+            <div className="text-gray-500 text-sm">Not shared with anyone yet</div>
           ) : (
             <div className="space-y-2">
               {sharedWith.map((share) => (
@@ -304,9 +287,7 @@ export function ShareDialog({
                   className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
                 >
                   <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {share.user?.email}
-                    </div>
+                    <div className="text-sm font-medium text-gray-900">{share.user?.email}</div>
                     <div className="text-xs text-gray-500">
                       {share.permission === 'write' ? 'Can edit' : 'Can view'}
                     </div>

@@ -1,5 +1,13 @@
 # Context for Claude
 
+## CRITICAL: Design System
+
+**MUST READ FIRST**: See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for all UI components.
+
+- **NEVER** create new form inputs, buttons, modals, or UI components
+- **ALWAYS** use existing components from `/components/ui/`
+- Run `npm run format` after making changes
+
 ## Rules
 
 - Be succinct, no superlatives
@@ -41,4 +49,16 @@ ADMIN_PASSWORD=required_for_admin
 
 - No real-time sync
 - Folder card icons overlap
-- Design system inconsistency
+
+## Component Checklist
+
+When building UI, use these components:
+
+- `FormField` - ALL text inputs
+- `SelectField` - ALL dropdowns
+- `LoadingButton` - ALL async buttons
+- `StatusMessage` - ALL error/success messages
+- `Modal` + `ModalFooter` - ALL dialogs
+- `Card` - Content containers
+- `IconButton` - Icon-only buttons
+- See DESIGN_SYSTEM.md for complete list

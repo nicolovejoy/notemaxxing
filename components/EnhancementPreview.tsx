@@ -1,6 +1,8 @@
 'use client';
 
 import { Modal } from '@/components/ui/Modal';
+import { ModalFooter } from '@/components/ui/ModalFooter';
+import { LoadingButton } from '@/components/ui/LoadingButton';
 import { Check, X, Sparkles } from 'lucide-react';
 import { useEffect } from 'react';
 
@@ -86,22 +88,23 @@ export function EnhancementPreview({
         </div>
 
         {/* Action buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <button
+        <ModalFooter>
+          <LoadingButton
             onClick={onClose}
-            className="flex items-center gap-2 px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            variant="secondary"
+            icon={X}
           >
-            <X className="h-4 w-4" />
             Cancel
-          </button>
-          <button
+          </LoadingButton>
+          <LoadingButton
             onClick={onAccept}
-            className="flex items-center gap-2 px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+            variant="primary"
+            icon={Check}
+            className="!bg-green-600 hover:!bg-green-700"
           >
-            <Check className="h-4 w-4" />
             Accept Changes
-          </button>
-        </div>
+          </LoadingButton>
+        </ModalFooter>
 
         {/* Keyboard shortcuts hint */}
         <p className="text-xs text-gray-500 text-center">

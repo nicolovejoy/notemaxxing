@@ -540,7 +540,12 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose ? onClose() : setIsOpen(false)} size="lg">
+    <Modal 
+      isOpen={isOpen} 
+      onClose={() => onClose ? onClose() : setIsOpen(false)} 
+      size="lg"
+      title="Admin Console"
+    >
       <div className="h-[80vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b">
@@ -885,28 +890,26 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
           {/* Logs Section */}
           <div className="border rounded-lg">
-            <button
-              onClick={() => toggleSection('logs')}
-              className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50"
-            >
-              <span className="font-medium">Logs ({logs.length})</span>
-              <div className="flex items-center gap-2">
-                <IconButton
-                  icon={Trash2}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    clearLogs()
-                  }}
-                  size="sm"
-                  variant="ghost"
-                />
+            <div className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50">
+              <button
+                onClick={() => toggleSection('logs')}
+                className="flex-1 text-left flex items-center gap-2"
+              >
+                <span className="font-medium">Logs ({logs.length})</span>
                 {expandedSections.logs ? (
                   <ChevronDown className="w-4 h-4" />
                 ) : (
                   <ChevronRight className="w-4 h-4" />
                 )}
-              </div>
-            </button>
+              </button>
+              <IconButton
+                icon={Trash2}
+                onClick={clearLogs}
+                size="sm"
+                variant="ghost"
+                title="Clear logs"
+              />
+            </div>
             {expandedSections.logs && (
               <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
                 {logs.length === 0 ? (
@@ -935,28 +938,26 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
           {/* Store State Section */}
           <div className="border rounded-lg">
-            <button
-              onClick={() => toggleSection('store')}
-              className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50"
-            >
-              <span className="font-medium">Store State</span>
-              <div className="flex items-center gap-2">
-                <IconButton
-                  icon={RefreshCw}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    refreshStore()
-                  }}
-                  size="sm"
-                  variant="ghost"
-                />
+            <div className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50">
+              <button
+                onClick={() => toggleSection('store')}
+                className="flex-1 text-left flex items-center gap-2"
+              >
+                <span className="font-medium">Store State</span>
                 {expandedSections.store ? (
                   <ChevronDown className="w-4 h-4" />
                 ) : (
                   <ChevronRight className="w-4 h-4" />
                 )}
-              </div>
-            </button>
+              </button>
+              <IconButton
+                icon={RefreshCw}
+                onClick={refreshStore}
+                size="sm"
+                variant="ghost"
+                title="Refresh store"
+              />
+            </div>
             {expandedSections.store && (
               <div className="p-4 space-y-2">
                 <div className="grid grid-cols-2 gap-2 text-sm">

@@ -127,12 +127,25 @@ Data is stored in Supabase PostgreSQL with:
 
 ## Development
 
+### Design System
+
+We have a comprehensive design system with reusable components. **Always use these components instead of creating new ones.**
+
+See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for:
+
+- Complete component documentation
+- Usage examples
+- Design tokens (colors, spacing, typography)
+- Best practices
+
 ### Key Commands
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Run TypeScript compiler
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
 
 ### Testing in Production (Vercel)
 
