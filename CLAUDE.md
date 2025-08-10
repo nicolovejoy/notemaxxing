@@ -1,5 +1,20 @@
 # Context
 
+## Current Focus: Real-Time Sync Implementation
+
+### Week 1 Plan
+
+- **Days 1-2**: Basic real-time (subscribe, handle events)
+- **Days 3-4**: Conflict resolution (versioning, optimistic updates)
+- **Day 5**: Smart subscriptions (only active resources)
+
+### Week 2 Plan
+
+- **Days 6-7**: Offline support (queue & sync)
+- **Days 8-9**: Polish, testing, UI indicators
+
+See [IMPLEMENTATION_ROADMAP.md](./docs/IMPLEMENTATION_ROADMAP.md) for details.
+
 ## Design System
 
 See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - use existing UI components only.

@@ -78,35 +78,36 @@ export const foldersApi = {
             }
           }
 
-          // Then get folders shared with the user
-          const { data: sharedFolderIds, error: permError } = await supabase
-            .from('permissions')
-            .select('resource_id, permission')
-            .eq('resource_type', 'folder')
-            .eq('user_id', user.id)
+          // Get folders shared with the user via Edge Function
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession()
 
-          if (!permError && sharedFolderIds && sharedFolderIds.length > 0) {
-            console.log('Found shared folder permissions:', sharedFolderIds)
-            const folderIds = sharedFolderIds.map((p) => p.resource_id)
-            const { data: sharedFolders, error: sharedError } = await supabase
-              .from('folders')
-              .select('*')
-              .in('id', folderIds)
-              .order('created_at', { ascending: true })
+            if (session?.access_token) {
+              const { data: sharedData, error: sharedError } = await supabase.functions.invoke(
+                'get-shared-resources',
+                {
+                  headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
+                }
+              )
 
-            if (!sharedError && sharedFolders) {
-              console.log('Loaded shared folders:', sharedFolders)
-              // Mark shared folders
-              const markedSharedFolders = sharedFolders.map((f) => ({
-                ...f,
-                shared: true,
-                permission:
-                  sharedFolderIds.find((p) => p.resource_id === f.id)?.permission || 'read',
-              }))
-              allFolders = [...allFolders, ...markedSharedFolders]
-            } else if (sharedError) {
-              console.error('Error loading shared folders:', sharedError)
+              if (sharedError) {
+                console.error('Error fetching shared resources via Edge Function:', sharedError)
+              } else if (sharedData) {
+                console.log('Loaded shared folders via Edge Function:', sharedData.folders)
+
+                // Add shared folders to the list
+                if (sharedData.folders && sharedData.folders.length > 0) {
+                  allFolders = [...allFolders, ...sharedData.folders]
+                }
+              }
             }
+          } catch (error) {
+            console.error('Failed to fetch shared resources:', error)
+            // Continue without shared resources rather than failing completely
           }
         }
       }
@@ -211,80 +212,70 @@ export const notebooksApi = {
               }))
             }
           }
-          // Get directly shared notebooks
-          const { data: sharedNotebookPerms, error: notebookPermError } = await supabase
-            .from('permissions')
-            .select('resource_id, permission')
-            .eq('resource_type', 'notebook')
-            .eq('user_id', user.id)
+          // Get shared notebooks via Edge Function
+          try {
+            const {
+              data: { session },
+            } = await supabase.auth.getSession()
 
-          // Get notebooks in shared folders
-          const { data: sharedFolderPerms, error: folderPermError } = await supabase
-            .from('permissions')
-            .select('resource_id, permission')
-            .eq('resource_type', 'folder')
-            .eq('user_id', user.id)
+            if (session?.access_token) {
+              const { data: sharedData, error: sharedError } = await supabase.functions.invoke(
+                'get-shared-resources',
+                {
+                  headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
+                }
+              )
 
-          const notebookIds: string[] = []
-          const permissions: Record<string, string> = {}
+              if (sharedError) {
+                console.error('Error fetching shared resources via Edge Function:', sharedError)
+              } else if (sharedData) {
+                console.log('Loaded shared notebooks via Edge Function:', sharedData.notebooks)
 
-          // Track which notebooks are directly shared vs inherited from folder
-          const directlySharedNotebookIds = new Set<string>()
+                // Add directly shared notebooks
+                if (sharedData.notebooks && sharedData.notebooks.length > 0) {
+                  // Filter out archived if needed
+                  let sharedNotebooks = sharedData.notebooks
+                  if (!includeArchived) {
+                    sharedNotebooks = sharedNotebooks.filter((n: Notebook) => !n.archived)
+                  }
+                  allNotebooks = [...allNotebooks, ...sharedNotebooks]
+                }
 
-          // Collect directly shared notebook IDs
-          if (!notebookPermError && sharedNotebookPerms) {
-            sharedNotebookPerms.forEach((p) => {
-              notebookIds.push(p.resource_id)
-              permissions[p.resource_id] = p.permission
-              directlySharedNotebookIds.add(p.resource_id) // Mark as directly shared
-            })
-          }
+                // Also get notebooks from shared folders
+                if (sharedData.folders && sharedData.folders.length > 0) {
+                  const folderIds = sharedData.folders.map((f: Folder) => f.id)
+                  let folderQuery = supabase
+                    .from('notebooks')
+                    .select('*')
+                    .in('folder_id', folderIds)
 
-          // Get notebooks from shared folders
-          if (!folderPermError && sharedFolderPerms && sharedFolderPerms.length > 0) {
-            const folderIds = sharedFolderPerms.map((p) => p.resource_id)
-            let folderQuery = supabase
-              .from('notebooks')
-              .select('id, folder_id')
-              .in('folder_id', folderIds)
+                  if (!includeArchived) {
+                    folderQuery = folderQuery.eq('archived', false)
+                  }
 
-            if (!includeArchived) {
-              folderQuery = folderQuery.eq('archived', false)
-            }
+                  const { data: notebooksInSharedFolders } = await folderQuery
 
-            const { data: notebooksInSharedFolders } = await folderQuery
-
-            if (notebooksInSharedFolders) {
-              notebooksInSharedFolders.forEach((n) => {
-                if (!notebookIds.includes(n.id)) {
-                  notebookIds.push(n.id)
-                  // Inherit folder permission
-                  const folderPerm = sharedFolderPerms.find((p) => p.resource_id === n.folder_id)
-                  if (folderPerm) {
-                    permissions[n.id] = folderPerm.permission
+                  if (notebooksInSharedFolders) {
+                    // Mark these as shared via folder (not directly)
+                    const markedNotebooks = notebooksInSharedFolders.map((n) => {
+                      const folder = sharedData.folders.find((f: Folder) => f.id === n.folder_id)
+                      return {
+                        ...n,
+                        shared: true,
+                        sharedDirectly: false,
+                        permission: folder?.permission || 'read',
+                      }
+                    })
+                    allNotebooks = [...allNotebooks, ...markedNotebooks]
                   }
                 }
-              })
+              }
             }
-          }
-
-          // Fetch all shared notebooks
-          if (notebookIds.length > 0) {
-            const { data: sharedNotebooks, error: sharedError } = await supabase
-              .from('notebooks')
-              .select('*')
-              .in('id', notebookIds)
-              .order('created_at', { ascending: true })
-
-            if (!sharedError && sharedNotebooks) {
-              const markedSharedNotebooks = sharedNotebooks.map((n) => ({
-                ...n,
-                shared: true, // Kept for backwards compatibility
-                sharedDirectly: directlySharedNotebookIds.has(n.id), // NEW: explicit flag for direct shares
-                permission: permissions[n.id] || 'read',
-              }))
-              allNotebooks = [...allNotebooks, ...markedSharedNotebooks]
-            }
+          } catch (error) {
+            console.error('Failed to fetch shared notebooks:', error)
+            // Continue without shared resources rather than failing completely
           }
         }
       }
