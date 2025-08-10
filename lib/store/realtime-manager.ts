@@ -5,11 +5,14 @@ import type { Folder, Notebook, Note } from './types'
 
 type DatabaseEntity = Folder | Notebook | Note
 
-interface ChangePayload extends RealtimePostgresChangesPayload<DatabaseEntity> {
+interface ChangePayload {
   table: string
   eventType: 'INSERT' | 'UPDATE' | 'DELETE'
   new: DatabaseEntity | null
   old: DatabaseEntity | null
+  commit_timestamp?: string
+  errors?: string[] | null
+  schema?: string
 }
 
 export class RealtimeManager {
