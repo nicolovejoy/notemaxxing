@@ -1,19 +1,25 @@
 # Context
 
-## Current Focus: Real-Time Sync Implementation
+## Current Status
 
-### Week 1 Plan
+### Completed ✅
 
-- **Days 1-2**: Basic real-time (subscribe, handle events)
-- **Days 3-4**: Conflict resolution (versioning, optimistic updates)
-- **Day 5**: Smart subscriptions (only active resources)
+- **Phase 0**: Edge Functions for shared resources (deployed & working)
+- **Phase 1 (Partial)**: Basic real-time infrastructure (WebSocket connections established)
+- **UI**: Connection status indicator showing real-time status
 
-### Week 2 Plan
+### In Progress 🚧
 
-- **Days 6-7**: Offline support (queue & sync)
-- **Days 8-9**: Polish, testing, UI indicators
+- **Phase 1 (Fix)**: Real-time sync not triggering UI updates
+- **Bug**: Invitation acceptance flow needs fixing
 
-See [IMPLEMENTATION_ROADMAP.md](./docs/IMPLEMENTATION_ROADMAP.md) for details.
+### Next Steps 📋
+
+- **Phase 2**: Conflict resolution (versioning, optimistic updates)
+- **Phase 3**: Smart subscriptions (only active resources)
+- **Phase 4**: Offline support (queue & sync)
+
+See [REALTIME_SYNC_PLAN.md](./REALTIME_SYNC_PLAN.md) for technical details.
 
 ## Design System
 
@@ -48,5 +54,7 @@ Admins: nicholas.lovejoy@gmail.com, mlovejoy@scu.edu
 
 ## Known Issues
 
-- No real-time sync
+- Real-time sync doesn't trigger UI updates (WebSocket connected but changes don't reflect)
+- Invitation acceptance flow broken (permissions not created on accept)
+- Share link copying/pasting doesn't work properly
 - Folder card icons overlap

@@ -10,7 +10,8 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 
 - Create custom folders with names and colors
 - Rename folders inline
-- Delete folders with cascade deletion (not sure what this means - nico - let's discuss)
+- Delete folders with cascade deletion
+- Share folders with other users via email invitations
 
 ### 📓 Smart Notebooks
 
@@ -47,6 +48,13 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 - Add questions and answers
 - Practice mode with self-grading
 - Track your progress
+
+### 🔄 Real-Time Sync (Beta)
+
+- WebSocket-based real-time synchronization
+- Connection status indicator
+- Automatic reconnection with exponential backoff
+- Shared resource access via Supabase Edge Functions
 
 ## Tech Stack
 
@@ -110,8 +118,12 @@ notemaxxing/
 │   └── page.tsx           # Homepage
 ├── lib/                   # Utilities
 │   ├── store/            # Zustand store with hooks
+│   │   └── realtime-manager.ts  # WebSocket sync manager
 │   ├── supabase/         # Database client & schema
 │   └── storage.ts        # Legacy localStorage (being phased out)
+├── supabase/              # Supabase configuration
+│   └── functions/        # Edge Functions for shared resources
+├── scripts/               # Deployment and database scripts
 ├── public/                # Static assets
 └── components/            # React components
 ```
