@@ -1,19 +1,19 @@
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import React from 'react'
+import { LucideIcon } from 'lucide-react'
 
 interface EntityCardProps {
-  title: string;
-  subtitle?: string;
-  color?: string;
-  icon?: LucideIcon;
-  actions?: React.ReactNode;
-  onClick?: () => void;
-  onTitleClick?: () => void;
-  children?: React.ReactNode;
-  className?: string;
-  headerClassName?: string;
-  contentClassName?: string;
-  isHeader?: boolean;
+  title: string
+  subtitle?: string
+  color?: string
+  icon?: LucideIcon
+  actions?: React.ReactNode
+  onClick?: () => void
+  onTitleClick?: () => void
+  children?: React.ReactNode
+  className?: string
+  headerClassName?: string
+  contentClassName?: string
+  isHeader?: boolean
 }
 
 export function EntityCard({
@@ -32,13 +32,13 @@ export function EntityCard({
 }: EntityCardProps) {
   const baseClasses = isHeader
     ? `${color || 'bg-gray-200'} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`
-    : 'bg-white rounded-lg shadow-sm border border-gray-200';
+    : 'bg-white rounded-lg shadow-sm border border-gray-200'
 
   const content = (
     <>
       {isHeader ? (
         <div className={`${baseClasses} ${headerClassName}`}>
-          <h3 
+          <h3
             className={`text-2xl font-bold ${onTitleClick ? 'cursor-pointer hover:underline' : ''}`}
             onClick={onTitleClick}
           >
@@ -74,15 +74,15 @@ export function EntityCard({
         </div>
       )}
     </>
-  );
+  )
 
   if (onClick && !isHeader) {
     return (
       <div onClick={onClick} className="cursor-pointer">
         {content}
       </div>
-    );
+    )
   }
 
-  return content;
+  return content
 }

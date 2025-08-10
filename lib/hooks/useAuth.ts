@@ -11,7 +11,7 @@ interface AuthState {
 /**
  * Client-side authentication hook that provides a memoized Supabase client
  * and manages auth state across the application.
- * 
+ *
  * Benefits:
  * - Single source of truth for auth state
  * - Memoized client instance (prevents recreating on every render)
@@ -22,7 +22,7 @@ export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     loading: true,
-    error: null
+    error: null,
   })
 
   // Memoize the Supabase client to prevent recreating it on every render
@@ -33,7 +33,7 @@ export function useAuth() {
       setAuthState({
         user: null,
         loading: false,
-        error: new Error('Supabase client not initialized')
+        error: new Error('Supabase client not initialized'),
       })
       return
     }
@@ -41,19 +41,22 @@ export function useAuth() {
     // Get initial session
     const initAuth = async () => {
       try {
-        const { data: { user }, error } = await client.auth.getUser()
+        const {
+          data: { user },
+          error,
+        } = await client.auth.getUser()
         if (error) throw error
-        
+
         setAuthState({
           user,
           loading: false,
-          error: null
+          error: null,
         })
       } catch (error) {
         setAuthState({
           user: null,
           loading: false,
-          error: error as Error
+          error: error as Error,
         })
       }
     }
@@ -61,11 +64,13 @@ export function useAuth() {
     initAuth()
 
     // Listen for auth changes
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = client.auth.onAuthStateChange((_event, session) => {
       setAuthState({
         user: session?.user ?? null,
         loading: false,
-        error: null
+        error: null,
       })
     })
 
@@ -77,46 +82,49 @@ export function useAuth() {
   // Helper functions
   const signOut = async () => {
     if (!client) {
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
-        error: new Error('Supabase client not initialized')
+        error: new Error('Supabase client not initialized'),
       }))
       return
     }
-    
+
     try {
       const { error } = await client.auth.signOut()
       if (error) throw error
     } catch (error) {
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
-        error: error as Error
+        error: error as Error,
       }))
     }
   }
 
   const refreshSession = async () => {
     if (!client) {
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
-        error: new Error('Supabase client not initialized')
+        error: new Error('Supabase client not initialized'),
       }))
       return
     }
-    
+
     try {
-      const { data: { session }, error } = await client.auth.refreshSession()
+      const {
+        data: { session },
+        error,
+      } = await client.auth.refreshSession()
       if (error) throw error
-      
+
       setAuthState({
         user: session?.user ?? null,
         loading: false,
-        error: null
+        error: null,
       })
     } catch (error) {
-      setAuthState(prev => ({
+      setAuthState((prev) => ({
         ...prev,
-        error: error as Error
+        error: error as Error,
       }))
     }
   }
@@ -126,6 +134,6 @@ export function useAuth() {
     client,
     signOut,
     refreshSession,
-    isAuthenticated: !!authState.user
+    isAuthenticated: !!authState.user,
   }
 }

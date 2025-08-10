@@ -165,7 +165,7 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
                 onChange={(value) => setPermission(value as Permission)}
                 options={[
                   { value: 'read', label: 'Can view' },
-                  { value: 'write', label: 'Can edit' }
+                  { value: 'write', label: 'Can edit' },
                 ]}
                 disabled={loading}
               />

@@ -28,7 +28,12 @@ export interface QuizQuestion {
 }
 
 // Sharing types
-export type { Permission, ResourceType, ShareInvitation, ResourcePermission } from '../types/sharing'
+export type {
+  Permission,
+  ResourceType,
+  ShareInvitation,
+  ResourcePermission,
+} from '../types/sharing'
 
 // Store types
 export interface SyncState {

@@ -1,10 +1,10 @@
-import React from 'react';
+import React from 'react'
 
 interface FormFieldProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  containerClassName?: string;
+  label?: string
+  error?: string
+  helperText?: string
+  containerClassName?: string
 }
 
 export function FormField({
@@ -17,15 +17,12 @@ export function FormField({
   ...inputProps
 }: FormFieldProps) {
   // Generate an ID if not provided and label exists
-  const fieldId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  const fieldId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
 
   return (
     <div className={containerClassName}>
       {label && (
-        <label 
-          htmlFor={fieldId}
-          className="block text-sm font-medium text-gray-700 mb-1"
-        >
+        <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700 mb-1">
           {label}
         </label>
       )}
@@ -55,5 +52,5 @@ export function FormField({
         </p>
       )}
     </div>
-  );
+  )
 }

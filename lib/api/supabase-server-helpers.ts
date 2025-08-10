@@ -8,26 +8,23 @@ import { NextResponse } from 'next/server'
  */
 export async function getAuthenticatedSupabaseClient() {
   const supabase = await createClient()
-  
+
   if (!supabase) {
     return {
       client: null,
-      error: NextResponse.json(
-        { error: 'Service temporarily unavailable' },
-        { status: 503 }
-      )
+      error: NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 }),
     }
   }
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser()
+
   if (authError || !user) {
     return {
       client: null,
-      error: NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
     }
   }
 
@@ -40,14 +37,11 @@ export async function getAuthenticatedSupabaseClient() {
  */
 export async function getPublicSupabaseClient() {
   const supabase = await createClient()
-  
+
   if (!supabase) {
     return {
       client: null,
-      error: NextResponse.json(
-        { error: 'Service temporarily unavailable' },
-        { status: 503 }
-      )
+      error: NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 }),
     }
   }
 

@@ -1,18 +1,18 @@
-'use client';
+'use client'
 
-import { Modal } from '@/components/ui/Modal';
-import { ModalFooter } from '@/components/ui/ModalFooter';
-import { LoadingButton } from '@/components/ui/LoadingButton';
-import { Check, X, Sparkles } from 'lucide-react';
-import { useEffect } from 'react';
+import { Modal } from '@/components/ui/Modal'
+import { ModalFooter } from '@/components/ui/ModalFooter'
+import { LoadingButton } from '@/components/ui/LoadingButton'
+import { Check, X, Sparkles } from 'lucide-react'
+import { useEffect } from 'react'
 
 interface EnhancementPreviewProps {
-  isOpen: boolean;
-  onClose: () => void;
-  originalText: string;
-  enhancedText: string;
-  onAccept: () => void;
-  improvements?: string[];
+  isOpen: boolean
+  onClose: () => void
+  originalText: string
+  enhancedText: string
+  onAccept: () => void
+  improvements?: string[]
 }
 
 export function EnhancementPreview({
@@ -21,34 +21,29 @@ export function EnhancementPreview({
   originalText,
   enhancedText,
   onAccept,
-  improvements = []
+  improvements = [],
 }: EnhancementPreviewProps) {
   // In the future, we can add diff visualization here
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!isOpen) return;
-      
-      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        onAccept();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-      }
-    };
+      if (!isOpen) return
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onAccept, onClose]);
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        onAccept()
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onAccept, onClose])
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="AI Enhancement Preview"
-      size="lg"
-    >
+    <Modal isOpen={isOpen} onClose={onClose} title="AI Enhancement Preview" size="lg">
       <div className="space-y-4">
         {/* Improvements Summary */}
         {improvements.length > 0 && (
@@ -79,7 +74,7 @@ export function EnhancementPreview({
           <div>
             <h4 className="font-medium text-gray-700 mb-2">Enhanced</h4>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 h-64 overflow-y-auto">
-              <div 
+              <div
                 className="text-sm text-gray-700 whitespace-pre-wrap prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: enhancedText }}
               />
@@ -89,11 +84,7 @@ export function EnhancementPreview({
 
         {/* Action buttons */}
         <ModalFooter>
-          <LoadingButton
-            onClick={onClose}
-            variant="secondary"
-            icon={X}
-          >
+          <LoadingButton onClick={onClose} variant="secondary" icon={X}>
             Cancel
           </LoadingButton>
           <LoadingButton
@@ -108,9 +99,10 @@ export function EnhancementPreview({
 
         {/* Keyboard shortcuts hint */}
         <p className="text-xs text-gray-500 text-center">
-          Press <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">⌘+Enter</kbd> to accept or <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Esc</kbd> to cancel
+          Press <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">⌘+Enter</kbd> to accept or{' '}
+          <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">Esc</kbd> to cancel
         </p>
       </div>
     </Modal>
-  );
+  )
 }

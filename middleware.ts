@@ -1,12 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const protectedPaths = [
-  '/folders',
-  '/notebooks',
-  '/quizzing',
-  '/typemaxxing'
-]
+const protectedPaths = ['/folders', '/notebooks', '/quizzing', '/typemaxxing']
 
 export async function middleware(request: NextRequest) {
   // Skip middleware if Supabase is not configured
@@ -43,9 +38,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isProtectedPath = protectedPaths.some(path => 
-    request.nextUrl.pathname.startsWith(path)
-  )
+  const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path))
 
   // Redirect unauthenticated users from protected routes
   if (!user && isProtectedPath) {

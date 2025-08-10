@@ -1,21 +1,18 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require('fs')
+const path = require('path')
 
 const buildInfo = {
   timestamp: new Date().toISOString(),
-  date: new Date().toLocaleString('en-US', { 
+  date: new Date().toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
-    month: 'short', 
+    month: 'short',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true
-  })
-};
+    hour12: true,
+  }),
+}
 
-fs.writeFileSync(
-  path.join(__dirname, '../lib/build-info.json'),
-  JSON.stringify(buildInfo, null, 2)
-);
+fs.writeFileSync(path.join(__dirname, '../lib/build-info.json'), JSON.stringify(buildInfo, null, 2))
 
-console.log('Build info generated:', buildInfo.date);
+console.log('Build info generated:', buildInfo.date)

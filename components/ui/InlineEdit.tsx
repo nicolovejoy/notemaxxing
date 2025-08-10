@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Check, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { Check, X } from 'lucide-react'
 
 interface InlineEditProps {
-  value: string;
-  onSave: (value: string) => void;
-  onCancel: () => void;
-  className?: string;
-  inputClassName?: string;
-  autoFocus?: boolean;
-  placeholder?: string;
+  value: string
+  onSave: (value: string) => void
+  onCancel: () => void
+  className?: string
+  inputClassName?: string
+  autoFocus?: boolean
+  placeholder?: string
 }
 
 export function InlineEdit({
@@ -20,25 +20,25 @@ export function InlineEdit({
   autoFocus = true,
   placeholder = '',
 }: InlineEditProps) {
-  const [editValue, setEditValue] = useState(value);
+  const [editValue, setEditValue] = useState(value)
 
   useEffect(() => {
-    setEditValue(value);
-  }, [value]);
+    setEditValue(value)
+  }, [value])
 
   const handleSave = () => {
     if (editValue.trim()) {
-      onSave(editValue);
+      onSave(editValue)
     }
-  };
+  }
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSave();
+      handleSave()
     } else if (e.key === 'Escape') {
-      onCancel();
+      onCancel()
     }
-  };
+  }
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -51,20 +51,12 @@ export function InlineEdit({
         autoFocus={autoFocus}
         placeholder={placeholder}
       />
-      <button
-        onClick={handleSave}
-        className="p-1 hover:bg-white/20 rounded"
-        type="button"
-      >
+      <button onClick={handleSave} className="p-1 hover:bg-white/20 rounded" type="button">
         <Check className="h-4 w-4" />
       </button>
-      <button
-        onClick={onCancel}
-        className="p-1 hover:bg-white/20 rounded"
-        type="button"
-      >
+      <button onClick={onCancel} className="p-1 hover:bg-white/20 rounded" type="button">
         <X className="h-4 w-4" />
       </button>
     </div>
-  );
+  )
 }

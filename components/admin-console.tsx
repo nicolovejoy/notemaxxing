@@ -18,13 +18,13 @@ import {
 } from 'lucide-react'
 import { Modal, Button, IconButton } from './ui'
 import { logger } from '@/lib/debug/logger'
-import { 
-  useFolders, 
-  useNotebooks, 
-  useNotes, 
-  useSyncState, 
+import {
+  useFolders,
+  useNotebooks,
+  useNotes,
+  useSyncState,
   useIsInitialized,
-  useDataActions 
+  useDataActions,
 } from '@/lib/store'
 import { dataManager } from '@/lib/store/data-manager'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -191,7 +191,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
       // Get all users using our admin function
       const { data: users, error } = await supabase.rpc('get_all_users_admin')
-      
+
       if (error) {
         logger.error('Failed to load users', error)
         throw error
@@ -233,14 +233,14 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
       // Build resource names from local store
       const resourceNames: Record<string, string> = {}
-      
+
       // Use local folders data
-      folders.forEach(f => {
+      folders.forEach((f) => {
         resourceNames[f.id] = f.name
       })
-      
+
       // Use local notebooks data
-      notebooks.forEach(n => {
+      notebooks.forEach((n) => {
         resourceNames[n.id] = n.name
       })
 
@@ -253,14 +253,14 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       })
 
       const userEmails: Record<string, string> = {}
-      
+
       if (userIds.size > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, email')
           .in('id', Array.from(userIds))
-        
-        profiles?.forEach(p => {
+
+        profiles?.forEach((p) => {
           userEmails[p.id] = p.email
         })
       }
@@ -269,10 +269,12 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
         invitations: invitations || [],
         permissions: permissions || [],
         resourceNames,
-        userEmails
+        userEmails,
       })
 
-      logger.info(`Loaded ${invitations?.length || 0} invitations and ${permissions?.length || 0} permissions`)
+      logger.info(
+        `Loaded ${invitations?.length || 0} invitations and ${permissions?.length || 0} permissions`
+      )
     } catch (error) {
       logger.error('Failed to load sharing data', error)
     } finally {
@@ -282,21 +284,21 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const deleteSelectedInvitations = async () => {
     if (selectedInvitations.size === 0) return
-    
+
     if (!confirm(`Delete ${selectedInvitations.size} invitation(s)? This cannot be undone.`)) {
       return
     }
 
     try {
       if (!supabase) throw new Error('No Supabase client')
-      
+
       const { error } = await supabase
         .from('share_invitations')
         .delete()
         .in('id', Array.from(selectedInvitations))
-      
+
       if (error) throw error
-      
+
       logger.info(`Deleted ${selectedInvitations.size} invitations`)
       setSelectedInvitations(new Set())
       loadSharingData() // Reload
@@ -308,21 +310,25 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
   const deleteSelectedPermissions = async () => {
     if (selectedPermissions.size === 0) return
-    
-    if (!confirm(`Delete ${selectedPermissions.size} permission(s)? This will revoke access. This cannot be undone.`)) {
+
+    if (
+      !confirm(
+        `Delete ${selectedPermissions.size} permission(s)? This will revoke access. This cannot be undone.`
+      )
+    ) {
       return
     }
 
     try {
       if (!supabase) throw new Error('No Supabase client')
-      
+
       const { error } = await supabase
         .from('permissions')
         .delete()
         .in('id', Array.from(selectedPermissions))
-      
+
       if (error) throw error
-      
+
       logger.info(`Deleted ${selectedPermissions.size} permissions`)
       setSelectedPermissions(new Set())
       loadSharingData() // Reload
@@ -348,23 +354,22 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
     logger.info('Starting reset for user', { userId })
     console.log('🔒 Using secure admin endpoint for user:', userId)
-    
-    try {
 
+    try {
       // Call the secure admin API endpoint
       const response = await fetch('/api/admin/reset-user-data', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           targetUserId: userId,
-          adminPassword: adminPassword
-        })
+          adminPassword: adminPassword,
+        }),
       })
 
       const result = await response.json()
-      
+
       console.log('📥 API Response:', { status: response.status, result })
 
       if (!response.ok) {
@@ -378,28 +383,36 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       logger.info('Reset successful via admin API', { userId, result })
       console.log('✅ Successfully deleted:', result.deleted)
       console.log('📊 Remaining (should be 0):', result.remaining)
-      
-      if (result.remaining.folders > 0 || result.remaining.notebooks > 0 || result.remaining.notes > 0) {
+
+      if (
+        result.remaining.folders > 0 ||
+        result.remaining.notebooks > 0 ||
+        result.remaining.notes > 0
+      ) {
         alert(`Warning: Some data may remain. Check console for details.`)
       } else {
-        alert(`User data reset successfully!\n\nDeleted:\n- ${result.deleted.folders} folders\n- ${result.deleted.notebooks} notebooks\n- ${result.deleted.notes} notes`)
+        alert(
+          `User data reset successfully!\n\nDeleted:\n- ${result.deleted.folders} folders\n- ${result.deleted.notebooks} notebooks\n- ${result.deleted.notes} notes`
+        )
       }
 
       // Refresh store if it's the current user
       if (userId === currentUserId) {
         await dataManager.refresh()
       }
-      
+
       // Refresh user list to update counts
       await loadAllUsers()
     } catch (error) {
-      logger.error('Failed to reset user data', { 
-        error, 
+      logger.error('Failed to reset user data', {
+        error,
         message: (error as Error).message,
-        stack: (error as Error).stack 
+        stack: (error as Error).stack,
       })
       console.error('Full error object:', error)
-      alert('Failed to reset user data: ' + (error as Error).message + '\n\nCheck console for details.')
+      alert(
+        'Failed to reset user data: ' + (error as Error).message + '\n\nCheck console for details.'
+      )
     }
   }
 
@@ -409,7 +422,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
 
       // Use the admin function to seed data for any user
       const { error } = await supabase.rpc('create_starter_content_for_specific_user', {
-        target_user_id: userId
+        target_user_id: userId,
       })
 
       if (error) {
@@ -434,7 +447,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       if (userId === currentUserId) {
         await dataManager.refresh()
       }
-      
+
       // Refresh user list to update counts
       await loadAllUsers()
     } catch (error) {
@@ -480,7 +493,11 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   }
 
   const deleteUser = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to DELETE the user account: ${userEmail}?\n\nThis will permanently delete:\n- The user account\n- All folders\n- All notebooks\n- All notes\n- All quizzes\n\nThis CANNOT be undone!`)) {
+    if (
+      !confirm(
+        `Are you sure you want to DELETE the user account: ${userEmail}?\n\nThis will permanently delete:\n- The user account\n- All folders\n- All notebooks\n- All notes\n- All quizzes\n\nThis CANNOT be undone!`
+      )
+    ) {
       return
     }
 
@@ -495,7 +512,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       if (!supabase) throw new Error('No Supabase client')
 
       const { error } = await supabase.rpc('delete_user_admin', {
-        user_id: userId
+        user_id: userId,
       })
 
       if (error) {
@@ -540,9 +557,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
   }
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={() => onClose ? onClose() : setIsOpen(false)} 
+    <Modal
+      isOpen={isOpen}
+      onClose={() => (onClose ? onClose() : setIsOpen(false))}
       size="lg"
       title="Admin Console"
     >
@@ -552,13 +569,11 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
           <div>
             <h2 className="text-xl font-semibold">Admin Console</h2>
             <p className="text-sm text-gray-500 mt-1">Logged in as: {userEmail}</p>
-            {!isAdmin && (
-              <p className="text-sm text-red-600 mt-1">⚠️ You are not an admin</p>
-            )}
+            {!isAdmin && <p className="text-sm text-red-600 mt-1">⚠️ You are not an admin</p>}
           </div>
           <IconButton
             icon={X}
-            onClick={() => onClose ? onClose() : setIsOpen(false)}
+            onClick={() => (onClose ? onClose() : setIsOpen(false))}
             size="sm"
             variant="ghost"
           />
@@ -658,12 +673,13 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                             </div>
                             {user.last_sign_in_at && (
                               <div className="text-xs text-gray-500">
-                                Last login: {new Date(user.last_sign_in_at).toLocaleString('en-US', { 
-                                  month: 'short', 
-                                  day: 'numeric', 
+                                Last login:{' '}
+                                {new Date(user.last_sign_in_at).toLocaleString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
                                   year: 'numeric',
                                   hour: '2-digit',
-                                  minute: '2-digit'
+                                  minute: '2-digit',
                                 })}
                               </div>
                             )}
@@ -695,25 +711,13 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                           </div>
                         </div>
                         <div className="flex gap-2 mt-2">
-                          <Button
-                            onClick={() => exportUserData(user.id)}
-                            variant="ghost"
-                            size="sm"
-                          >
+                          <Button onClick={() => exportUserData(user.id)} variant="ghost" size="sm">
                             Export
                           </Button>
-                          <Button
-                            onClick={() => seedUserData(user.id)}
-                            variant="ghost"
-                            size="sm"
-                          >
+                          <Button onClick={() => seedUserData(user.id)} variant="ghost" size="sm">
                             Add Starter
                           </Button>
-                          <Button
-                            onClick={() => resetUserData(user.id)}
-                            variant="ghost"
-                            size="sm"
-                          >
+                          <Button onClick={() => resetUserData(user.id)} variant="ghost" size="sm">
                             Clear Data
                           </Button>
                         </div>
@@ -754,12 +758,18 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                   <>
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium">Invitations ({sharingData.invitations.length})</h3>
+                        <h3 className="font-medium">
+                          Invitations ({sharingData.invitations.length})
+                        </h3>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={() => setSelectedInvitations(new Set(sharingData.invitations.map(i => i.id)))}
+                            onClick={() =>
+                              setSelectedInvitations(
+                                new Set(sharingData.invitations.map((i) => i.id))
+                              )
+                            }
                           >
                             Select All
                           </Button>
@@ -797,24 +807,40 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                                 <div className="flex-1">
                                   <div className="flex justify-between">
                                     <span className="font-medium">{invite.invited_email}</span>
-                                    <span className={`px-2 py-1 rounded text-xs ${
-                                      invite.accepted_at ? 'bg-green-100 text-green-800' : 
-                                      new Date(invite.expires_at) < new Date() ? 'bg-red-100 text-red-800' :
-                                      'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                      {invite.accepted_at ? 'Accepted' : 
-                                       new Date(invite.expires_at) < new Date() ? 'Expired' : 'Pending'}
+                                    <span
+                                      className={`px-2 py-1 rounded text-xs ${
+                                        invite.accepted_at
+                                          ? 'bg-green-100 text-green-800'
+                                          : new Date(invite.expires_at) < new Date()
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-yellow-100 text-yellow-800'
+                                      }`}
+                                    >
+                                      {invite.accepted_at
+                                        ? 'Accepted'
+                                        : new Date(invite.expires_at) < new Date()
+                                          ? 'Expired'
+                                          : 'Pending'}
                                     </span>
                                   </div>
                                   <div className="text-gray-600 mt-1">
                                     <div className="font-medium text-black">
-                                      {invite.resource_type === 'folder' ? '📁' : '📓'} {sharingData.resourceNames[invite.resource_id] || 'Unknown'}
+                                      {invite.resource_type === 'folder' ? '📁' : '📓'}{' '}
+                                      {sharingData.resourceNames[invite.resource_id] || 'Unknown'}
                                     </div>
                                     <div>Permission: {invite.permission}</div>
-                                    <div>Invited by: {sharingData.userEmails[invite.invited_by] || invite.invited_by}</div>
-                                    <div>Created: {new Date(invite.created_at).toLocaleString()}</div>
+                                    <div>
+                                      Invited by:{' '}
+                                      {sharingData.userEmails[invite.invited_by] ||
+                                        invite.invited_by}
+                                    </div>
+                                    <div>
+                                      Created: {new Date(invite.created_at).toLocaleString()}
+                                    </div>
                                     {invite.accepted_at && (
-                                      <div>Accepted: {new Date(invite.accepted_at).toLocaleString()}</div>
+                                      <div>
+                                        Accepted: {new Date(invite.accepted_at).toLocaleString()}
+                                      </div>
                                     )}
                                   </div>
                                 </div>
@@ -824,15 +850,21 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                         )}
                       </div>
                     </div>
-                    
+
                     <div>
                       <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium">Permissions ({sharingData.permissions.length})</h3>
+                        <h3 className="font-medium">
+                          Permissions ({sharingData.permissions.length})
+                        </h3>
                         <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="secondary"
-                            onClick={() => setSelectedPermissions(new Set(sharingData.permissions.map(p => p.id)))}
+                            onClick={() =>
+                              setSelectedPermissions(
+                                new Set(sharingData.permissions.map((p) => p.id))
+                              )
+                            }
                           >
                             Select All
                           </Button>
@@ -869,16 +901,24 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
                                 />
                                 <div className="flex-1">
                                   <div className="flex justify-between">
-                                    <span className="font-medium">{sharingData.userEmails[perm.user_id] || perm.user_id}</span>
+                                    <span className="font-medium">
+                                      {sharingData.userEmails[perm.user_id] || perm.user_id}
+                                    </span>
                                     <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                                       {perm.permission}
                                     </span>
                                   </div>
                                   <div className="text-gray-600 mt-1">
                                     <div className="font-medium text-black">
-                                      {perm.resource_type === 'folder' ? '📁' : '📓'} {sharingData.resourceNames[perm.resource_id] || 'Unknown'}
+                                      {perm.resource_type === 'folder' ? '📁' : '📓'}{' '}
+                                      {sharingData.resourceNames[perm.resource_id] || 'Unknown'}
                                     </div>
-                                    <div>Granted by: {perm.granted_by ? sharingData.userEmails[perm.granted_by] || perm.granted_by : 'System'}</div>
+                                    <div>
+                                      Granted by:{' '}
+                                      {perm.granted_by
+                                        ? sharingData.userEmails[perm.granted_by] || perm.granted_by
+                                        : 'System'}
+                                    </div>
                                     <div>Created: {new Date(perm.created_at).toLocaleString()}</div>
                                   </div>
                                 </div>

@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Timer, RotateCcw, BookOpen, Check, Sparkles, FileText, ChevronRight } from 'lucide-react'
+import {
+  ArrowLeft,
+  Timer,
+  RotateCcw,
+  BookOpen,
+  Check,
+  Sparkles,
+  FileText,
+  ChevronRight,
+} from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { UserMenu } from '@/components/user-menu'
 import { useNotebooks, useNotesInNotebook, useSyncState } from '@/lib/store'
@@ -16,16 +25,16 @@ export default function TypingPage() {
   const syncState = useSyncState()
   const [selectedNotebook, setSelectedNotebook] = useState<string | null>(null)
   const notes = useNotesInNotebook(selectedNotebook || '')
-  
+
   const notebooksLoading = syncState.status === 'loading'
   const notesLoading = syncState.status === 'loading'
-  
+
   const [currentStep, setCurrentStep] = useState<Step>('select-notebook')
   const [selectedNotes, setSelectedNotes] = useState<string[]>([])
   const [wordCount, setWordCount] = useState(100)
   const [generatedText, setGeneratedText] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
-  
+
   // Typing test state
   const [userInput, setUserInput] = useState('')
   const [startTime, setStartTime] = useState<number | null>(null)
@@ -41,21 +50,18 @@ export default function TypingPage() {
     return Math.round(words / minutes)
   }
 
-  const accuracy = userInput.length > 0 
-    ? Math.round(((userInput.length - errors) / userInput.length) * 100) 
-    : 100
+  const accuracy =
+    userInput.length > 0 ? Math.round(((userInput.length - errors) / userInput.length) * 100) : 100
 
   // Handle note selection
   const toggleNoteSelection = (noteId: string) => {
-    setSelectedNotes(prev => 
-      prev.includes(noteId) 
-        ? prev.filter(id => id !== noteId)
-        : [...prev, noteId]
+    setSelectedNotes((prev) =>
+      prev.includes(noteId) ? prev.filter((id) => id !== noteId) : [...prev, noteId]
     )
   }
 
   const selectAllNotes = () => {
-    setSelectedNotes(notes.map(note => note.id))
+    setSelectedNotes(notes.map((note) => note.id))
   }
 
   const clearSelection = () => {
@@ -65,14 +71,14 @@ export default function TypingPage() {
   // Generate practice text
   const generatePracticeText = async () => {
     if (selectedNotes.length === 0) return
-    
+
     setIsGenerating(true)
     try {
       const selectedNotesContent = notes
-        .filter(note => selectedNotes.includes(note.id))
-        .map(note => ({
+        .filter((note) => selectedNotes.includes(note.id))
+        .map((note) => ({
           title: note.title,
-          content: toPlainText(note.content)
+          content: toPlainText(note.content),
         }))
 
       const response = await fetch('/api/typing/generate', {
@@ -80,12 +86,12 @@ export default function TypingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           notes: selectedNotesContent,
-          wordCount
-        })
+          wordCount,
+        }),
       })
 
       const data = await response.json()
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to generate text')
       }
@@ -156,7 +162,10 @@ export default function TypingPage() {
               <Link href="/" className="p-2 rounded-md hover:bg-gray-100">
                 <ArrowLeft className="h-5 w-5 text-gray-800" />
               </Link>
-              <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity">
+              <Link
+                href="/"
+                className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity"
+              >
                 <Logo size={36} />
                 <h1 className="text-xl font-semibold italic">Typemaxxing</h1>
               </Link>
@@ -183,27 +192,29 @@ export default function TypingPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {notebooks.filter(nb => !nb.archived).map((notebook) => (
-                  <button
-                    key={notebook.id}
-                    onClick={() => {
-                      setSelectedNotebook(notebook.id)
-                      setCurrentStep('select-notes')
-                    }}
-                    className={`${notebook.color} p-6 rounded-lg hover:shadow-lg transition-shadow text-left group`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <BookOpen className="h-6 w-6 text-gray-700" />
-                        <div>
-                          <h3 className="font-semibold text-gray-900">{notebook.name}</h3>
-                          <p className="text-sm text-gray-700">Select to practice</p>
+                {notebooks
+                  .filter((nb) => !nb.archived)
+                  .map((notebook) => (
+                    <button
+                      key={notebook.id}
+                      onClick={() => {
+                        setSelectedNotebook(notebook.id)
+                        setCurrentStep('select-notes')
+                      }}
+                      className={`${notebook.color} p-6 rounded-lg hover:shadow-lg transition-shadow text-left group`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <BookOpen className="h-6 w-6 text-gray-700" />
+                          <div>
+                            <h3 className="font-semibold text-gray-900">{notebook.name}</h3>
+                            <p className="text-sm text-gray-700">Select to practice</p>
+                          </div>
                         </div>
+                        <ChevronRight className="h-5 w-5 text-gray-600 group-hover:translate-x-1 transition-transform" />
                       </div>
-                      <ChevronRight className="h-5 w-5 text-gray-600 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))}
               </div>
             )}
           </div>
@@ -228,9 +239,7 @@ export default function TypingPage() {
                 >
                   Clear Selection
                 </button>
-                <span className="text-sm text-gray-600">
-                  {selectedNotes.length} selected
-                </span>
+                <span className="text-sm text-gray-600">{selectedNotes.length} selected</span>
               </div>
             </div>
 
@@ -255,17 +264,21 @@ export default function TypingPage() {
                     >
                       <div className="flex items-start justify-between mb-2">
                         <FileText className="h-5 w-5 text-gray-400" />
-                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                          selectedNotes.includes(note.id)
-                            ? 'bg-blue-500 border-blue-500'
-                            : 'border-gray-300'
-                        }`}>
+                        <div
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                            selectedNotes.includes(note.id)
+                              ? 'bg-blue-500 border-blue-500'
+                              : 'border-gray-300'
+                          }`}
+                        >
                           {selectedNotes.includes(note.id) && (
                             <Check className="h-3 w-3 text-white" />
                           )}
                         </div>
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">{note.title}</h3>
+                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1">
+                        {note.title}
+                      </h3>
                       <p className="text-sm text-gray-600 line-clamp-3">
                         {toPlainText(note.content)}
                       </p>
@@ -320,7 +333,9 @@ export default function TypingPage() {
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <p className="text-sm text-blue-800">
                   <strong>Estimated cost:</strong> ~{(wordCount * 0.00007).toFixed(4)} USD
-                  <span className="text-xs ml-2">({selectedNotes.length} notes × ~300 tokens each)</span>
+                  <span className="text-xs ml-2">
+                    ({selectedNotes.length} notes × ~300 tokens each)
+                  </span>
                 </p>
               </div>
 
@@ -377,7 +392,8 @@ export default function TypingPage() {
                   {generatedText.split('').map((char, index) => {
                     let className = 'text-gray-600'
                     if (index < userInput.length) {
-                      className = userInput[index] === char ? 'text-green-600' : 'text-red-600 bg-red-100'
+                      className =
+                        userInput[index] === char ? 'text-green-600' : 'text-red-600 bg-red-100'
                     } else if (index === userInput.length) {
                       className = 'bg-blue-100'
                     }

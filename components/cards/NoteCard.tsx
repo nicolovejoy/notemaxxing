@@ -1,37 +1,34 @@
-import React from 'react';
-import { FileText, Trash2 } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
-import { toPlainText, toHTML } from '@/lib/utils/content';
+import React from 'react'
+import { FileText, Trash2 } from 'lucide-react'
+import { Card } from '@/components/ui/Card'
+import { toPlainText, toHTML } from '@/lib/utils/content'
 
 interface NoteCardProps {
-  title: string;
-  content: string;
-  updatedAt: string;
-  onClick: () => void;
-  onDelete?: () => void;
-  formatDate: (date: string) => string;
+  title: string
+  content: string
+  updatedAt: string
+  onClick: () => void
+  onDelete?: () => void
+  formatDate: (date: string) => string
 }
 
-export function NoteCard({ 
-  title, 
-  content, 
-  updatedAt, 
-  onClick, 
-  onDelete, 
-  formatDate 
+export function NoteCard({
+  title,
+  content,
+  updatedAt,
+  onClick,
+  onDelete,
+  formatDate,
 }: NoteCardProps) {
   return (
-    <Card 
-      onClick={onClick}
-      className="p-6 h-48 flex flex-col group"
-    >
+    <Card onClick={onClick} className="p-6 h-48 flex flex-col group">
       <div className="flex items-start justify-between mb-2">
         <FileText className="h-5 w-5 text-gray-400" />
         {onDelete && (
           <button
             onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
+              e.stopPropagation()
+              onDelete()
             }}
             className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
           >
@@ -39,24 +36,17 @@ export function NoteCard({
           </button>
         )}
       </div>
-      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
-        {title}
-      </h3>
+      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{title}</h3>
       <p className="text-sm text-gray-600 line-clamp-3 flex-1">
-        {content ? 
-          toPlainText(toHTML(content)).substring(0, 150) : 
-          "No content yet..."
-        }
+        {content ? toPlainText(toHTML(content)).substring(0, 150) : 'No content yet...'}
       </p>
-      <p className="text-xs text-gray-500 mt-2">
-        {formatDate(updatedAt)}
-      </p>
+      <p className="text-xs text-gray-500 mt-2">{formatDate(updatedAt)}</p>
     </Card>
-  );
+  )
 }
 
 interface AddNoteCardProps {
-  onClick: () => void;
+  onClick: () => void
 }
 
 export function AddNoteCard({ onClick }: AddNoteCardProps) {
@@ -68,5 +58,5 @@ export function AddNoteCard({ onClick }: AddNoteCardProps) {
       <FileText className="h-8 w-8 text-gray-400 group-hover:text-gray-600 mb-2" />
       <span className="text-gray-600 font-medium">Add new note</span>
     </button>
-  );
+  )
 }

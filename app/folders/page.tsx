@@ -1,24 +1,24 @@
-"use client";
+'use client'
 
-import { useState, useMemo } from "react";
-import { Plus, Trash2, FolderOpen, Archive, SortAsc, Edit2, ChevronRight } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { Modal } from "@/components/ui/Modal";
-import { ColorPicker } from "@/components/forms/ColorPicker";
-import { EntityCard } from "@/components/cards/EntityCard";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { SearchInput } from "@/components/ui/SearchInput";
-import { Dropdown } from "@/components/ui/Dropdown";
-import { InlineEdit } from "@/components/ui/InlineEdit";
-import { NotebookCard } from "@/components/cards/NotebookCard";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Skeleton } from "@/components/ui/Skeleton";
-import { ShareButton } from "@/components/ShareButton";
-import { SharedIndicator } from "@/components/SharedIndicator";
-import { FormField } from "@/components/ui/FormField";
-import { LoadingButton } from "@/components/ui/LoadingButton";
-import { StatusMessage } from "@/components/ui/StatusMessage";
-import { 
+import { useState, useMemo } from 'react'
+import { Plus, Trash2, FolderOpen, Archive, SortAsc, Edit2, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Modal } from '@/components/ui/Modal'
+import { ColorPicker } from '@/components/forms/ColorPicker'
+import { EntityCard } from '@/components/cards/EntityCard'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { SearchInput } from '@/components/ui/SearchInput'
+import { Dropdown } from '@/components/ui/Dropdown'
+import { InlineEdit } from '@/components/ui/InlineEdit'
+import { NotebookCard } from '@/components/cards/NotebookCard'
+import { EmptyState } from '@/components/ui/EmptyState'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { ShareButton } from '@/components/ShareButton'
+import { SharedIndicator } from '@/components/SharedIndicator'
+import { FormField } from '@/components/ui/FormField'
+import { LoadingButton } from '@/components/ui/LoadingButton'
+import { StatusMessage } from '@/components/ui/StatusMessage'
+import {
   useFolders,
   useNotebooks,
   useNotes,
@@ -27,287 +27,308 @@ import {
   useNotebookSort,
   useGlobalSearch,
   useUIActions,
-  useOrphanedSharedNotebooks
-} from "@/lib/store";
-import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from "@/lib/constants";
-import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
+  useOrphanedSharedNotebooks,
+} from '@/lib/store'
+import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
+import { useNavigateToRecentNotebook } from '@/lib/hooks/useNavigateToRecentNotebook'
 
 export default function FoldersPage() {
-  const router = useRouter();
-  const folders = useFolders();
-  const notebooks = useNotebooks(true); // includeArchived = true
-  const notes = useNotes();
-  const orphanedSharedNotebooks = useOrphanedSharedNotebooks();
-  const { createFolder, updateFolder, deleteFolder, createNotebook, updateNotebook, archiveNotebook, restoreNotebook, deleteNotebook } = useDataActions();
-  const syncState = useSyncState();
-  const { setNotebookSort, setGlobalSearch } = useUIActions();
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [newFolderName, setNewFolderName] = useState("");
-  const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR);
-  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
-  const [editFolderName, setEditFolderName] = useState("");
-  const [isCreatingNotebook, setIsCreatingNotebook] = useState<string | null>(null);
-  const [newNotebookName, setNewNotebookName] = useState("");
-  const [editingNotebookId, setEditingNotebookId] = useState<string | null>(null);
-  const [editNotebookName, setEditNotebookName] = useState("");
-  const [showArchived, setShowArchived] = useState(false);
-  const [isCreatingFolderLoading, setIsCreatingFolderLoading] = useState(false);
-  
-  const notebookSort = useNotebookSort();
-  const globalSearch = useGlobalSearch();
-  const navigateToRecentNotebook = useNavigateToRecentNotebook();
-  
+  const router = useRouter()
+  const folders = useFolders()
+  const notebooks = useNotebooks(true) // includeArchived = true
+  const notes = useNotes()
+  const orphanedSharedNotebooks = useOrphanedSharedNotebooks()
+  const {
+    createFolder,
+    updateFolder,
+    deleteFolder,
+    createNotebook,
+    updateNotebook,
+    archiveNotebook,
+    restoreNotebook,
+    deleteNotebook,
+  } = useDataActions()
+  const syncState = useSyncState()
+  const { setNotebookSort, setGlobalSearch } = useUIActions()
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+  const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null)
+  const [editFolderName, setEditFolderName] = useState('')
+  const [isCreatingNotebook, setIsCreatingNotebook] = useState<string | null>(null)
+  const [newNotebookName, setNewNotebookName] = useState('')
+  const [editingNotebookId, setEditingNotebookId] = useState<string | null>(null)
+  const [editNotebookName, setEditNotebookName] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
+  const [isCreatingFolderLoading, setIsCreatingFolderLoading] = useState(false)
+
+  const notebookSort = useNotebookSort()
+  const globalSearch = useGlobalSearch()
+  const navigateToRecentNotebook = useNavigateToRecentNotebook()
+
   // Filter folders based on search - now searches folder names, notebook names, and note content
   const filteredFolders = useMemo(() => {
-    if (!globalSearch) return folders;
-    
-    const searchLower = globalSearch.toLowerCase();
-    
-    return folders.filter(folder => {
+    if (!globalSearch) return folders
+
+    const searchLower = globalSearch.toLowerCase()
+
+    return folders.filter((folder) => {
       // Check folder name
-      if (folder.name.toLowerCase().includes(searchLower)) return true;
-      
+      if (folder.name.toLowerCase().includes(searchLower)) return true
+
       // Check notebooks in this folder
-      const folderNotebooks = notebooks.filter(n => n.folder_id === folder.id);
+      const folderNotebooks = notebooks.filter((n) => n.folder_id === folder.id)
       for (const notebook of folderNotebooks) {
         // Check notebook name
-        if (notebook.name.toLowerCase().includes(searchLower)) return true;
-        
+        if (notebook.name.toLowerCase().includes(searchLower)) return true
+
         // Check notes in this notebook
-        const notebookNotes = notes.filter(n => n.notebook_id === notebook.id);
+        const notebookNotes = notes.filter((n) => n.notebook_id === notebook.id)
         for (const note of notebookNotes) {
           // Check note title or content
-          if (note.title.toLowerCase().includes(searchLower) ||
-              note.content.toLowerCase().includes(searchLower)) {
-            return true;
+          if (
+            note.title.toLowerCase().includes(searchLower) ||
+            note.content.toLowerCase().includes(searchLower)
+          ) {
+            return true
           }
         }
       }
-      
-      return false;
-    });
-  }, [folders, notebooks, notes, globalSearch]);
+
+      return false
+    })
+  }, [folders, notebooks, notes, globalSearch])
 
   const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) return;
+    if (!newFolderName.trim()) return
 
-    setIsCreatingFolderLoading(true);
+    setIsCreatingFolderLoading(true)
     try {
-      await createFolder(newFolderName, newFolderColor);
-      setIsCreatingFolder(false);
-      setNewFolderName("");
-      setNewFolderColor(DEFAULT_FOLDER_COLOR);
+      await createFolder(newFolderName, newFolderColor)
+      setIsCreatingFolder(false)
+      setNewFolderName('')
+      setNewFolderColor(DEFAULT_FOLDER_COLOR)
     } catch (error) {
-      console.error('Failed to create folder:', error);
+      console.error('Failed to create folder:', error)
     } finally {
-      setIsCreatingFolderLoading(false);
+      setIsCreatingFolderLoading(false)
     }
-  };
+  }
 
   const handleUpdateFolder = async (id: string, newName?: string) => {
-    const nameToUpdate = newName || editFolderName;
-    if (!nameToUpdate.trim()) return;
+    const nameToUpdate = newName || editFolderName
+    if (!nameToUpdate.trim()) return
 
     try {
-      await updateFolder(id, { name: nameToUpdate });
-      setEditingFolderId(null);
-      setEditFolderName("");
+      await updateFolder(id, { name: nameToUpdate })
+      setEditingFolderId(null)
+      setEditFolderName('')
     } catch (error) {
-      console.error('Failed to update folder:', error);
+      console.error('Failed to update folder:', error)
     }
-  };
+  }
 
   const handleDeleteFolder = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this folder? All notebooks and notes inside will be deleted.")) {
-      return;
+    if (
+      !confirm(
+        'Are you sure you want to delete this folder? All notebooks and notes inside will be deleted.'
+      )
+    ) {
+      return
     }
 
     try {
-      await deleteFolder(id);
+      await deleteFolder(id)
     } catch (error) {
-      console.error('Failed to delete folder:', error);
+      console.error('Failed to delete folder:', error)
     }
-  };
+  }
 
   const handleCreateNotebook = async (folderId: string) => {
-    if (!newNotebookName.trim()) return;
+    if (!newNotebookName.trim()) return
 
-    const randomColor = NOTEBOOK_COLORS[Math.floor(Math.random() * NOTEBOOK_COLORS.length)];
+    const randomColor = NOTEBOOK_COLORS[Math.floor(Math.random() * NOTEBOOK_COLORS.length)]
 
     try {
-      await createNotebook(newNotebookName, folderId, randomColor);
-      setIsCreatingNotebook(null);
-      setNewNotebookName("");
+      await createNotebook(newNotebookName, folderId, randomColor)
+      setIsCreatingNotebook(null)
+      setNewNotebookName('')
     } catch (error) {
-      console.error('Failed to create notebook:', error);
+      console.error('Failed to create notebook:', error)
     }
-  };
+  }
 
   const handleUpdateNotebook = async (id: string, newName?: string) => {
-    const nameToUpdate = newName || editNotebookName;
-    if (!nameToUpdate.trim()) return;
+    const nameToUpdate = newName || editNotebookName
+    if (!nameToUpdate.trim()) return
 
     try {
-      await updateNotebook(id, { name: nameToUpdate });
-      setEditingNotebookId(null);
-      setEditNotebookName("");
+      await updateNotebook(id, { name: nameToUpdate })
+      setEditingNotebookId(null)
+      setEditNotebookName('')
     } catch (error) {
-      console.error('Failed to update notebook:', error);
+      console.error('Failed to update notebook:', error)
     }
-  };
+  }
 
   const handleArchiveNotebook = async (notebookId: string) => {
     try {
-      await archiveNotebook(notebookId);
+      await archiveNotebook(notebookId)
     } catch (error) {
-      console.error('Failed to archive notebook:', error);
+      console.error('Failed to archive notebook:', error)
     }
-  };
+  }
 
   const handleRestoreNotebook = async (notebookId: string) => {
     try {
-      await restoreNotebook(notebookId);
+      await restoreNotebook(notebookId)
     } catch (error) {
-      console.error('Failed to restore notebook:', error);
+      console.error('Failed to restore notebook:', error)
     }
-  };
+  }
 
   const handleDeleteNotebook = async (notebookId: string) => {
-    if (!confirm("Are you sure you want to permanently delete this notebook? All notes inside will be deleted. Consider archiving instead.")) {
-      return;
+    if (
+      !confirm(
+        'Are you sure you want to permanently delete this notebook? All notes inside will be deleted. Consider archiving instead.'
+      )
+    ) {
+      return
     }
 
     try {
-      await deleteNotebook(notebookId);
+      await deleteNotebook(notebookId)
     } catch (error) {
-      console.error('Failed to delete notebook:', error);
+      console.error('Failed to delete notebook:', error)
     }
-  };
+  }
 
   const getNotebooksByFolder = (folderId: string) => {
-    let filtered = notebooks.filter(notebook => notebook.folder_id === folderId);
-    
+    let filtered = notebooks.filter((notebook) => notebook.folder_id === folderId)
+
     // If there's a search, filter notebooks that match directly OR contain matching notes
     if (globalSearch) {
-      const searchLower = globalSearch.toLowerCase();
-      filtered = filtered.filter(notebook => {
+      const searchLower = globalSearch.toLowerCase()
+      filtered = filtered.filter((notebook) => {
         // Check notebook name
-        if (notebook.name.toLowerCase().includes(searchLower)) return true;
-        
+        if (notebook.name.toLowerCase().includes(searchLower)) return true
+
         // Check notes in this notebook
-        const notebookNotes = notes.filter(n => n.notebook_id === notebook.id);
-        return notebookNotes.some(note => 
-          note.title.toLowerCase().includes(searchLower) ||
-          note.content.toLowerCase().includes(searchLower)
-        );
-      });
+        const notebookNotes = notes.filter((n) => n.notebook_id === notebook.id)
+        return notebookNotes.some(
+          (note) =>
+            note.title.toLowerCase().includes(searchLower) ||
+            note.content.toLowerCase().includes(searchLower)
+        )
+      })
     }
-    
-    filtered = showArchived ? filtered : filtered.filter(n => !n.archived);
-    
+
+    filtered = showArchived ? filtered : filtered.filter((n) => !n.archived)
+
     // Sort notebooks
     const sorted = [...filtered].sort((a, b) => {
       switch (notebookSort) {
         case 'alphabetical':
-          return a.name.localeCompare(b.name);
+          return a.name.localeCompare(b.name)
         case 'alphabetical-reverse':
-          return b.name.localeCompare(a.name);
+          return b.name.localeCompare(a.name)
         case 'created':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         case 'created-reverse':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         case 'recent':
         default:
           // Sort by most recently edited note
           const aNotesLatest = notes
-            .filter(n => n.notebook_id === a.id)
+            .filter((n) => n.notebook_id === a.id)
             .reduce((latest, note) => {
-              const noteTime = new Date(note.updated_at || note.created_at).getTime();
-              return noteTime > latest ? noteTime : latest;
-            }, 0);
-            
+              const noteTime = new Date(note.updated_at || note.created_at).getTime()
+              return noteTime > latest ? noteTime : latest
+            }, 0)
+
           const bNotesLatest = notes
-            .filter(n => n.notebook_id === b.id)
+            .filter((n) => n.notebook_id === b.id)
             .reduce((latest, note) => {
-              const noteTime = new Date(note.updated_at || note.created_at).getTime();
-              return noteTime > latest ? noteTime : latest;
-            }, 0);
-            
-          return bNotesLatest - aNotesLatest;
+              const noteTime = new Date(note.updated_at || note.created_at).getTime()
+              return noteTime > latest ? noteTime : latest
+            }, 0)
+
+          return bNotesLatest - aNotesLatest
       }
-    });
-    
-    return sorted;
-  };
+    })
+
+    return sorted
+  }
 
   const getNotesCount = (notebookId: string) => {
-    return notes.filter((n) => n.notebook_id === notebookId).length;
-  };
-  
+    return notes.filter((n) => n.notebook_id === notebookId).length
+  }
+
   const getSearchMatchInfo = (folderId: string) => {
-    if (!globalSearch) return null;
-    
-    const searchLower = globalSearch.toLowerCase();
-    const folder = folders.find(f => f.id === folderId);
-    const folderNotebooks = notebooks.filter(n => n.folder_id === folderId);
-    
-    let matchCount = 0;
-    const matchTypes = new Set<string>();
-    
+    if (!globalSearch) return null
+
+    const searchLower = globalSearch.toLowerCase()
+    const folder = folders.find((f) => f.id === folderId)
+    const folderNotebooks = notebooks.filter((n) => n.folder_id === folderId)
+
+    let matchCount = 0
+    const matchTypes = new Set<string>()
+
     // Check folder name
     if (folder?.name.toLowerCase().includes(searchLower)) {
-      matchTypes.add('folder');
+      matchTypes.add('folder')
     }
-    
+
     // Check notebooks and notes
     for (const notebook of folderNotebooks) {
       if (notebook.name.toLowerCase().includes(searchLower)) {
-        matchCount++;
-        matchTypes.add('notebook');
+        matchCount++
+        matchTypes.add('notebook')
       }
-      
-      const notebookNotes = notes.filter(n => n.notebook_id === notebook.id);
-      const matchingNotes = notebookNotes.filter(note => 
-        note.title.toLowerCase().includes(searchLower) ||
-        note.content.toLowerCase().includes(searchLower)
-      );
-      
+
+      const notebookNotes = notes.filter((n) => n.notebook_id === notebook.id)
+      const matchingNotes = notebookNotes.filter(
+        (note) =>
+          note.title.toLowerCase().includes(searchLower) ||
+          note.content.toLowerCase().includes(searchLower)
+      )
+
       if (matchingNotes.length > 0) {
-        matchCount += matchingNotes.length;
-        matchTypes.add('note');
+        matchCount += matchingNotes.length
+        matchTypes.add('note')
       }
     }
-    
-    if (matchTypes.size === 0) return null;
-    
-    const typeText = Array.from(matchTypes).join(', ');
-    return `Found in: ${typeText}${matchCount > 0 ? ` (${matchCount} matches)` : ''}`;
-  };
-  
-  const handleFolderClick = (folderId: string) => {
-    navigateToRecentNotebook(folderId);
-  };
 
-  const loading = syncState.status === 'loading';
-  const error = syncState.error;
+    if (matchTypes.size === 0) return null
+
+    const typeText = Array.from(matchTypes).join(', ')
+    return `Found in: ${typeText}${matchCount > 0 ? ` (${matchCount} matches)` : ''}`
+  }
+
+  const handleFolderClick = (folderId: string) => {
+    navigateToRecentNotebook(folderId)
+  }
+
+  const loading = syncState.status === 'loading'
+  const error = syncState.error
 
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
-      <PageHeader 
-        backUrl="/" 
+      <PageHeader
+        backUrl="/"
         rightContent={
           <>
             <button
               onClick={() => setShowArchived(!showArchived)}
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${
-                showArchived 
-                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300" 
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                showArchived
+                  ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
               <Archive className="h-4 w-4" />
-              {showArchived ? "Hide" : "Show"} Archived
+              {showArchived ? 'Hide' : 'Show'} Archived
             </button>
             <button
               onClick={() => setIsCreatingFolder(true)}
@@ -323,11 +344,7 @@ export default function FoldersPage() {
       {/* Error Message */}
       {error && (
         <div className="mx-4 mt-4">
-          <StatusMessage 
-            type="error" 
-            message={error}
-            onDismiss={() => window.location.reload()}
-          />
+          <StatusMessage type="error" message={error} onDismiss={() => window.location.reload()} />
         </div>
       )}
 
@@ -335,9 +352,9 @@ export default function FoldersPage() {
       <Modal
         isOpen={isCreatingFolder}
         onClose={() => {
-          setIsCreatingFolder(false);
-          setNewFolderName("");
-          setNewFolderColor(DEFAULT_FOLDER_COLOR);
+          setIsCreatingFolder(false)
+          setNewFolderName('')
+          setNewFolderColor(DEFAULT_FOLDER_COLOR)
         }}
         title="Create New Folder"
       >
@@ -368,9 +385,9 @@ export default function FoldersPage() {
             </LoadingButton>
             <button
               onClick={() => {
-                setIsCreatingFolder(false);
-                setNewFolderName("");
-                setNewFolderColor(DEFAULT_FOLDER_COLOR);
+                setIsCreatingFolder(false)
+                setNewFolderName('')
+                setNewFolderColor(DEFAULT_FOLDER_COLOR)
               }}
               className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
             >
@@ -410,7 +427,7 @@ export default function FoldersPage() {
               />
             </div>
           </div>
-          
+
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[...Array(6)].map((_, i) => (
@@ -434,22 +451,24 @@ export default function FoldersPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredFolders.map((folder) => {
-                const folderNotebooks = getNotebooksByFolder(folder.id);
-                
+                const folderNotebooks = getNotebooksByFolder(folder.id)
+
                 return (
                   <div key={folder.id} className="space-y-4">
                     {/* Folder Header */}
                     {editingFolderId === folder.id ? (
-                      <div className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}>
+                      <div
+                        className={`${folder.color} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`}
+                      >
                         <InlineEdit
                           value={editFolderName}
                           onSave={(newName) => {
-                            setEditFolderName(newName);
-                            handleUpdateFolder(folder.id, newName);
+                            setEditFolderName(newName)
+                            handleUpdateFolder(folder.id, newName)
                           }}
                           onCancel={() => {
-                            setEditingFolderId(null);
-                            setEditFolderName("");
+                            setEditingFolderId(null)
+                            setEditFolderName('')
                           }}
                           inputClassName="bg-white/20 text-white placeholder-white/70"
                         />
@@ -476,8 +495,8 @@ export default function FoldersPage() {
                             {(!folder.shared || folder.permission === 'write') && (
                               <button
                                 onClick={() => {
-                                  setEditingFolderId(folder.id);
-                                  setEditFolderName(folder.name);
+                                  setEditingFolderId(folder.id)
+                                  setEditFolderName(folder.name)
                                 }}
                                 className="p-1 hover:bg-white/20 rounded"
                               >
@@ -501,10 +520,10 @@ export default function FoldersPage() {
                     {/* Shared indicator below folder header */}
                     {(folder.shared || folder.sharedByMe) && (
                       <div className="bg-white px-4 py-2 -mt-4 rounded-b-lg">
-                        <SharedIndicator 
-                          shared={folder.shared} 
+                        <SharedIndicator
+                          shared={folder.shared}
                           sharedByMe={folder.sharedByMe}
-                          permission={folder.permission} 
+                          permission={folder.permission}
                         />
                       </div>
                     )}
@@ -535,7 +554,7 @@ export default function FoldersPage() {
                             autoFocus
                             onKeyPress={(e) => {
                               if (e.key === 'Enter') {
-                                handleCreateNotebook(folder.id);
+                                handleCreateNotebook(folder.id)
                               }
                             }}
                           />
@@ -548,8 +567,8 @@ export default function FoldersPage() {
                             </button>
                             <button
                               onClick={() => {
-                                setIsCreatingNotebook(null);
-                                setNewNotebookName("");
+                                setIsCreatingNotebook(null)
+                                setNewNotebookName('')
                               }}
                               className="px-3 py-1 bg-gray-200 text-gray-700 rounded-md text-sm hover:bg-gray-300"
                             >
@@ -561,8 +580,8 @@ export default function FoldersPage() {
 
                       <div className="space-y-2">
                         {folderNotebooks.map((notebook) => {
-                          const noteCount = getNotesCount(notebook.id);
-                          
+                          const noteCount = getNotesCount(notebook.id)
+
                           return (
                             <NotebookCard
                               key={notebook.id}
@@ -579,31 +598,28 @@ export default function FoldersPage() {
                               onEditingNameChange={setEditNotebookName}
                               onClick={() => router.push(`/notebooks/${notebook.id}`)}
                               onEdit={() => {
-                                setEditingNotebookId(notebook.id);
-                                setEditNotebookName(notebook.name);
+                                setEditingNotebookId(notebook.id)
+                                setEditNotebookName(notebook.name)
                               }}
                               onArchive={() => handleArchiveNotebook(notebook.id)}
                               onRestore={() => handleRestoreNotebook(notebook.id)}
                               onDelete={() => handleDeleteNotebook(notebook.id)}
                               onUpdate={(newName) => handleUpdateNotebook(notebook.id, newName)}
                               onCancelEdit={() => {
-                                setEditingNotebookId(null);
-                                setEditNotebookName("");
+                                setEditingNotebookId(null)
+                                setEditNotebookName('')
                               }}
                             />
-                          );
+                          )
                         })}
-                        
+
                         {folderNotebooks.length === 0 && isCreatingNotebook !== folder.id && (
-                          <EmptyState
-                            title="No notebooks yet"
-                            className="py-4"
-                          />
+                          <EmptyState title="No notebooks yet" className="py-4" />
                         )}
                       </div>
                     </div>
                   </div>
-                );
+                )
               })}
             </div>
           )}
@@ -613,19 +629,28 @@ export default function FoldersPage() {
             <div className="mt-12">
               <div className="mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Shared with Me</h2>
-                <p className="text-sm text-gray-600 mt-1">Notebooks that have been shared with you</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Notebooks that have been shared with you
+                </p>
               </div>
-              
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
-                   onClick={() => router.push('/shared-with-me')}>
+
+              <div
+                className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => router.push('/shared-with-me')}
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-purple-500 text-white rounded-lg">
                       <FolderOpen className="h-6 w-6" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-lg">{orphanedSharedNotebooks.length} notebook{orphanedSharedNotebooks.length === 1 ? '' : 's'} shared directly with you</h3>
-                      <p className="text-sm text-gray-600">Click to view notebooks shared without folder access</p>
+                      <h3 className="font-semibold text-lg">
+                        {orphanedSharedNotebooks.length} notebook
+                        {orphanedSharedNotebooks.length === 1 ? '' : 's'} shared directly with you
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Click to view notebooks shared without folder access
+                      </p>
                     </div>
                   </div>
                   <ChevronRight className="h-5 w-5 text-gray-400" />
@@ -636,5 +661,5 @@ export default function FoldersPage() {
         </div>
       </main>
     </div>
-  );
+  )
 }

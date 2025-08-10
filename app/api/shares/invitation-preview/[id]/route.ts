@@ -2,23 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPublicSupabaseClient } from '@/lib/api/supabase-server-helpers'
 
 // Public endpoint - returns minimal invitation info for unauthenticated users
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { client: supabase, error } = await getPublicSupabaseClient()
     if (error) return error
     if (!supabase) {
-      return NextResponse.json(
-        { error: 'Service temporarily unavailable' },
-        { status: 503 }
-      )
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
     }
-    
+
     const { id: invitationId } = await params
     console.log('[Invitation Preview] Looking for invitation:', invitationId)
-    
+
     // Query invitation with minimal fields
     const { data: invitation, error: inviteError } = await supabase
       .from('share_invitations')
@@ -28,10 +22,7 @@ export async function GET(
 
     if (inviteError || !invitation) {
       console.error('[Invitation Preview] Error:', inviteError)
-      return NextResponse.json(
-        { valid: false, error: 'Invitation not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ valid: false, error: 'Invitation not found' }, { status: 404 })
     }
 
     // Check if invitation has expired
@@ -58,7 +49,7 @@ export async function GET(
         .select('name')
         .eq('id', invitation.resource_id)
         .single()
-      
+
       resourceName = folder?.name || 'Unnamed folder'
     } else {
       const { data: notebook } = await supabase
@@ -66,7 +57,7 @@ export async function GET(
         .select('name')
         .eq('id', invitation.resource_id)
         .single()
-      
+
       resourceName = notebook?.name || 'Unnamed notebook'
     }
 
@@ -78,7 +69,7 @@ export async function GET(
         .select('email')
         .eq('id', invitation.invited_by)
         .single()
-      
+
       if (inviterProfile) {
         inviterEmail = inviterProfile.email
       }
@@ -91,14 +82,10 @@ export async function GET(
       resourceName,
       invitedBy: inviterEmail,
       requiresEmail: invitation.invited_email,
-      expiresAt: invitation.expires_at
+      expiresAt: invitation.expires_at,
     })
-
   } catch (error) {
     console.error('Unexpected error in invitation preview:', error)
-    return NextResponse.json(
-      { valid: false, error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ valid: false, error: 'Internal server error' }, { status: 500 })
   }
 }

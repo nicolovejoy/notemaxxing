@@ -1,78 +1,78 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { setupNewUser } from "@/lib/auth/setup-new-user";
-import { FormField } from "@/components/ui/FormField";
-import { StatusMessage } from "@/components/ui/StatusMessage";
-import { LoadingButton } from "@/components/ui/LoadingButton";
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { setupNewUser } from '@/lib/auth/setup-new-user'
+import { FormField } from '@/components/ui/FormField'
+import { StatusMessage } from '@/components/ui/StatusMessage'
+import { LoadingButton } from '@/components/ui/LoadingButton'
 
 export default function SignupPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const supabase = createClient();
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
 
   const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
 
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
-      return;
+      setError("Passwords don't match")
+      return
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
+      setError('Password must be at least 6 characters')
+      return
     }
 
     if (!supabase) {
-      setError("Authentication is not configured. Please set up Supabase.");
-      return;
+      setError('Authentication is not configured. Please set up Supabase.')
+      return
     }
 
-    setLoading(true);
+    setLoading(true)
 
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-      });
+      })
 
-      if (error) throw error;
+      if (error) throw error
 
       // Check if email confirmation is required
       if (data.user && !data.session) {
         // Email confirmation is enabled
-        setError("Check your email for the confirmation link!");
-        return;
+        setError('Check your email for the confirmation link!')
+        return
       }
 
       // If we have a session, user is logged in (email confirmation is disabled)
       if (data.session && data.user) {
         // Set up the new user's profile and role
-        const setupResult = await setupNewUser(data.user.id, data.user.email!);
-        
+        const setupResult = await setupNewUser(data.user.id, data.user.email!)
+
         if (!setupResult.success) {
-          console.error("Failed to set up user profile:", setupResult.error);
+          console.error('Failed to set up user profile:', setupResult.error)
           // Continue anyway - the user is created, just missing profile/role
         }
-        
-        router.push("/");
-        router.refresh();
+
+        router.push('/')
+        router.refresh()
       }
     } catch (error) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
@@ -83,7 +83,7 @@ export default function SignupPage() {
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{" "}
+            Or{' '}
             <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
               sign in to existing account
             </Link>
@@ -110,7 +110,11 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 6 characters"
-              error={password.length > 0 && password.length < 6 ? "Password must be at least 6 characters" : undefined}
+              error={
+                password.length > 0 && password.length < 6
+                  ? 'Password must be at least 6 characters'
+                  : undefined
+              }
             />
             <FormField
               label="Confirm password"
@@ -121,14 +125,18 @@ export default function SignupPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your password"
-              error={confirmPassword && confirmPassword !== password ? "Passwords don't match" : undefined}
+              error={
+                confirmPassword && confirmPassword !== password
+                  ? "Passwords don't match"
+                  : undefined
+              }
             />
           </div>
 
           {error && (
-            <StatusMessage 
-              type={error.includes("Check your email") ? "success" : "error"} 
-              message={error} 
+            <StatusMessage
+              type={error.includes('Check your email') ? 'success' : 'error'}
+              message={error}
             />
           )}
 
@@ -144,5 +152,5 @@ export default function SignupPage() {
         </form>
       </div>
     </div>
-  );
+  )
 }

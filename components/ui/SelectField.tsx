@@ -1,17 +1,17 @@
-import React from 'react';
+import React from 'react'
 
 interface Option {
-  value: string;
-  label: string;
+  value: string
+  label: string
 }
 
 interface SelectFieldProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  options: Option[];
-  onChange: (value: string) => void;
-  containerClassName?: string;
+  label?: string
+  error?: string
+  helperText?: string
+  options: Option[]
+  onChange: (value: string) => void
+  containerClassName?: string
 }
 
 export function SelectField({
@@ -27,15 +27,12 @@ export function SelectField({
   ...selectProps
 }: SelectFieldProps) {
   // Generate an ID if not provided and label exists
-  const fieldId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  const fieldId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined)
 
   return (
     <div className={containerClassName}>
       {label && (
-        <label 
-          htmlFor={fieldId}
-          className="block text-sm font-medium text-gray-700 mb-2"
-        >
+        <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700 mb-2">
           {label}
         </label>
       )}
@@ -73,5 +70,5 @@ export function SelectField({
         </p>
       )}
     </div>
-  );
+  )
 }
