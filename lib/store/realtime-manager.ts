@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import { dataStore } from './data-store'
-import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import type { Folder, Notebook, Note } from './types'
 
 type DatabaseEntity = Folder | Notebook | Note
