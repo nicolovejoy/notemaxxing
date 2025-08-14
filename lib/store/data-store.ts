@@ -2,24 +2,18 @@ import { createStore } from 'zustand/vanilla'
 import type { Folder, Notebook, Note, Quiz, ShareInvitation, Permission } from './types'
 
 export interface DataState {
-  // Entity Maps for O(1) lookup
+  // Entity Arrays - simpler and works better with React
   entities: {
-    folders: Map<string, Folder>
-    notebooks: Map<string, Notebook>
-    notes: Map<string, Note>
-    quizzes: Map<string, Quiz>
+    folders: Folder[]
+    notebooks: Notebook[]
+    notes: Note[]
+    quizzes: Quiz[]
   }
 
-  // Metadata
+  // Metadata (keeping as Maps since they're not rendered directly)
   metadata: {
     permissions: Map<string, Permission[]>
     shareInvitations: Map<string, ShareInvitation>
-  }
-
-  // Indexes for efficient queries
-  indexes: {
-    notebooksByFolder: Map<string, Set<string>>
-    notesByNotebook: Map<string, Set<string>>
   }
 
   // Sync state
@@ -70,20 +64,15 @@ export interface DataState {
 
 export const dataStore = createStore<DataState>((set, get) => ({
   entities: {
-    folders: new Map(),
-    notebooks: new Map(),
-    notes: new Map(),
-    quizzes: new Map(),
+    folders: [],
+    notebooks: [],
+    notes: [],
+    quizzes: [],
   },
 
   metadata: {
     permissions: new Map(),
     shareInvitations: new Map(),
-  },
-
-  indexes: {
-    notebooksByFolder: new Map(),
-    notesByNotebook: new Map(),
   },
 
   syncState: {
@@ -95,348 +84,148 @@ export const dataStore = createStore<DataState>((set, get) => ({
 
   // Bulk setters
   setFolders: (folders) =>
-    set(() => ({
+    set((state) => ({
       entities: {
-        ...get().entities,
-        folders: new Map(folders.map((f) => [f.id, f])),
+        ...state.entities,
+        folders,
       },
     })),
 
-  setNotebooks: (notebooks) => {
-    const notebooksByFolder = new Map<string, Set<string>>()
-    notebooks.forEach((notebook) => {
-      if (!notebooksByFolder.has(notebook.folder_id)) {
-        notebooksByFolder.set(notebook.folder_id, new Set())
-      }
-      notebooksByFolder.get(notebook.folder_id)!.add(notebook.id)
-    })
-
-    set(() => ({
+  setNotebooks: (notebooks) =>
+    set((state) => ({
       entities: {
-        ...get().entities,
-        notebooks: new Map(notebooks.map((n) => [n.id, n])),
+        ...state.entities,
+        notebooks,
       },
-      indexes: {
-        ...get().indexes,
-        notebooksByFolder,
-      },
-    }))
-  },
+    })),
 
-  setNotes: (notes) => {
-    const notesByNotebook = new Map<string, Set<string>>()
-    notes.forEach((note) => {
-      if (!notesByNotebook.has(note.notebook_id)) {
-        notesByNotebook.set(note.notebook_id, new Set())
-      }
-      notesByNotebook.get(note.notebook_id)!.add(note.id)
-    })
-
-    set(() => ({
+  setNotes: (notes) =>
+    set((state) => ({
       entities: {
-        ...get().entities,
-        notes: new Map(notes.map((n) => [n.id, n])),
+        ...state.entities,
+        notes,
       },
-      indexes: {
-        ...get().indexes,
-        notesByNotebook,
-      },
-    }))
-  },
+    })),
 
   setQuizzes: (quizzes) =>
-    set(() => ({
+    set((state) => ({
       entities: {
-        ...get().entities,
-        quizzes: new Map(quizzes.map((q) => [q.id, q])),
+        ...state.entities,
+        quizzes,
       },
     })),
 
   setPermissions: (permissions) =>
-    set(() => ({
+    set((state) => ({
       metadata: {
-        ...get().metadata,
+        ...state.metadata,
         permissions,
       },
     })),
 
   setShareInvitations: (invitations) =>
-    set(() => ({
+    set((state) => ({
       metadata: {
-        ...get().metadata,
+        ...state.metadata,
         shareInvitations: invitations,
       },
     })),
 
   // Individual operations
   addFolder: (folder) =>
-    set((state) => {
-      const newFolders = new Map(state.entities.folders)
-      newFolders.set(folder.id, folder)
-      return {
-        entities: {
-          ...state.entities,
-          folders: newFolders,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        folders: [...state.entities.folders, folder],
+      },
+    })),
 
   updateFolder: (id, updates) =>
-    set((state) => {
-      const folder = state.entities.folders.get(id)
-      if (!folder) return state
-
-      const newFolders = new Map(state.entities.folders)
-      newFolders.set(id, { ...folder, ...updates })
-      return {
-        entities: {
-          ...state.entities,
-          folders: newFolders,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        folders: state.entities.folders.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+      },
+    })),
 
   removeFolder: (id) =>
-    set((state) => {
-      const newFolders = new Map(state.entities.folders)
-      const newNotebooks = new Map(state.entities.notebooks)
-      const newNotes = new Map(state.entities.notes)
-      const newNotebooksByFolder = new Map(state.indexes.notebooksByFolder)
-      const newNotesByNotebook = new Map(state.indexes.notesByNotebook)
-
-      // Remove folder
-      newFolders.delete(id)
-
-      // Remove all notebooks in this folder and their notes
-      const notebookIds = state.indexes.notebooksByFolder.get(id) || new Set()
-      notebookIds.forEach((notebookId) => {
-        newNotebooks.delete(notebookId)
-
-        // Remove all notes in this notebook
-        const noteIds = state.indexes.notesByNotebook.get(notebookId) || new Set()
-        noteIds.forEach((noteId) => newNotes.delete(noteId))
-        newNotesByNotebook.delete(notebookId)
-      })
-      newNotebooksByFolder.delete(id)
-
-      return {
-        entities: {
-          ...state.entities,
-          folders: newFolders,
-          notebooks: newNotebooks,
-          notes: newNotes,
-        },
-        indexes: {
-          ...state.indexes,
-          notebooksByFolder: newNotebooksByFolder,
-          notesByNotebook: newNotesByNotebook,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        folders: state.entities.folders.filter((f) => f.id !== id),
+        // Also remove orphaned notebooks and notes
+        notebooks: state.entities.notebooks.filter((n) => n.folder_id !== id),
+        notes: state.entities.notes.filter((n) => {
+          // Remove notes that belong to notebooks in this folder
+          const notebook = state.entities.notebooks.find((nb) => nb.id === n.notebook_id)
+          return notebook?.folder_id !== id
+        }),
+      },
+    })),
 
   addNotebook: (notebook) =>
-    set((state) => {
-      const newNotebooks = new Map(state.entities.notebooks)
-      newNotebooks.set(notebook.id, notebook)
-
-      const newNotebooksByFolder = new Map(state.indexes.notebooksByFolder)
-      if (!newNotebooksByFolder.has(notebook.folder_id)) {
-        newNotebooksByFolder.set(notebook.folder_id, new Set())
-      }
-      const folderNotebooks = new Set(newNotebooksByFolder.get(notebook.folder_id))
-      folderNotebooks.add(notebook.id)
-      newNotebooksByFolder.set(notebook.folder_id, folderNotebooks)
-
-      return {
-        entities: {
-          ...state.entities,
-          notebooks: newNotebooks,
-        },
-        indexes: {
-          ...state.indexes,
-          notebooksByFolder: newNotebooksByFolder,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        notebooks: [...state.entities.notebooks, notebook],
+      },
+    })),
 
   updateNotebook: (id, updates) =>
-    set((state) => {
-      const notebook = state.entities.notebooks.get(id)
-      if (!notebook) return state
-
-      const updated = { ...notebook, ...updates }
-      const newNotebooks = new Map(state.entities.notebooks)
-      newNotebooks.set(id, updated)
-
-      let newNotebooksByFolder = state.indexes.notebooksByFolder
-
-      // Update folder index if folder changed
-      if (updates.folder_id && updates.folder_id !== notebook.folder_id) {
-        newNotebooksByFolder = new Map(state.indexes.notebooksByFolder)
-
-        // Remove from old folder
-        const oldFolderNotebooks = new Set(newNotebooksByFolder.get(notebook.folder_id))
-        oldFolderNotebooks.delete(id)
-        if (oldFolderNotebooks.size > 0) {
-          newNotebooksByFolder.set(notebook.folder_id, oldFolderNotebooks)
-        } else {
-          newNotebooksByFolder.delete(notebook.folder_id)
-        }
-
-        // Add to new folder
-        if (!newNotebooksByFolder.has(updates.folder_id)) {
-          newNotebooksByFolder.set(updates.folder_id, new Set())
-        }
-        const newFolderNotebooks = new Set(newNotebooksByFolder.get(updates.folder_id))
-        newFolderNotebooks.add(id)
-        newNotebooksByFolder.set(updates.folder_id, newFolderNotebooks)
-      }
-
-      return {
-        entities: {
-          ...state.entities,
-          notebooks: newNotebooks,
-        },
-        indexes: {
-          ...state.indexes,
-          notebooksByFolder: newNotebooksByFolder,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        notebooks: state.entities.notebooks.map((n) => (n.id === id ? { ...n, ...updates } : n)),
+      },
+    })),
 
   removeNotebook: (id) =>
-    set((state) => {
-      const notebook = state.entities.notebooks.get(id)
-      if (!notebook) return state
-
-      const newNotebooks = new Map(state.entities.notebooks)
-      const newNotes = new Map(state.entities.notes)
-      const newNotebooksByFolder = new Map(state.indexes.notebooksByFolder)
-      const newNotesByNotebook = new Map(state.indexes.notesByNotebook)
-
-      // Remove notebook
-      newNotebooks.delete(id)
-
-      // Update folder index
-      const folderNotebooks = new Set(newNotebooksByFolder.get(notebook.folder_id))
-      folderNotebooks.delete(id)
-      if (folderNotebooks.size > 0) {
-        newNotebooksByFolder.set(notebook.folder_id, folderNotebooks)
-      } else {
-        newNotebooksByFolder.delete(notebook.folder_id)
-      }
-
-      // Remove all notes in this notebook
-      const noteIds = state.indexes.notesByNotebook.get(id) || new Set()
-      noteIds.forEach((noteId) => newNotes.delete(noteId))
-      newNotesByNotebook.delete(id)
-
-      return {
-        entities: {
-          ...state.entities,
-          notebooks: newNotebooks,
-          notes: newNotes,
-        },
-        indexes: {
-          ...state.indexes,
-          notebooksByFolder: newNotebooksByFolder,
-          notesByNotebook: newNotesByNotebook,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        notebooks: state.entities.notebooks.filter((n) => n.id !== id),
+        // Also remove orphaned notes
+        notes: state.entities.notes.filter((n) => n.notebook_id !== id),
+      },
+    })),
 
   addNote: (note) =>
-    set((state) => {
-      const newNotes = new Map(state.entities.notes)
-      newNotes.set(note.id, note)
-
-      const newNotesByNotebook = new Map(state.indexes.notesByNotebook)
-      if (!newNotesByNotebook.has(note.notebook_id)) {
-        newNotesByNotebook.set(note.notebook_id, new Set())
-      }
-      const notebookNotes = new Set(newNotesByNotebook.get(note.notebook_id))
-      notebookNotes.add(note.id)
-      newNotesByNotebook.set(note.notebook_id, notebookNotes)
-
-      return {
-        entities: {
-          ...state.entities,
-          notes: newNotes,
-        },
-        indexes: {
-          ...state.indexes,
-          notesByNotebook: newNotesByNotebook,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        notes: [...state.entities.notes, note],
+      },
+    })),
 
   updateNote: (id, updates) =>
-    set((state) => {
-      const note = state.entities.notes.get(id)
-      if (!note) return state
-
-      const newNotes = new Map(state.entities.notes)
-      newNotes.set(id, { ...note, ...updates })
-
-      return {
-        entities: {
-          ...state.entities,
-          notes: newNotes,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        notes: state.entities.notes.map((n) => (n.id === id ? { ...n, ...updates } : n)),
+      },
+    })),
 
   removeNote: (id) =>
-    set((state) => {
-      const note = state.entities.notes.get(id)
-      if (!note) return state
-
-      const newNotes = new Map(state.entities.notes)
-      const newNotesByNotebook = new Map(state.indexes.notesByNotebook)
-
-      // Remove note
-      newNotes.delete(id)
-
-      // Update notebook index
-      const notebookNotes = new Set(newNotesByNotebook.get(note.notebook_id))
-      notebookNotes.delete(id)
-      if (notebookNotes.size > 0) {
-        newNotesByNotebook.set(note.notebook_id, notebookNotes)
-      } else {
-        newNotesByNotebook.delete(note.notebook_id)
-      }
-
-      return {
-        entities: {
-          ...state.entities,
-          notes: newNotes,
-        },
-        indexes: {
-          ...state.indexes,
-          notesByNotebook: newNotesByNotebook,
-        },
-      }
-    }),
+    set((state) => ({
+      entities: {
+        ...state.entities,
+        notes: state.entities.notes.filter((n) => n.id !== id),
+      },
+    })),
 
   // Getters
-  getFolder: (id) => get().entities.folders.get(id),
-  getNotebook: (id) => get().entities.notebooks.get(id),
-  getNote: (id) => get().entities.notes.get(id),
+  getFolder: (id) => get().entities.folders.find((f) => f.id === id),
+  getNotebook: (id) => get().entities.notebooks.find((n) => n.id === id),
+  getNote: (id) => get().entities.notes.find((n) => n.id === id),
 
   getNotebooksInFolder: (folderId) => {
     const state = get()
-    const notebookIds = state.indexes.notebooksByFolder.get(folderId) || new Set()
-    return Array.from(notebookIds)
-      .map((id) => state.entities.notebooks.get(id))
-      .filter((n): n is Notebook => n !== undefined)
+    return state.entities.notebooks.filter((n) => n.folder_id === folderId)
   },
 
   getNotesInNotebook: (notebookId) => {
     const state = get()
-    const noteIds = state.indexes.notesByNotebook.get(notebookId) || new Set()
-    return Array.from(noteIds)
-      .map((id) => state.entities.notes.get(id))
-      .filter((n): n is Note => n !== undefined)
+    return state.entities.notes.filter((n) => n.notebook_id === notebookId)
   },
 
   // Sync state actions
@@ -463,18 +252,14 @@ export const dataStore = createStore<DataState>((set, get) => ({
   clearAll: () =>
     set(() => ({
       entities: {
-        folders: new Map(),
-        notebooks: new Map(),
-        notes: new Map(),
-        quizzes: new Map(),
+        folders: [],
+        notebooks: [],
+        notes: [],
+        quizzes: [],
       },
       metadata: {
         permissions: new Map(),
         shareInvitations: new Map(),
-      },
-      indexes: {
-        notebooksByFolder: new Map(),
-        notesByNotebook: new Map(),
       },
     })),
 }))

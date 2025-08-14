@@ -19,6 +19,7 @@ export class RealtimeManager {
   private channel: RealtimeChannel | null = null
   private userId: string | null = null
   private isConnected: boolean = false
+  private isInitializing: boolean = false
   private reconnectAttempts: number = 0
   private maxReconnectAttempts: number = 5
 
@@ -34,10 +35,13 @@ export class RealtimeManager {
   private constructor() {}
 
   async initialize(userId: string): Promise<void> {
-    if (this.isConnected && this.userId === userId) {
-      console.log('[RealtimeManager] Already connected for user:', userId)
+    // Check if already connected or currently initializing
+    if ((this.isConnected || this.isInitializing) && this.userId === userId) {
+      console.log('[RealtimeManager] Already connected or initializing for user:', userId)
       return
     }
+
+    this.isInitializing = true
 
     this.userId = userId
     console.log('[RealtimeManager] Initializing for user:', userId)
@@ -129,19 +133,23 @@ export class RealtimeManager {
 
       if (status === 'SUBSCRIBED') {
         this.isConnected = true
+        this.isInitializing = false
         this.reconnectAttempts = 0
         dataStore.getState().setRealtimeStatus('connected')
         console.log('[RealtimeManager] Successfully connected to realtime')
       } else if (status === 'CHANNEL_ERROR') {
         this.isConnected = false
+        this.isInitializing = false
         dataStore.getState().setRealtimeStatus('error')
         this.handleReconnect()
       } else if (status === 'TIMED_OUT') {
         this.isConnected = false
+        this.isInitializing = false
         dataStore.getState().setRealtimeStatus('disconnected')
         this.handleReconnect()
       } else if (status === 'CLOSED') {
         this.isConnected = false
+        this.isInitializing = false
         dataStore.getState().setRealtimeStatus('disconnected')
       }
     })
@@ -161,8 +169,6 @@ export class RealtimeManager {
     // We'll implement this check in Day 3-4 with optimistic updates
     // For now, apply all changes
 
-    const state = dataStore.getState()
-
     switch (table) {
       case 'folders':
         this.handleFolderChange(eventType, newRecord as Folder, oldRecord as Folder)
@@ -176,7 +182,7 @@ export class RealtimeManager {
     }
 
     // Update sync timestamp
-    state.setSyncTime(new Date())
+    dataStore.getState().setSyncTime(new Date())
   }
 
   private handleFolderChange(
@@ -184,27 +190,37 @@ export class RealtimeManager {
     newRecord: Folder | null,
     oldRecord: Folder | null
   ): void {
-    const state = dataStore.getState()
-
     switch (eventType) {
       case 'INSERT':
         if (newRecord) {
           console.log('[RealtimeManager] Adding new folder:', newRecord.id)
-          state.addFolder(newRecord)
+          console.log(
+            '[RealtimeManager] Before add - folder count:',
+            dataStore.getState().entities.folders.size
+          )
+          dataStore.getState().addFolder(newRecord)
+          console.log(
+            '[RealtimeManager] After add - folder count:',
+            dataStore.getState().entities.folders.size
+          )
+          console.log(
+            '[RealtimeManager] Folder exists in store?',
+            dataStore.getState().entities.folders.has(newRecord.id)
+          )
         }
         break
 
       case 'UPDATE':
         if (newRecord) {
           console.log('[RealtimeManager] Updating folder:', newRecord.id)
-          state.updateFolder(newRecord.id, newRecord)
+          dataStore.getState().updateFolder(newRecord.id, newRecord)
         }
         break
 
       case 'DELETE':
         if (oldRecord) {
           console.log('[RealtimeManager] Deleting folder:', oldRecord.id)
-          state.removeFolder(oldRecord.id)
+          dataStore.getState().removeFolder(oldRecord.id)
         }
         break
     }
@@ -215,27 +231,25 @@ export class RealtimeManager {
     newRecord: Notebook | null,
     oldRecord: Notebook | null
   ): void {
-    const state = dataStore.getState()
-
     switch (eventType) {
       case 'INSERT':
         if (newRecord) {
           console.log('[RealtimeManager] Adding new notebook:', newRecord.id)
-          state.addNotebook(newRecord)
+          dataStore.getState().addNotebook(newRecord)
         }
         break
 
       case 'UPDATE':
         if (newRecord) {
           console.log('[RealtimeManager] Updating notebook:', newRecord.id)
-          state.updateNotebook(newRecord.id, newRecord)
+          dataStore.getState().updateNotebook(newRecord.id, newRecord)
         }
         break
 
       case 'DELETE':
         if (oldRecord) {
           console.log('[RealtimeManager] Deleting notebook:', oldRecord.id)
-          state.removeNotebook(oldRecord.id)
+          dataStore.getState().removeNotebook(oldRecord.id)
         }
         break
     }
@@ -246,27 +260,25 @@ export class RealtimeManager {
     newRecord: Note | null,
     oldRecord: Note | null
   ): void {
-    const state = dataStore.getState()
-
     switch (eventType) {
       case 'INSERT':
         if (newRecord) {
           console.log('[RealtimeManager] Adding new note:', newRecord.id)
-          state.addNote(newRecord)
+          dataStore.getState().addNote(newRecord)
         }
         break
 
       case 'UPDATE':
         if (newRecord) {
           console.log('[RealtimeManager] Updating note:', newRecord.id)
-          state.updateNote(newRecord.id, newRecord)
+          dataStore.getState().updateNote(newRecord.id, newRecord)
         }
         break
 
       case 'DELETE':
         if (oldRecord) {
           console.log('[RealtimeManager] Deleting note:', oldRecord.id)
-          state.removeNote(oldRecord.id)
+          dataStore.getState().removeNote(oldRecord.id)
         }
         break
     }
@@ -304,6 +316,7 @@ export class RealtimeManager {
     }
 
     this.isConnected = false
+    this.isInitializing = false
     this.userId = null
     dataStore.getState().setRealtimeStatus('disconnected')
     console.log('[RealtimeManager] Disconnected')

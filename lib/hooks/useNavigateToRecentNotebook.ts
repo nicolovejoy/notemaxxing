@@ -1,46 +1,38 @@
 import { useRouter } from 'next/navigation'
 import { useCallback } from 'react'
-import { useNotebooks, useNotes } from '@/lib/store'
+import { useNotebooks } from '@/lib/store'
 
 export function useNavigateToRecentNotebook() {
   const router = useRouter()
   const notebooks = useNotebooks()
-  const notes = useNotes()
 
   const navigateToRecentNotebook = useCallback(
     (folderId: string) => {
       // Safety check - handle empty arrays (not null/undefined)
-      if (!Array.isArray(notebooks) || !Array.isArray(notes)) {
-        console.warn('Notebooks or notes not loaded yet')
+      if (!Array.isArray(notebooks)) {
+        console.warn('Notebooks not loaded yet')
         return
       }
 
-      // Find the most recently edited notebook in this folder
+      // Find the most recently updated notebook in this folder
       const folderNotebooks = notebooks.filter((n) => n.folder_id === folderId && !n.archived)
       if (folderNotebooks.length === 0) {
         console.log('No notebooks found in folder:', folderId)
         return
       }
 
-      let mostRecentNotebook = folderNotebooks[0]
-      let mostRecentTime = new Date(0)
-
-      for (const notebook of folderNotebooks) {
-        const notebookNotes = notes.filter((n) => n.notebook_id === notebook.id)
-        for (const note of notebookNotes) {
-          const noteTime = new Date(note.updated_at || note.created_at)
-          if (noteTime > mostRecentTime) {
-            mostRecentTime = noteTime
-            mostRecentNotebook = notebook
-          }
-        }
-      }
+      // Sort by notebook update time (will be improved when we add last_note_updated field)
+      const mostRecentNotebook = folderNotebooks.sort(
+        (a, b) =>
+          new Date(b.updated_at || b.created_at).getTime() -
+          new Date(a.updated_at || a.created_at).getTime()
+      )[0]
 
       if (mostRecentNotebook) {
         router.push(`/notebooks/${mostRecentNotebook.id}`)
       }
     },
-    [notebooks, notes, router]
+    [notebooks, router]
   )
 
   return navigateToRecentNotebook

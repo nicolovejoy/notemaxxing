@@ -1,25 +1,14 @@
-# Context
+# Architecture Update - View-Based Data Loading
 
-## Current Status
+**Latest Status**: See CURRENT_STATUS.md for session progress
+**Latest Fix**: Complete architecture overhaul - See HANDOFF_SESSION3.md
 
-### Completed ✅
+## Current Architecture
 
-- **Phase 0**: Edge Functions for shared resources (deployed & working)
-- **Phase 1 (Partial)**: Basic real-time infrastructure (WebSocket connections established)
-- **UI**: Connection status indicator showing real-time status
-
-### In Progress 🚧
-
-- **Phase 1 (Fix)**: Real-time sync not triggering UI updates
-- **Bug**: Invitation acceptance flow needs fixing
-
-### Next Steps 📋
-
-- **Phase 2**: Conflict resolution (versioning, optimistic updates)
-- **Phase 3**: Smart subscriptions (only active resources)
-- **Phase 4**: Offline support (queue & sync)
-
-See [REALTIME_SYNC_PLAN.md](./REALTIME_SYNC_PLAN.md) for technical details.
+- **ViewStore**: Each page loads only its data
+- **No Global Loading**: Never load all notes/notebooks
+- **Server Aggregation**: Counts computed in database
+- **Stable References**: No filtering in render functions
 
 ## Design System
 
@@ -28,33 +17,43 @@ See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - use existing UI components only.
 ## Rules
 
 - Be succinct
-- Dev server always running
-- Ask before assuming
-- Use local store when available
 - No .md files unless asked
-- SQL < 100 lines: show inline
 - Ask before committing
 - Run `npm run format` after changes
 
-## Environment
+## Next Tasks (Priority Order)
 
+### 1. Fix Notebook Navigation
+
+**Simple Solution**: Add `most_recent_notebook_id` to folder metadata in `/api/views/folders`
+
+- No extra API calls
+- Navigate directly to notebook ID
+- Keep notebook page simple
+
+### 2. Fix Notebook Cards UI
+
+**Current**: Notebooks shown as text list items
+**Needed**: Small cards within folder cards (like production)
+
+- Each notebook as a mini card with color, name, note count
+- Grid/stack layout inside folder card
+- Proper hover states and styling
+
+## Critical: New Data Pattern
+
+**DO NOT** use old patterns like:
+
+```typescript
+const notes = useNotes() // ❌ Loads everything
+const filtered = notes.filter(...) // ❌ Creates new arrays
 ```
-SUPABASE_SERVICE_ROLE_KEY=required_for_admin
-ADMIN_PASSWORD=required_for_admin
+
+**DO** use new ViewStore pattern:
+
+```typescript
+const foldersView = useFoldersView() // ✅ Only current view
+const { loadFoldersView } = useViewActions() // ✅ Load on demand
 ```
 
-Admins: nicholas.lovejoy@gmail.com, mlovejoy@scu.edu
-
-## Architecture
-
-- **Local store**: User's folders/notebooks/notes
-- **Remote only**: Invitations, permissions, other users
-- **Sharing**: Email invites (7-day expiry), permission inheritance
-- **RLS**: `has_permission()` function
-
-## Known Issues
-
-- Real-time sync doesn't trigger UI updates (WebSocket connected but changes don't reflect)
-- Invitation acceptance flow broken (permissions not created on accept)
-- Share link copying/pasting doesn't work properly
-- Folder card icons overlap
+See ARCHITECTURE_V2.md for complete details.

@@ -1,17 +1,12 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   ArrowLeft,
-  Trash2,
   FolderOpen,
   BookOpen,
-  Filter,
-  Edit2,
-  Clock,
-  Calendar,
   SortAsc,
 } from 'lucide-react'
 import { RichTextEditor } from '@/components/RichTextEditor'
@@ -20,506 +15,384 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Dropdown } from '@/components/ui/Dropdown'
 import { NoteCard, AddNoteCard } from '@/components/cards/NoteCard'
-import { SharedIndicator } from '@/components/SharedIndicator'
-import { toHTML, toPlainText } from '@/lib/utils/content'
-import {
-  useFolder,
-  useNotebook,
-  useNotebooks,
-  useNotesInNotebook,
-  useDataActions,
-  useSyncState,
-  useNotebookSort,
-  useGlobalSearch,
-  useUIActions,
-} from '@/lib/store'
+import { StatusMessage } from '@/components/ui/StatusMessage'
+import { useNoteView, useViewLoading, useViewActions, useViewError } from '@/lib/store/view-store'
+import { useDebounce } from '@/lib/hooks/useDebounce'
 
 type SortOption = 'recent' | 'alphabetical' | 'created'
 
 export default function NotebookPage() {
   const params = useParams()
-  const router = useRouter()
   const notebookId = params.id as string
 
-  // Use Zustand hooks
-  const notebook = useNotebook(notebookId)
-  const folder = useFolder(notebook?.folder_id || null)
-  const allNotebooks = useNotebooks()
-  const allNotes = useNotesInNotebook(notebookId)
-  const { createNote, updateNote, deleteNote } = useDataActions()
-  const syncState = useSyncState()
-  const notebookSort = useNotebookSort()
-  const globalSearch = useGlobalSearch()
-  const { setGlobalSearch } = useUIActions()
+  // Debug counters
+  const renderCount = useRef(0)
+  const loadCount = useRef(0)
+  console.log(`[NotebookPage] Render #${++renderCount.current}, notebookId: ${notebookId}`)
 
-  const loading = syncState.status === 'loading'
+  // Use ViewStore - following the folders page pattern
+  const noteView = useNoteView()
+  const loading = useViewLoading()
+  const error = useViewError()
+  const { loadNoteView, clearView } = useViewActions()
 
-  // Check if this is a directly shared notebook (no folder access)
-  const isDirectlyShared = notebook?.sharedDirectly && !folder
-
-  const [notes, setNotes] = useState<typeof allNotes>([])
+  const [search, setSearch] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('recent')
-  const [selectedNote, setSelectedNote] = useState<(typeof allNotes)[0] | null>(null)
+  const [selectedNote, setSelectedNote] = useState<{ id: string; title: string; content?: string } | null>(null)
   const [isEditingNote, setIsEditingNote] = useState(false)
   const [editingNoteContent, setEditingNoteContent] = useState('')
   const [editingNoteTitle, setEditingNoteTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  const [tempNoteId, setTempNoteId] = useState<string | null>(null)
 
-  // Get notebooks in the same folder
-  const folderNotebooks = useMemo(() => {
-    if (!notebook?.folder_id) return []
-    const filtered = allNotebooks.filter((n) => n.folder_id === notebook.folder_id && !n.archived)
+  // Debounce search input to avoid too many API calls
+  const debouncedSearch = useDebounce(search, 300)
 
-    // Sort notebooks
-    const sorted = [...filtered].sort((a, b) => {
-      switch (notebookSort) {
-        case 'alphabetical':
-          return a.name.localeCompare(b.name)
-        case 'alphabetical-reverse':
-          return b.name.localeCompare(a.name)
-        case 'created':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        case 'created-reverse':
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        case 'recent':
-        default:
-          // For recent, we'd need to check notes - for now just use created date
-          return (
-            new Date(b.updated_at || b.created_at).getTime() -
-            new Date(a.updated_at || a.created_at).getTime()
-          )
-      }
-    })
+  // Track if initial load is done
+  const [initialLoadDone, setInitialLoadDone] = useState(false)
 
-    return sorted
-  }, [allNotebooks, notebook, notebookSort])
-
-  // Redirect if notebook not found
+  // Initial load - only when notebookId changes
   useEffect(() => {
-    if (!loading && !notebook) {
-      router.push('/folders')
+    console.log(`[NotebookPage] Initial load effect, count: ${++loadCount.current}`)
+    if (notebookId) {
+      console.log(`[NotebookPage] Loading notebook: ${notebookId}`)
+      loadNoteView(notebookId, {
+        search: '',
+        sort: 'recent',
+      }).then(() => {
+        console.log(`[NotebookPage] Initial load complete`)
+        setInitialLoadDone(true)
+      })
     }
-  }, [notebook, loading, router])
 
-  // Sort and filter notes
+    // Cleanup on unmount
+    return () => {
+      console.log(`[NotebookPage] Unmounting, clearing view`)
+      clearView()
+      setInitialLoadDone(false)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notebookId]) // Only depend on notebookId, ignore loadNoteView/clearView
+
+  // Filter changes - only after initial load
   useEffect(() => {
-    const filteredNotes = allNotes.filter(
-      (note) =>
-        note.title.toLowerCase().includes(globalSearch.toLowerCase()) ||
-        note.content.toLowerCase().includes(globalSearch.toLowerCase())
-    )
+    if (initialLoadDone && notebookId) {
+      console.log(`[NotebookPage] Filter change effect:`, { debouncedSearch, sortOption })
+      loadNoteView(notebookId, {
+        search: debouncedSearch,
+        sort: sortOption,
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, sortOption, initialLoadDone, notebookId]) // Ignore loadNoteView
 
-    const sortedNotes = [...filteredNotes].sort((a, b) => {
-      switch (sortOption) {
-        case 'recent':
-          return (
-            new Date(b.updated_at || b.created_at).getTime() -
-            new Date(a.updated_at || a.created_at).getTime()
-          )
-        case 'alphabetical':
-          return a.title.localeCompare(b.title)
-        case 'created':
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        default:
-          return 0
-      }
-    })
+  // Handle note creation
+  const handleCreateNote = async () => {
+    setIsSaving(true)
+    try {
+      const response = await fetch('/api/notes', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Untitled Note',
+          content: '',
+          notebook_id: notebookId,
+        }),
+      })
 
-    setNotes(sortedNotes)
-  }, [allNotes, sortOption, globalSearch])
+      if (!response.ok) throw new Error('Failed to create note')
 
-  const handleCreateNote = () => {
-    // Create a temporary note (not saved yet)
-    const tempId = `temp-${Date.now()}`
-    setTempNoteId(tempId)
-    setSelectedNote({
-      id: tempId,
-      user_id: '', // Will be set by server
-      notebook_id: notebookId,
-      title: '',
-      content: '<p></p>',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    setEditingNoteTitle('')
-    setEditingNoteContent('<p></p>')
-    setIsEditingNote(true)
+      const newNote = await response.json()
+
+      // Reload the view to get updated list with current filters
+      await loadNoteView(notebookId, {
+        search: debouncedSearch,
+        sort: sortOption,
+      })
+
+      // Open the new note for editing
+      setSelectedNote(newNote)
+      setIsEditingNote(true)
+      setEditingNoteTitle(newNote.title)
+      setEditingNoteContent(newNote.content || '')
+    } catch (err) {
+      console.error('Error creating note:', err)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
-  // Auto-save with debouncing
-  useEffect(() => {
-    if (!selectedNote || !isEditingNote) return
-
-    // Check if content has actually changed
-    const hasContentChanged =
-      editingNoteTitle !== selectedNote.title || editingNoteContent !== selectedNote.content
-
-    // Don't save if nothing changed (prevents save on initial load)
-    if (!hasContentChanged && !tempNoteId) return
-
-    // Don't save if both title and content are empty
-    if (!editingNoteTitle.trim() && !editingNoteContent.trim()) {
-      return
-    }
+  // Handle note update
+  const handleSaveNote = async () => {
+    if (!selectedNote) return
 
     setIsSaving(true)
-    const timeoutId = setTimeout(async () => {
-      try {
-        // If it's a new note (temp id), create it properly
-        if (tempNoteId && selectedNote.id === tempNoteId) {
-          // If no title, use first 3 words of content
-          let title = editingNoteTitle.trim()
-          if (!title && editingNoteContent.trim()) {
-            const plainText = toPlainText(editingNoteContent)
-            const words = plainText.trim().split(/\s+/)
-            title = words.slice(0, 3).join(' ')
-            if (words.length > 3) title += '...'
-          }
+    try {
+      const response = await fetch('/api/notes', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: selectedNote.id,
+          title: editingNoteTitle,
+          content: editingNoteContent,
+        }),
+      })
 
-          const newNote = await createNote(title || 'Untitled Note', editingNoteContent, notebookId)
-          if (newNote) {
-            setSelectedNote(newNote)
-            setTempNoteId(null)
-          }
-        } else {
-          // Update existing note
-          let title = editingNoteTitle.trim()
+      if (!response.ok) throw new Error('Failed to save note')
 
-          // If title is empty but content exists, use first 3 words
-          if (!title && editingNoteContent.trim()) {
-            const plainText = toPlainText(editingNoteContent)
-            const words = plainText.trim().split(/\s+/)
-            title = words.slice(0, 3).join(' ')
-            if (words.length > 3) title += '...'
-          }
+      // Reload the view to get updated data with current filters
+      await loadNoteView(notebookId, {
+        search: debouncedSearch,
+        sort: sortOption,
+      })
+      setIsEditingNote(false)
+    } catch (err) {
+      console.error('Error saving note:', err)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
-          await updateNote(selectedNote.id, {
-            title: title || 'Untitled Note',
-            content: editingNoteContent,
-          })
-        }
-        setIsSaving(false)
-      } catch (error) {
-        console.error('Failed to save note:', error)
-        // Error is logged but not displayed in UI currently
-        setIsSaving(false)
-      }
-    }, 500) // Auto-save after 500ms of no typing
-
-    return () => clearTimeout(timeoutId)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editingNoteTitle, editingNoteContent, selectedNote, isEditingNote, tempNoteId])
-
+  // Handle note deletion
   const handleDeleteNote = async (noteId: string) => {
     if (!confirm('Are you sure you want to delete this note?')) return
 
     try {
-      await deleteNote(noteId)
+      const response = await fetch(`/api/notes?id=${noteId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      if (!response.ok) throw new Error('Failed to delete note')
+
+      // Clear selection if deleted note was selected
       if (selectedNote?.id === noteId) {
         setSelectedNote(null)
         setIsEditingNote(false)
       }
-    } catch (error) {
-      console.error('Failed to delete note:', error)
-      // Error is logged but not displayed in UI currently
+
+      // Reload the view with current filters
+      await loadNoteView(notebookId, {
+        search: debouncedSearch,
+        sort: sortOption,
+      })
+    } catch (err) {
+      console.error('Error deleting note:', err)
     }
   }
 
-  const formatDate = (date: Date | string) => {
-    const d = new Date(date)
-    const now = new Date()
-    const diffMs = now.getTime() - d.getTime()
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  // Get data from store (already filtered and sorted by server)
+  const notes = noteView?.notes || []
+  const notebook = noteView?.notebook
 
-    if (diffHours < 1) return 'Just now'
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <StatusMessage type="error" message={error} />
+      </div>
+    )
+  }
 
-    return d.toLocaleDateString()
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader />
+        <main className="max-w-7xl mx-auto px-4 py-8">
+          <Skeleton className="h-8 w-64 mb-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+        </main>
+      </div>
+    )
   }
 
   if (!notebook) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading notebook...</p>
+        <div className="text-center">
+          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Notebook not found</h2>
+          <Link href="/folders" className="text-blue-600 hover:underline">
+            Return to folders
+          </Link>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <PageHeader backUrl="/folders" />
+      <PageHeader
+        backUrl="/folders"
+        rightContent={
+          <div className="flex items-center gap-4">
+            <SearchInput
+              value={search}
+              onChange={setSearch}
+              placeholder="Search notes..."
+              className="w-64"
+            />
+            <Dropdown
+              label="Sort"
+              icon={<SortAsc className="h-4 w-4" />}
+              value={sortOption}
+              onChange={(value) => setSortOption(value as SortOption)}
+              options={[
+                { value: 'recent', label: 'Recently Updated' },
+                { value: 'alphabetical', label: 'Alphabetical' },
+                { value: 'created', label: 'Date Created' },
+              ]}
+            />
+          </div>
+        }
+      />
 
-      {/* Error Message */}
-      {syncState.error && (
-        <div className="mx-4 mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
-          <p className="font-semibold">Error</p>
-          <p>{syncState.error}</p>
-          <button onClick={() => console.log('Error dismissed')} className="mt-2 text-sm underline">
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      <div className="flex h-[calc(100vh-4rem)]}">
-        {/* Folder Sidebar - Only show if user has folder access */}
-        {!isDirectlyShared && folder && (
-          <div className="w-64 bg-white border-r border-gray-200 p-4">
-            <Link href="/folders" className="block">
-              <div
-                className={`${folder.color} text-white rounded-lg p-3 mb-4 hover:opacity-90 transition-opacity cursor-pointer`}
+      <div className="flex h-[calc(100vh-64px)]">
+        {/* Sidebar */}
+        {noteView?.folder && (
+          <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
+            <div className="p-4">
+              {/* Folder Header */}
+              <Link
+                href="/folders"
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4"
               >
-                <div className="flex items-center gap-2">
-                  <FolderOpen className="h-5 w-5" />
-                  <span className="font-semibold">{folder.name}</span>
+                <ArrowLeft className="h-4 w-4" />
+                <span>All Folders</span>
+              </Link>
+
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 rounded-lg" style={{ backgroundColor: noteView.folder.color }}>
+                  <FolderOpen className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-900">{noteView.folder.name}</h2>
+                  <p className="text-xs text-gray-500">
+                    {noteView.siblingNotebooks.length} notebooks
+                  </p>
                 </div>
               </div>
-            </Link>
 
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Notebooks</h3>
-            <div className="space-y-2">
-              {folderNotebooks.map((nb) => (
-                <button
-                  key={nb.id}
-                  onClick={() => router.push(`/notebooks/${nb.id}`)}
-                  className={`w-full text-left rounded-lg p-3 transition-colors ${
-                    nb.id === notebookId ? `${nb.color} shadow-sm` : 'hover:bg-gray-50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <BookOpen
-                      className={`h-4 w-4 ${
-                        nb.id === notebookId ? 'text-gray-700' : 'text-gray-500'
-                      }`}
+              {/* Notebooks List */}
+              <div className="space-y-1">
+                {noteView.siblingNotebooks.map((nb) => (
+                  <Link
+                    key={nb.id}
+                    href={`/notebooks/${nb.id}`}
+                    className={`flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors ${
+                      nb.id === notebookId ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                    }`}
+                  >
+                    <div
+                      className="w-2 h-2 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: nb.color }}
                     />
-                    <span
-                      className={`text-sm font-medium ${
-                        nb.id === notebookId ? 'text-gray-900' : 'text-gray-700'
-                      }`}
-                    >
-                      {nb.name}
-                      {nb.id === notebookId && ' ✓'}
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Simplified Sidebar for Directly Shared Notebooks */}
-        {isDirectlyShared && (
-          <div className="w-64 bg-white border-r border-gray-200 p-4">
-            <Link href="/shared-with-me" className="block">
-              <div className="bg-purple-500 text-white rounded-lg p-3 mb-4 hover:opacity-90 transition-opacity cursor-pointer">
-                <div className="flex items-center gap-2">
-                  <ArrowLeft className="h-5 w-5" />
-                  <span className="font-semibold">Shared with Me</span>
-                </div>
-              </div>
-            </Link>
-
-            <div className="bg-gray-50 rounded-lg p-3">
-              <h3 className="text-sm font-medium text-gray-700 mb-2">Shared Notebook</h3>
-              <div className={`${notebook.color} rounded-lg p-3`}>
-                <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-gray-700" />
-                  <span className="text-sm font-medium text-gray-900">{notebook.name}</span>
-                </div>
-              </div>
-              <div className="mt-3">
-                <SharedIndicator shared={notebook.shared} permission={notebook.permission} />
+                    <span className="text-sm font-medium truncate">{nb.name}</span>
+                  </Link>
+                ))}
               </div>
             </div>
-          </div>
+          </aside>
         )}
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
-          {/* Content Header */}
-          <div className="bg-white border-b border-gray-200 p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <h2 className="text-2xl font-semibold">{notebook.name}</h2>
-              {notebook.shared && (
-                <SharedIndicator shared={notebook.shared} permission={notebook.permission} />
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              <SearchInput
-                value={globalSearch}
-                onChange={setGlobalSearch}
-                placeholder="Search notes..."
-                className="flex-1"
-              />
-              <button
-                className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50"
-                disabled
-              >
-                <Filter className="h-4 w-4" />
-                Filter
-              </button>
-              <Dropdown
-                label="Sort"
-                icon={<SortAsc className="h-4 w-4" />}
-                value={sortOption}
-                onChange={(value) => setSortOption(value as SortOption)}
-                options={[
-                  {
-                    value: 'recent',
-                    label: 'Recently edited',
-                    icon: <Clock className="h-4 w-4" />,
-                  },
-                  {
-                    value: 'alphabetical',
-                    label: 'Alphabetical',
-                    icon: <SortAsc className="h-4 w-4" />,
-                  },
-                  {
-                    value: 'created',
-                    label: 'Date created',
-                    icon: <Calendar className="h-4 w-4" />,
-                  },
-                ]}
-              />
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Notebook Header */}
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-lg" style={{ backgroundColor: notebook.color }}>
+                <BookOpen className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-semibold text-gray-900">{notebook.name}</h1>
+                {notebook.folder_name && !noteView?.folder && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                    <FolderOpen className="h-4 w-4" />
+                    <span>{notebook.folder_name}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Notes Grid or Editor */}
-          {!selectedNote ? (
-            <div className="flex-1 p-6 overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {/* Add Note Card - only show if user can write */}
-                {!loading && (!notebook.shared || notebook.permission === 'write') && (
-                  <AddNoteCard onClick={handleCreateNote} />
-                )}
-
-                {/* Loading Skeletons */}
-                {loading
-                  ? [...Array(8)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="bg-white rounded-lg border border-gray-200 p-6 h-48 flex flex-col"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <Skeleton width={20} height={20} />
-                          <Skeleton width={16} height={16} />
-                        </div>
-                        <Skeleton height={20} className="mb-2" />
-                        <Skeleton height={16} width="80%" className="mb-1" />
-                        <Skeleton height={16} width="60%" className="mb-1" />
-                        <Skeleton height={12} width="40%" className="mt-auto" />
-                      </div>
-                    ))
-                  : /* Note Cards */
-                    notes.map((note) => (
-                      <NoteCard
-                        key={note.id}
-                        title={note.title}
-                        content={note.content}
-                        updatedAt={note.updated_at || note.created_at}
-                        onClick={() => {
-                          setSelectedNote(note)
-                          setEditingNoteTitle(note.title)
-                          setEditingNoteContent(toHTML(note.content))
-                          // Never start in edit mode for read-only notebooks
-                          setIsEditingNote(false)
-                        }}
-                        onDelete={
-                          !notebook.shared || notebook.permission === 'write'
-                            ? () => handleDeleteNote(note.id)
-                            : undefined
-                        }
-                        formatDate={formatDate}
-                      />
-                    ))}
-              </div>
+          {/* Notes Grid */}
+          {notes.length === 0 && !search ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
             </div>
           ) : (
-            /* Note Editor */
-            <div className="flex-1 bg-white">
-              <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-                <button
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
+              {notes.map((note) => (
+                <NoteCard
+                  key={note.id}
+                  id={note.id}
+                  title={note.title}
+                  content={note.preview}
+                  updatedAt={note.updated_at}
+                  isSelected={selectedNote?.id === note.id}
                   onClick={() => {
-                    setSelectedNote(null)
-                    setIsEditingNote(false)
+                    setSelectedNote(note)
+                    setEditingNoteTitle(note.title)
+                    setEditingNoteContent('')
                   }}
-                  className="p-2 rounded-md hover:bg-gray-100"
-                >
-                  <ArrowLeft className="h-5 w-5 text-gray-800" />
-                </button>
-                <div className="flex items-center gap-2">
-                  {/* Only show edit button if user has write permission */}
-                  {!isEditingNote && (!notebook.shared || notebook.permission === 'write') && (
-                    <button
-                      onClick={() => setIsEditingNote(true)}
-                      className="p-2 rounded-md hover:bg-gray-100"
-                      title="Edit note"
-                    >
-                      <Edit2 className="h-5 w-5 text-gray-800" />
-                    </button>
-                  )}
-                  {/* Show view-only indicator for read-only notebooks */}
-                  {!isEditingNote && notebook.shared && notebook.permission === 'read' && (
-                    <span className="text-sm text-gray-500">View only</span>
-                  )}
-                  {isEditingNote && (
-                    <span className="text-sm text-gray-500 italic">
-                      {isSaving ? 'Saving...' : 'Saved'}
-                    </span>
-                  )}
-                  {/* Only show delete button if user has write permission */}
-                  {(!notebook.shared || notebook.permission === 'write') && (
-                    <button
-                      onClick={() => handleDeleteNote(selectedNote.id)}
-                      className="p-2 rounded-md hover:bg-gray-100 text-red-500"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="p-8">
-                {isEditingNote ? (
-                  <>
-                    <input
-                      type="text"
-                      value={editingNoteTitle}
-                      onChange={(e) => setEditingNoteTitle(e.target.value)}
-                      className="text-2xl font-semibold mb-4 w-full outline-none border-b border-gray-200 pb-2"
-                      placeholder="Note title..."
-                    />
-                    <RichTextEditor
-                      content={editingNoteContent}
-                      onChange={setEditingNoteContent}
-                      placeholder="Start typing your note..."
-                    />
-                  </>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-3 mb-4">
-                      <h2 className="text-2xl font-semibold">{selectedNote.title}</h2>
-                      {notebook.shared && notebook.permission === 'read' && (
-                        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                          Read-only
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      className="prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{
-                        __html: toHTML(selectedNote.content) || '<p>No content yet...</p>',
-                      }}
-                    />
-                  </>
-                )}
-              </div>
+                  onEdit={async () => {
+                    // Load full note content via ViewStore
+                    await loadNoteView(notebookId, { noteId: note.id })
+                    const fullNote = noteView?.currentNote
+                    if (fullNote) {
+                      setSelectedNote(fullNote)
+                      setIsEditingNote(true)
+                      setEditingNoteTitle(fullNote.title)
+                      setEditingNoteContent(fullNote.content || '')
+                    }
+                  }}
+                  onDelete={() => handleDeleteNote(note.id)}
+                />
+              ))}
             </div>
           )}
-        </div>
+        </main>
       </div>
+
+      {/* Note Editor Modal */}
+      {isEditingNote && selectedNote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <input
+                type="text"
+                value={editingNoteTitle}
+                onChange={(e) => setEditingNoteTitle(e.target.value)}
+                className="text-xl font-semibold bg-transparent border-none outline-none flex-1"
+                placeholder="Note title..."
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsEditingNote(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveNote}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {isSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <RichTextEditor content={editingNoteContent} onChange={setEditingNoteContent} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

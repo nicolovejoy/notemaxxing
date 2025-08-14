@@ -175,8 +175,16 @@ export const notebooksApi = {
     try {
       const supabase = await getSupabaseClient()
 
-      // Get user's own notebooks
-      let query = supabase.from('notebooks').select('*').order('created_at', { ascending: true })
+      // Get user's own notebooks with note counts
+      let query = supabase
+        .from('notebooks')
+        .select(
+          `
+          *,
+          notes:notes(count)
+        `
+        )
+        .order('created_at', { ascending: true })
 
       if (!includeArchived) {
         query = query.eq('archived', false)
@@ -186,7 +194,12 @@ export const notebooksApi = {
 
       if (ownError) throw ownError
 
-      let allNotebooks = ownNotebooks || []
+      // Transform the data to include note_count
+      let allNotebooks = (ownNotebooks || []).map((notebook) => ({
+        ...notebook,
+        note_count: notebook.notes?.[0]?.count ?? 0,
+        notes: undefined, // Remove the notes property
+      }))
 
       // Get shared notebooks if requested
       if (includeShared) {
@@ -301,7 +314,8 @@ export const notebooksApi = {
       .single()
 
     if (error) throw error
-    return data as Notebook
+    // New notebooks have 0 notes
+    return { ...data, note_count: 0 } as Notebook
   },
 
   async update(

@@ -1,8 +1,11 @@
 import { useStore } from 'zustand'
-import { useMemo } from 'react'
+import { shallow } from 'zustand/shallow'
 import { dataStore } from '../data-store'
 import { dataManager } from '../data-manager'
-import type { Notebook, Note } from '../types'
+
+// Stable empty array reference to avoid re-renders
+type EntityArray = Array<{ id: string; [key: string]: unknown }>
+const EMPTY_ARRAY: EntityArray = []
 
 // Selectors for common queries
 export const useFolder = (id: string | null) => {
@@ -17,53 +20,46 @@ export const useNote = (id: string | null) => {
   return useStore(dataStore, (state) => (id ? state.getNote(id) : undefined))
 }
 
+// Now these hooks can directly return arrays - no conversion needed!
 export const useFolders = () => {
-  const foldersMap = useStore(dataStore, (state) => state.entities.folders)
-  return useMemo(() => Array.from(foldersMap.values()), [foldersMap])
+  return useStore(dataStore, (state) => state.entities.folders)
 }
 
 export const useNotebooks = (includeArchived = false) => {
-  const notebooksMap = useStore(dataStore, (state) => state.entities.notebooks)
-  return useMemo(() => {
-    const notebooks = Array.from(notebooksMap.values())
-    return includeArchived ? notebooks : notebooks.filter((n) => !n.archived)
-  }, [notebooksMap, includeArchived])
+  return useStore(
+    dataStore,
+    (state) => {
+      const notebooks = state.entities.notebooks
+      return includeArchived ? notebooks : notebooks.filter((n) => !n.archived)
+    },
+    shallow
+  )
 }
 
 export const useNotebooksInFolder = (folderId: string | null) => {
-  const notebooksMap = useStore(dataStore, (state) => state.entities.notebooks)
-  const notebookIds = useStore(dataStore, (state) =>
-    folderId ? state.indexes.notebooksByFolder.get(folderId) : undefined
+  return useStore(
+    dataStore,
+    (state) => {
+      if (!folderId) return EMPTY_ARRAY
+      return state.entities.notebooks.filter((n) => n.folder_id === folderId)
+    },
+    shallow
   )
-
-  return useMemo(() => {
-    if (!folderId || !notebookIds) return []
-    return Array.from(notebookIds)
-      .map((id) => notebooksMap.get(id))
-      .filter((n): n is Notebook => n !== undefined)
-  }, [notebooksMap, notebookIds, folderId])
 }
 
 export const useNotesInNotebook = (notebookId: string | null) => {
-  const notesMap = useStore(dataStore, (state) => state.entities.notes)
-  const noteIds = useStore(dataStore, (state) =>
-    notebookId ? state.indexes.notesByNotebook.get(notebookId) : undefined
+  return useStore(
+    dataStore,
+    (state) => {
+      if (!notebookId) return EMPTY_ARRAY
+      return state.entities.notes.filter((n) => n.notebook_id === notebookId)
+    },
+    shallow
   )
-
-  return useMemo(() => {
-    if (!notebookId || !noteIds) return []
-    return Array.from(noteIds)
-      .map((id) => notesMap.get(id))
-      .filter((n): n is Note => n !== undefined)
-  }, [notesMap, noteIds, notebookId])
 }
 
 export const useNotes = () => {
-  const notesMap = useStore(dataStore, (state) => state.entities.notes)
-  return useMemo(() => {
-    if (!notesMap) return []
-    return Array.from(notesMap.values())
-  }, [notesMap])
+  return useStore(dataStore, (state) => state.entities.notes)
 }
 
 // Actions wrapped with data manager - memoized to prevent recreation
@@ -108,12 +104,15 @@ export const useIsInitialized = () => {
 
 // Get directly shared notebooks (not through folder permissions)
 export const useOrphanedSharedNotebooks = () => {
-  const notebooks = useNotebooks()
-  const folders = useFolders()
-
-  return useMemo(() => {
-    const accessibleFolderIds = new Set(folders.map((f) => f.id))
-    // Only return notebooks that are DIRECTLY shared and whose folder is NOT accessible
-    return notebooks.filter((n) => n.sharedDirectly && !accessibleFolderIds.has(n.folder_id))
-  }, [notebooks, folders])
+  return useStore(
+    dataStore,
+    (state) => {
+      const notebooks = state.entities.notebooks
+      const folders = state.entities.folders
+      const accessibleFolderIds = new Set(folders.map((f) => f.id))
+      // Only return notebooks that are DIRECTLY shared and whose folder is NOT accessible
+      return notebooks.filter((n) => n.sharedDirectly && !accessibleFolderIds.has(n.folder_id))
+    },
+    shallow
+  )
 }

@@ -1,8 +1,8 @@
-import { createClient } from './client'
+import { createClient } from './server'
 import { logger } from '@/lib/debug/logger'
 
 export async function getCurrentUser() {
-  const supabase = createClient()
+  const supabase = await createClient()
   if (!supabase) {
     logger.error('Cannot get current user - Supabase client not available')
     return null

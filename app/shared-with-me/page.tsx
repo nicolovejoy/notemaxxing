@@ -2,17 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, BookOpen } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { NotebookCard } from '@/components/cards/NotebookCard'
-import { useNotes, useSyncState, useOrphanedSharedNotebooks, useIsInitialized } from '@/lib/store'
+import { useSyncState, useOrphanedSharedNotebooks, useIsInitialized } from '@/lib/store'
 
 export default function SharedWithMePage() {
   const router = useRouter()
   const [search, setSearch] = useState('')
 
-  const notes = useNotes()
   const syncState = useSyncState()
   const isInitialized = useIsInitialized()
 
@@ -27,7 +26,8 @@ export default function SharedWithMePage() {
   })
 
   const getNotesCount = (notebookId: string) => {
-    return notes.filter((n) => n.notebook_id === notebookId).length
+    const notebook = sharedNotebooks.find((n) => n.id === notebookId)
+    return notebook?.note_count ?? 0
   }
 
   // Show loading state until store is initialized

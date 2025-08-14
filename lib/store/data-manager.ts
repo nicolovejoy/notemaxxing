@@ -67,18 +67,17 @@ class DataManager {
     dataStore.getState().setSyncError(null)
 
     try {
-      // Load all entities in parallel
-      const [folders, notebooks, notes, shares] = await Promise.all([
+      // Load only essential entities (not notes - they'll be loaded on demand)
+      const [folders, notebooks, shares] = await Promise.all([
         foldersApi.getAll(true), // Include shared folders
         notebooksApi.getAll(true), // Include archived
-        notesApi.getAll(), // Load all notes upfront
         sharesApi.getShareMetadata(),
       ])
 
       // Update data store
       dataStore.getState().setFolders(folders)
       dataStore.getState().setNotebooks(notebooks)
-      dataStore.getState().setNotes(notes)
+      dataStore.getState().setNotes([]) // Start with empty notes - load on demand
 
       // Process share metadata
       if (shares) {
