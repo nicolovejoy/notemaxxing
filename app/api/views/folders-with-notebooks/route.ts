@@ -99,7 +99,7 @@ export async function GET() {
     const totalFolders = folders?.length || 0
     const totalNotebooks = notebooks?.length || 0
     const totalNotes = noteCounts?.length || 0
-    const totalArchived = (folders as any[])?.reduce((sum: number, f: any) => sum + (f.archived_count || 0), 0) || 0
+    const totalArchived = (folders as Array<Folder & { archived_count?: number }>)?.reduce((sum: number, f) => sum + (f.archived_count || 0), 0) || 0
 
     return NextResponse.json({
       folders: foldersWithNotebooks,
