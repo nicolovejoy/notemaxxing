@@ -21,7 +21,7 @@ export async function GET() {
     if (foldersError) throw foldersError
 
     // Get all notebooks for these folders to show in the UI
-    const folderIds = folders?.map((f) => f.id) || []
+    const folderIds = folders?.map((f: { id: string }) => f.id) || []
 
     let notebooksWithCounts: Array<{ id: string; name: string; color: string; folder_id: string; note_count: number }> = []
     const mostRecentNotebookByFolder: Record<string, string> = {}
@@ -56,7 +56,7 @@ export async function GET() {
       })
 
       // Get note counts for each notebook
-      const notebookIds = notebooks?.map((n) => n.id) || []
+      const notebookIds = notebooks?.map((n: { id: string }) => n.id) || []
 
       if (notebookIds.length > 0) {
         const { data: noteCounts, error: noteCountError } = await supabase
@@ -69,7 +69,7 @@ export async function GET() {
         // Count notes per notebook
         const noteCountMap =
           noteCounts?.reduce(
-            (acc, note) => {
+            (acc: Record<string, number>, note: { notebook_id: string }) => {
               acc[note.notebook_id] = (acc[note.notebook_id] || 0) + 1
               return acc
             },
@@ -78,7 +78,7 @@ export async function GET() {
 
         // Add note counts to notebooks
         notebooksWithCounts =
-          notebooks?.map((nb) => ({
+          notebooks?.map((nb: { id: string; name: string; color: string; folder_id: string }) => ({
             id: nb.id,
             name: nb.name,
             color: nb.color,
@@ -89,7 +89,7 @@ export async function GET() {
     }
 
     // Group notebooks by folder
-    const notebooksByFolder = notebooksWithCounts.reduce(
+    const notebooksByFolder = notebooksWithCounts.reduce<Record<string, typeof notebooksWithCounts>>(
       (acc, nb) => {
         if (!acc[nb.folder_id]) acc[nb.folder_id] = []
         acc[nb.folder_id].push({
@@ -106,7 +106,7 @@ export async function GET() {
 
     // Add notebooks and most recent notebook ID to each folder
     const foldersWithNotebooks =
-      folders?.map((folder) => ({
+      folders?.map((folder: { id: string; notebook_count: number; note_count: number; archived_count: number; [key: string]: any }) => ({
         ...folder,
         notebooks: notebooksByFolder[folder.id] || [],
         most_recent_notebook_id: mostRecentNotebookByFolder[folder.id] || null,
@@ -137,9 +137,9 @@ export async function GET() {
       // Filter orphaned notebooks (those whose folders we don't have access to)
       const accessibleFolderIds = new Set(folderIds)
       orphanedNotebooks = (sharedNotebooks || [])
-        .filter((nb) => !accessibleFolderIds.has(nb.folder_id))
-        .map((nb) => {
-          const permission = notebookPermissions.find((p) => p.resource_id === nb.id)
+        .filter((nb: { folder_id: string }) => !accessibleFolderIds.has(nb.folder_id))
+        .map((nb: { id: string; name: string; color: string }) => {
+          const permission = notebookPermissions.find((p: { resource_id: string }) => p.resource_id === nb.id)
           return {
             id: nb.id,
             name: nb.name,
