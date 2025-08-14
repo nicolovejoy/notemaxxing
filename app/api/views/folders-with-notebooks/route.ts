@@ -33,7 +33,7 @@ export async function GET() {
     if (notebooksError) throw notebooksError
 
     // Get note counts for each notebook
-    const notebookIds = notebooks?.map((n) => n.id) || []
+    const notebookIds = notebooks?.map((n: { id: string }) => n.id) || []
 
     const { data: noteCounts, error: noteCountError } = await supabase
       .from('notes')
@@ -54,14 +54,14 @@ export async function GET() {
 
     // Add note counts to notebooks
     const notebooksWithCounts =
-      notebooks?.map((nb) => ({
+      notebooks?.map((nb: any) => ({
         ...nb,
         note_count: noteCountMap[nb.id] || 0,
       })) || []
 
     // Group notebooks by folder
     const notebooksByFolder = notebooksWithCounts.reduce(
-      (acc, nb) => {
+      (acc, nb: any) => {
         if (!acc[nb.folder_id]) acc[nb.folder_id] = []
         acc[nb.folder_id].push(nb)
         return acc
@@ -71,7 +71,7 @@ export async function GET() {
 
     // Combine folders with their notebooks
     const foldersWithNotebooks =
-      folders?.map((folder) => ({
+      folders?.map((folder: any) => ({
         ...folder,
         notebooks: notebooksByFolder[folder.id] || [],
       })) || []
