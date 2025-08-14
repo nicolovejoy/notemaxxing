@@ -62,7 +62,7 @@ export async function GET() {
 
     // Count notes per notebook
     const noteCountMap = noteCounts
-      ? noteCounts.reduce<Record<string, number>>(
+      ? (noteCounts as Array<{ notebook_id: string }>).reduce<Record<string, number>>(
           (acc, note) => {
             acc[note.notebook_id] = (acc[note.notebook_id] || 0) + 1
             return acc
