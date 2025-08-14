@@ -61,14 +61,15 @@ export async function GET() {
     if (noteCountError) throw noteCountError
 
     // Count notes per notebook
-    const noteCountMap =
-      noteCounts?.reduce<Record<string, number>>(
-        (acc, note) => {
-          acc[note.notebook_id] = (acc[note.notebook_id] || 0) + 1
-          return acc
-        },
-        {}
-      ) || {}
+    const noteCountMap = noteCounts
+      ? noteCounts.reduce<Record<string, number>>(
+          (acc, note) => {
+            acc[note.notebook_id] = (acc[note.notebook_id] || 0) + 1
+            return acc
+          },
+          {}
+        )
+      : {}
 
     // Add note counts to notebooks
     const notebooksWithCounts =
