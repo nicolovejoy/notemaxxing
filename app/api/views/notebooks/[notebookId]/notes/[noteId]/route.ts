@@ -66,7 +66,7 @@ export async function GET(
     if (notesError) throw notesError
 
     const notesWithPreviews =
-      notes?.map((n) => ({
+      notes?.map((n: { id: string; title: string; created_at: string; updated_at: string }) => ({
         ...n,
         preview: n.id === noteId ? note.content.substring(0, 150) : 'Note preview...',
       })) || []

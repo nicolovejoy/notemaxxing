@@ -196,16 +196,16 @@ export class RealtimeManager {
           console.log('[RealtimeManager] Adding new folder:', newRecord.id)
           console.log(
             '[RealtimeManager] Before add - folder count:',
-            dataStore.getState().entities.folders.size
+            dataStore.getState().entities.folders.length
           )
           dataStore.getState().addFolder(newRecord)
           console.log(
             '[RealtimeManager] After add - folder count:',
-            dataStore.getState().entities.folders.size
+            dataStore.getState().entities.folders.length
           )
           console.log(
             '[RealtimeManager] Folder exists in store?',
-            dataStore.getState().entities.folders.has(newRecord.id)
+            dataStore.getState().entities.folders.some((f) => f.id === newRecord.id)
           )
         }
         break

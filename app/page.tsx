@@ -2,15 +2,7 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import {
-  FolderOpen,
-  Sparkles,
-  BookOpen,
-  Keyboard,
-  Brain,
-  Plus,
-  ArrowRight,
-} from 'lucide-react'
+import { FolderOpen, Sparkles, BookOpen, Keyboard, Brain, Plus, ArrowRight } from 'lucide-react'
 import { UserMenu } from '@/components/user-menu'
 import { BuildTimestamp } from '@/components/build-timestamp'
 import { Logo } from '@/components/logo'

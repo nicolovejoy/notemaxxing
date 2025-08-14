@@ -1,5 +1,4 @@
 import { useStore } from 'zustand'
-import { shallow } from 'zustand/shallow'
 import { dataStore } from '../data-store'
 import { dataManager } from '../data-manager'
 
@@ -26,36 +25,24 @@ export const useFolders = () => {
 }
 
 export const useNotebooks = (includeArchived = false) => {
-  return useStore(
-    dataStore,
-    (state) => {
-      const notebooks = state.entities.notebooks
-      return includeArchived ? notebooks : notebooks.filter((n) => !n.archived)
-    },
-    shallow
-  )
+  return useStore(dataStore, (state) => {
+    const notebooks = state.entities.notebooks
+    return includeArchived ? notebooks : notebooks.filter((n) => !n.archived)
+  })
 }
 
 export const useNotebooksInFolder = (folderId: string | null) => {
-  return useStore(
-    dataStore,
-    (state) => {
-      if (!folderId) return EMPTY_ARRAY
-      return state.entities.notebooks.filter((n) => n.folder_id === folderId)
-    },
-    shallow
-  )
+  return useStore(dataStore, (state) => {
+    if (!folderId) return EMPTY_ARRAY
+    return state.entities.notebooks.filter((n) => n.folder_id === folderId)
+  })
 }
 
 export const useNotesInNotebook = (notebookId: string | null) => {
-  return useStore(
-    dataStore,
-    (state) => {
-      if (!notebookId) return EMPTY_ARRAY
-      return state.entities.notes.filter((n) => n.notebook_id === notebookId)
-    },
-    shallow
-  )
+  return useStore(dataStore, (state) => {
+    if (!notebookId) return EMPTY_ARRAY
+    return state.entities.notes.filter((n) => n.notebook_id === notebookId)
+  })
 }
 
 export const useNotes = () => {
@@ -104,15 +91,11 @@ export const useIsInitialized = () => {
 
 // Get directly shared notebooks (not through folder permissions)
 export const useOrphanedSharedNotebooks = () => {
-  return useStore(
-    dataStore,
-    (state) => {
-      const notebooks = state.entities.notebooks
-      const folders = state.entities.folders
-      const accessibleFolderIds = new Set(folders.map((f) => f.id))
-      // Only return notebooks that are DIRECTLY shared and whose folder is NOT accessible
-      return notebooks.filter((n) => n.sharedDirectly && !accessibleFolderIds.has(n.folder_id))
-    },
-    shallow
-  )
+  return useStore(dataStore, (state) => {
+    const notebooks = state.entities.notebooks
+    const folders = state.entities.folders
+    const accessibleFolderIds = new Set(folders.map((f) => f.id))
+    // Only return notebooks that are DIRECTLY shared and whose folder is NOT accessible
+    return notebooks.filter((n) => n.sharedDirectly && !accessibleFolderIds.has(n.folder_id))
+  })
 }

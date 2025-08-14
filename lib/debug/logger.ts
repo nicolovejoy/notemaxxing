@@ -96,7 +96,8 @@ export function logApiCall(endpoint: string, method: string, data?: unknown, err
 }
 
 // Debug helper to log auth events
-export function logAuthEvent(event: string, data?: unknown) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function logAuthEvent(_event: string, _data?: unknown) {
   // Commented out to reduce console noise
-  // logger.info(`Auth event: ${event}`, data);
+  // logger.info(`Auth event: ${_event}`, _data);
 }

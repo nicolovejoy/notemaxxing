@@ -31,7 +31,7 @@ export default function FoldersPage() {
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
-  const [newFolderColor, setNewFolderColor] = useState(DEFAULT_FOLDER_COLOR)
+  const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
   const [creating, setCreating] = useState(false)
 
   // Load folders view on mount
@@ -316,8 +316,8 @@ export default function FoldersPage() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Folder Color</label>
             <ColorPicker
               colors={FOLDER_COLORS}
-              selectedColor={newFolderColor}
-              onColorSelect={setNewFolderColor}
+              selected={newFolderColor}
+              onChange={setNewFolderColor}
             />
           </div>
         </div>

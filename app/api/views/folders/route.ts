@@ -23,7 +23,13 @@ export async function GET() {
     // Get all notebooks for these folders to show in the UI
     const folderIds = folders?.map((f: { id: string }) => f.id) || []
 
-    let notebooksWithCounts: Array<{ id: string; name: string; color: string; folder_id: string; note_count: number }> = []
+    let notebooksWithCounts: Array<{
+      id: string
+      name: string
+      color: string
+      folder_id: string
+      note_count: number
+    }> = []
     const mostRecentNotebookByFolder: Record<string, string> = {}
 
     if (folderIds.length > 0) {
@@ -38,13 +44,14 @@ export async function GET() {
       if (notebooksError) throw notebooksError
 
       // Find most recent notebook for each folder
-      notebooks?.forEach((nb) => {
+      notebooks?.forEach((nb: { id: string; folder_id: string; updated_at: string }) => {
         if (!mostRecentNotebookByFolder[nb.folder_id]) {
           mostRecentNotebookByFolder[nb.folder_id] = nb.id
         } else {
           // Compare updated_at to find most recent
           const currentMostRecent = notebooks.find(
-            (n) => n.id === mostRecentNotebookByFolder[nb.folder_id]
+            (n: { id: string; updated_at: string }) =>
+              n.id === mostRecentNotebookByFolder[nb.folder_id]
           )
           if (
             currentMostRecent &&
@@ -89,7 +96,8 @@ export async function GET() {
     }
 
     // Group notebooks by folder
-    const notebooksByFolder = notebooksWithCounts.reduce<Record<string, typeof notebooksWithCounts>>(
+    type NotebookSummary = { id: string; name: string; color: string; note_count: number }
+    const notebooksByFolder = notebooksWithCounts.reduce<Record<string, NotebookSummary[]>>(
       (acc, nb) => {
         if (!acc[nb.folder_id]) acc[nb.folder_id] = []
         acc[nb.folder_id].push({
@@ -100,13 +108,24 @@ export async function GET() {
         })
         return acc
       },
-      {} as Record<string, Array<{ id: string; name: string; color: string; note_count: number }>>
-
+      {}
     )
 
     // Add notebooks and most recent notebook ID to each folder
+    type FolderFromView = {
+      id: string
+      name: string
+      color: string
+      notebook_count: number
+      note_count: number
+      archived_count: number
+      created_at: string
+      updated_at: string
+      user_id: string
+    }
+
     const foldersWithNotebooks =
-      folders?.map((folder: { id: string; notebook_count: number; note_count: number; archived_count: number; [key: string]: any }) => ({
+      folders?.map((folder: FolderFromView) => ({
         ...folder,
         notebooks: notebooksByFolder[folder.id] || [],
         most_recent_notebook_id: mostRecentNotebookByFolder[folder.id] || null,
@@ -122,11 +141,18 @@ export async function GET() {
 
     if (permError) throw permError
 
-    let orphanedNotebooks: Array<{ id: string; name: string; color: string; note_count: number; shared_by: string; permission: 'read' | 'write' }> = []
+    let orphanedNotebooks: Array<{
+      id: string
+      name: string
+      color: string
+      note_count: number
+      shared_by: string
+      permission: 'read' | 'write'
+    }> = []
 
     if (notebookPermissions && notebookPermissions.length > 0) {
       // Get the actual notebook data
-      const notebookIds = notebookPermissions.map((p) => p.resource_id)
+      const notebookIds = notebookPermissions.map((p: { resource_id: string }) => p.resource_id)
       const { data: sharedNotebooks, error: nbError } = await supabase
         .from('notebooks')
         .select('id, name, color, folder_id')
@@ -139,7 +165,9 @@ export async function GET() {
       orphanedNotebooks = (sharedNotebooks || [])
         .filter((nb: { folder_id: string }) => !accessibleFolderIds.has(nb.folder_id))
         .map((nb: { id: string; name: string; color: string }) => {
-          const permission = notebookPermissions.find((p: { resource_id: string }) => p.resource_id === nb.id)
+          const permission = notebookPermissions.find(
+            (p: { resource_id: string }) => p.resource_id === nb.id
+          )
           return {
             id: nb.id,
             name: nb.name,

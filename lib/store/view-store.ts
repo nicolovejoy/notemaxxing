@@ -18,6 +18,7 @@ export interface FoldersViewData {
     last_activity: string | null
     shared?: boolean
     permission?: 'read' | 'write'
+    most_recent_notebook_id?: string | null
     // Add notebooks array with just metadata
     notebooks?: Array<{
       id: string
@@ -285,7 +286,7 @@ export const useViewStore = create<ViewState>()(
         currentNoteViewRequest = null
       } catch (error) {
         // Ignore abort errors
-        if (error?.name === 'AbortError') {
+        if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError') {
           return
         }
 

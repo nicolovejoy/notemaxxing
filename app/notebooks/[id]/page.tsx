@@ -3,12 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import {
-  ArrowLeft,
-  FolderOpen,
-  BookOpen,
-  SortAsc,
-} from 'lucide-react'
+import { ArrowLeft, FolderOpen, BookOpen, SortAsc } from 'lucide-react'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -38,7 +33,11 @@ export default function NotebookPage() {
 
   const [search, setSearch] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('recent')
-  const [selectedNote, setSelectedNote] = useState<{ id: string; title: string; content?: string } | null>(null)
+  const [selectedNote, setSelectedNote] = useState<{
+    id: string
+    title: string
+    content?: string
+  } | null>(null)
   const [isEditingNote, setIsEditingNote] = useState(false)
   const [editingNoteContent, setEditingNoteContent] = useState('')
   const [editingNoteTitle, setEditingNoteTitle] = useState('')

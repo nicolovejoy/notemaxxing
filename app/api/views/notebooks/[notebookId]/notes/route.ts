@@ -146,17 +146,27 @@ export async function GET(
 
     // Generate previews from actual content (first 150 chars)
     const notesWithPreviews =
-      notes?.map((note) => {
-        // Strip HTML tags and get first 150 characters for preview
-        const plainText = note.content ? note.content.replace(/<[^>]*>/g, '').substring(0, 150) : ''
-        return {
-          id: note.id,
-          title: note.title,
-          preview: plainText || 'Empty note',
-          created_at: note.created_at,
-          updated_at: note.updated_at,
+      notes?.map(
+        (note: {
+          id: string
+          title: string
+          content: string
+          created_at: string
+          updated_at: string
+        }) => {
+          // Strip HTML tags and get first 150 characters for preview
+          const plainText = note.content
+            ? note.content.replace(/<[^>]*>/g, '').substring(0, 150)
+            : ''
+          return {
+            id: note.id,
+            title: note.title,
+            preview: plainText || 'Empty note',
+            created_at: note.created_at,
+            updated_at: note.updated_at,
+          }
         }
-      }) || []
+      ) || []
 
     return NextResponse.json({
       notebook: {

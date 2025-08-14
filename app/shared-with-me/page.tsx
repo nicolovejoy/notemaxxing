@@ -1,21 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { BookOpen } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { NotebookCard } from '@/components/cards/NotebookCard'
-import { useOrphanedSharedNotebooks, useIsInitialized } from '@/lib/store'
+import { useFoldersView, useViewActions, useViewLoading } from '@/lib/store/view-store'
 
 export default function SharedWithMePage() {
   const router = useRouter()
   const [search, setSearch] = useState('')
+  const foldersView = useFoldersView()
+  const loading = useViewLoading()
+  const { loadFoldersView } = useViewActions()
 
-  const isInitialized = useIsInitialized()
+  // Load folders view on mount
+  useEffect(() => {
+    loadFoldersView()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Use the same hook as folders page to ensure consistency
-  const sharedNotebooks = useOrphanedSharedNotebooks()
+  const sharedNotebooks = foldersView?.orphanedNotebooks || []
 
   // Filter by search
   const filteredNotebooks = sharedNotebooks.filter((notebook) => {
@@ -23,14 +29,6 @@ export default function SharedWithMePage() {
     const searchLower = search.toLowerCase()
     return notebook.name.toLowerCase().includes(searchLower)
   })
-
-  const getNotesCount = (notebookId: string) => {
-    const notebook = sharedNotebooks.find((n) => n.id === notebookId)
-    return notebook?.note_count ?? 0
-  }
-
-  // Show loading state until store is initialized
-  const loading = !isInitialized
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -87,10 +85,10 @@ export default function SharedWithMePage() {
                 id={notebook.id}
                 name={notebook.name}
                 color={notebook.color}
-                noteCount={getNotesCount(notebook.id)}
-                archived={notebook.archived}
-                shared={notebook.shared}
-                sharedByMe={notebook.sharedByMe}
+                noteCount={notebook.note_count}
+                archived={false}
+                shared={true}
+                sharedByMe={false}
                 permission={notebook.permission}
                 isEditing={false}
                 editingName=""
