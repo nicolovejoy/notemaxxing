@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
 
@@ -24,7 +24,7 @@ export async function GET() {
     const folderIds = folders?.map((f) => f.id) || []
 
     let notebooksWithCounts: Array<{ id: string; name: string; color: string; folder_id: string; note_count: number }> = []
-    let mostRecentNotebookByFolder: Record<string, string> = {}
+    const mostRecentNotebookByFolder: Record<string, string> = {}
 
     if (folderIds.length > 0) {
       // Get notebooks with updated_at for finding most recent

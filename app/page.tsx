@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import {
   FolderOpen,
   Sparkles,
@@ -17,7 +16,7 @@ import { BuildTimestamp } from '@/components/build-timestamp'
 import { Logo } from '@/components/logo'
 import { Card, CardBody } from '@/components/ui'
 import { LoadingButton } from '@/components/ui/LoadingButton'
-import { useFoldersView, useViewLoading, useViewActions } from '@/lib/store/view-store'
+import { useFoldersView, useViewActions } from '@/lib/store/view-store'
 
 export default function Home() {
   const foldersView = useFoldersView()
@@ -26,6 +25,7 @@ export default function Home() {
   // Load folders view on mount for stats
   useEffect(() => {
     loadFoldersView()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const features = [

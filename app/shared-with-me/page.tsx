@@ -6,13 +6,12 @@ import { BookOpen } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { NotebookCard } from '@/components/cards/NotebookCard'
-import { useSyncState, useOrphanedSharedNotebooks, useIsInitialized } from '@/lib/store'
+import { useOrphanedSharedNotebooks, useIsInitialized } from '@/lib/store'
 
 export default function SharedWithMePage() {
   const router = useRouter()
   const [search, setSearch] = useState('')
 
-  const syncState = useSyncState()
   const isInitialized = useIsInitialized()
 
   // Use the same hook as folders page to ensure consistency

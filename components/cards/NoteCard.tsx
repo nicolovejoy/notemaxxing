@@ -15,7 +15,6 @@ interface NoteCardProps {
 }
 
 export function NoteCard({
-  id,
   title,
   content,
   updatedAt,
