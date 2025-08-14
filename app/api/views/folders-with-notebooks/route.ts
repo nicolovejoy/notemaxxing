@@ -21,7 +21,7 @@ export async function GET() {
     if (foldersError) throw foldersError
 
     // Get all notebooks for these folders
-    const folderIds = folders?.map((f) => f.id) || []
+    const folderIds = folders?.map((f: { id: string }) => f.id) || []
 
     const { data: notebooks, error: notebooksError } = await supabase
       .from('notebooks')
