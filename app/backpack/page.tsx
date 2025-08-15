@@ -85,7 +85,6 @@ export default function BackpackPage() {
   }
 
   const handleFolderClick = (folderId: string) => {
-    console.log('Navigating to folder:', folderId)
     // Navigate to folder detail page (shows notebooks in that folder)
     router.push(`/folders/${folderId}`)
   }

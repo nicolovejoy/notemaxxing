@@ -40,18 +40,8 @@ export async function middleware(request: NextRequest) {
 
   const isProtectedPath = protectedPaths.some((path) => request.nextUrl.pathname.startsWith(path))
 
-  // Debug logging
-  if (request.nextUrl.pathname.startsWith('/folders')) {
-    console.log('[Middleware] Folders route:', {
-      pathname: request.nextUrl.pathname,
-      user: user?.email,
-      isProtectedPath,
-    })
-  }
-
   // Redirect unauthenticated users from protected routes
   if (!user && isProtectedPath) {
-    console.log('[Middleware] Redirecting to login:', request.nextUrl.pathname)
     const url = request.nextUrl.clone()
     url.pathname = '/auth/login'
     // Preserve intended destination
