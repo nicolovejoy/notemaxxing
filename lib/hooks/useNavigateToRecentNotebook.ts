@@ -24,8 +24,8 @@ export function useNavigateToRecentNotebook() {
       // Sort by notebook update time (will be improved when we add last_note_updated field)
       const mostRecentNotebook = folderNotebooks.sort(
         (a, b) =>
-          new Date(b.updated_at || b.created_at).getTime() -
-          new Date(a.updated_at || a.created_at).getTime()
+          new Date(b.updated_at || b.created_at || 0).getTime() -
+          new Date(a.updated_at || a.created_at || 0).getTime()
       )[0]
 
       if (mostRecentNotebook) {

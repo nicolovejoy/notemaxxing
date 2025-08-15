@@ -21,6 +21,15 @@ export async function GET(
     const search = searchParams.get('search') || ''
     const sort = searchParams.get('sort') || 'recent' // recent | alphabetical | created
 
+    console.log('[API] Loading notes for notebook:', {
+      notebookId,
+      userId,
+      offset,
+      limit,
+      search,
+      sort,
+    })
+
     // Get notebook and folder info
     const { data: notebook, error: notebookError } = await supabase
       .from('notebooks')
@@ -46,19 +55,55 @@ export async function GET(
       return NextResponse.json({ error: 'Notebook not found', notebookId }, { status: 404 })
     }
 
-    // Check ownership
-    if (notebook.user_id !== userId) {
-      // Check if user has permission
+    // Check permissions using the new system
+    // First check if user is owner
+    const { data: ownership } = await supabase
+      .from('ownership')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('resource_id', notebookId)
+      .eq('resource_type', 'notebook')
+      .single()
+
+    if (!ownership) {
+      // Not owner, check if user has explicit permission
       const { data: permission } = await supabase
         .from('permissions')
-        .select('permission')
+        .select('permission_level')
         .eq('user_id', userId)
         .eq('resource_id', notebookId)
         .eq('resource_type', 'notebook')
+        .neq('permission_level', 'none')
         .single()
 
       if (!permission) {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+        // Check for folder-level permission (inherited)
+        if (notebook.folder_id) {
+          const { data: folderPerm } = await supabase
+            .from('permissions')
+            .select('permission_level')
+            .eq('user_id', userId)
+            .eq('resource_id', notebook.folder_id)
+            .eq('resource_type', 'folder')
+            .neq('permission_level', 'none')
+            .single()
+
+          if (!folderPerm) {
+            console.error('Access denied - no permission:', {
+              notebookId,
+              userId,
+              notebookOwnerId: notebook.user_id,
+            })
+            return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+          }
+        } else {
+          console.error('Access denied - no permission and no folder:', {
+            notebookId,
+            userId,
+            notebookOwnerId: notebook.user_id,
+          })
+          return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+        }
       }
     }
 

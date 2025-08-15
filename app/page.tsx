@@ -1,24 +1,19 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
-import { FolderOpen, Sparkles, BookOpen, Keyboard, Brain, Plus, ArrowRight } from 'lucide-react'
+import { FolderOpen, Sparkles, BookOpen, Keyboard, Brain, Plus, ArrowRight, LogIn } from 'lucide-react'
 import { UserMenu } from '@/components/user-menu'
 import { BuildTimestamp } from '@/components/build-timestamp'
 import { Logo } from '@/components/logo'
 import { Card, CardBody } from '@/components/ui'
 import { LoadingButton } from '@/components/ui/LoadingButton'
-import { useFoldersView, useViewActions } from '@/lib/store/view-store'
+import { useFoldersView } from '@/lib/query/hooks'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 export default function Home() {
-  const foldersView = useFoldersView()
-  const { loadFoldersView } = useViewActions()
-
-  // Load folders view on mount for stats
-  useEffect(() => {
-    loadFoldersView()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // React Query - NO useEffect needed! No infinite loops possible!
+  const { data: foldersView, isLoading } = useFoldersView()
+  const { user } = useAuth()
 
   const features = [
     {
@@ -27,20 +22,6 @@ export default function Home() {
       description: 'Organize your notes with custom folders and colors',
       href: '/folders',
       color: 'text-blue-500',
-    },
-    {
-      icon: BookOpen,
-      title: 'Smart Notebooks',
-      description: 'Create notebooks within folders for better organization',
-      href: '/folders',
-      color: 'text-green-500',
-    },
-    {
-      icon: Sparkles,
-      title: 'AI Enhancement',
-      description: 'Improve your writing with Claude AI assistance',
-      href: '/folders',
-      color: 'text-purple-500',
     },
     {
       icon: Keyboard,
@@ -84,40 +65,40 @@ export default function Home() {
             Organize your thoughts, enhance your writing, and master your knowledge with AI-powered
             note-taking
           </p>
-          <Link href="/folders">
-            <LoadingButton size="lg" icon={Plus} variant="primary">
-              Get Started
-            </LoadingButton>
-          </Link>
+          {!user && (
+            <div className="flex justify-center">
+              <Link href="/auth/login">
+                <LoadingButton size="lg" icon={LogIn} variant="primary">
+                  Sign In / Get Started
+                </LoadingButton>
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Stats Section */}
-      {foldersView && (
+      {!isLoading && foldersView && (
         <section className="py-8 bg-white border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="text-center">
                 <p className="text-3xl font-bold text-gray-900">
-                  {foldersView.stats.total_folders}
+                  {foldersView.stats?.total_folders || 0}
                 </p>
                 <p className="text-sm text-gray-600">Folders</p>
               </div>
               <div className="text-center">
                 <p className="text-3xl font-bold text-gray-900">
-                  {foldersView.stats.total_notebooks}
+                  {foldersView.stats?.total_notebooks || 0}
                 </p>
                 <p className="text-sm text-gray-600">Notebooks</p>
               </div>
               <div className="text-center">
-                <p className="text-3xl font-bold text-gray-900">{foldersView.stats.total_notes}</p>
-                <p className="text-sm text-gray-600">Notes</p>
-              </div>
-              <div className="text-center">
                 <p className="text-3xl font-bold text-gray-900">
-                  {foldersView.stats.total_archived}
+                  {foldersView.stats?.total_notes || 0}
                 </p>
-                <p className="text-sm text-gray-600">Archived</p>
+                <p className="text-sm text-gray-600">Notes</p>
               </div>
             </div>
           </div>
@@ -156,29 +137,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Quick Actions */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">Quick Actions</h3>
-          <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/folders">
-              <LoadingButton variant="primary" icon={FolderOpen}>
-                Browse Folders
-              </LoadingButton>
-            </Link>
-            <Link href="/typemaxxing">
-              <LoadingButton variant="secondary" icon={Keyboard}>
-                Practice Typing
-              </LoadingButton>
-            </Link>
-            <Link href="/quizzing">
-              <LoadingButton variant="secondary" icon={Brain}>
-                Take a Quiz
-              </LoadingButton>
-            </Link>
-          </div>
-        </div>
-      </section>
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-8">

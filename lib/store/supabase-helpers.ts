@@ -67,46 +67,48 @@ export const foldersApi = {
             if (outgoingShares && outgoingShares.length > 0) {
               console.log('Found folders shared by me:', outgoingShares)
               const sharedByMeIds = new Set(outgoingShares.map((p) => p.resource_id))
-              allFolders = allFolders.map((f) => ({
-                ...f,
-                sharedByMe: sharedByMeIds.has(f.id),
-              }))
+              // Note: sharedByMe info available but not used in current UI
               console.log(
-                'Marked folders with sharedByMe:',
-                allFolders.filter((f) => f.sharedByMe)
+                'Folders shared by me:',
+                allFolders.filter((f) => sharedByMeIds.has(f.id)).map((f) => f.name)
               )
             }
           }
 
-          // Get folders shared with the user via Edge Function
+          // Get folders shared with the user
           try {
-            const {
-              data: { session },
-            } = await supabase.auth.getSession()
+            const { data: sharedPerms } = await supabase
+              .from('permissions')
+              .select('resource_id, permission_level')
+              .eq('user_id', user.id)
+              .eq('resource_type', 'folder')
+              .neq('permission_level', 'none')
 
-            if (session?.access_token) {
-              const { data: sharedData, error: sharedError } = await supabase.functions.invoke(
-                'get-shared-resources',
-                {
-                  headers: {
-                    Authorization: `Bearer ${session.access_token}`,
-                  },
-                }
-              )
+            if (sharedPerms && sharedPerms.length > 0) {
+              const sharedFolderIds = sharedPerms.map((p: { resource_id: string }) => p.resource_id)
+              const { data: sharedFolders } = await supabase
+                .from('folders')
+                .select('*')
+                .in('id', sharedFolderIds)
 
-              if (sharedError) {
-                console.error('Error fetching shared resources via Edge Function:', sharedError)
-              } else if (sharedData) {
-                console.log('Loaded shared folders via Edge Function:', sharedData.folders)
-
-                // Add shared folders to the list
-                if (sharedData.folders && sharedData.folders.length > 0) {
-                  allFolders = [...allFolders, ...sharedData.folders]
-                }
+              if (sharedFolders && sharedFolders.length > 0) {
+                console.log('Loaded shared folders:', sharedFolders.length)
+                // Mark these as shared and add permission info
+                const sharedFoldersWithPerms = sharedFolders.map((f: Folder) => {
+                  const perm = sharedPerms.find(
+                    (p: { resource_id: string }) => p.resource_id === f.id
+                  )
+                  return {
+                    ...f,
+                    shared: true,
+                    permission_level: perm?.permission_level || 'read',
+                  }
+                })
+                allFolders = [...allFolders, ...sharedFoldersWithPerms]
               }
             }
           } catch (error) {
-            console.error('Failed to fetch shared resources:', error)
+            console.error('Failed to fetch shared folders:', error)
             // Continue without shared resources rather than failing completely
           }
         }
@@ -225,65 +227,85 @@ export const notebooksApi = {
               }))
             }
           }
-          // Get shared notebooks via Edge Function
+          // Get shared notebooks
           try {
-            const {
-              data: { session },
-            } = await supabase.auth.getSession()
+            // Get directly shared notebooks
+            const { data: notebookPerms } = await supabase
+              .from('permissions')
+              .select('resource_id, permission_level')
+              .eq('user_id', user.id)
+              .eq('resource_type', 'notebook')
+              .neq('permission_level', 'none')
 
-            if (session?.access_token) {
-              const { data: sharedData, error: sharedError } = await supabase.functions.invoke(
-                'get-shared-resources',
-                {
-                  headers: {
-                    Authorization: `Bearer ${session.access_token}`,
-                  },
-                }
+            if (notebookPerms && notebookPerms.length > 0) {
+              const sharedNotebookIds = notebookPerms.map(
+                (p: { resource_id: string }) => p.resource_id
               )
+              let nbQuery = supabase.from('notebooks').select('*').in('id', sharedNotebookIds)
 
-              if (sharedError) {
-                console.error('Error fetching shared resources via Edge Function:', sharedError)
-              } else if (sharedData) {
-                console.log('Loaded shared notebooks via Edge Function:', sharedData.notebooks)
+              if (!includeArchived) {
+                nbQuery = nbQuery.eq('archived', false)
+              }
 
-                // Add directly shared notebooks
-                if (sharedData.notebooks && sharedData.notebooks.length > 0) {
-                  // Filter out archived if needed
-                  let sharedNotebooks = sharedData.notebooks
-                  if (!includeArchived) {
-                    sharedNotebooks = sharedNotebooks.filter((n: Notebook) => !n.archived)
+              const { data: sharedNotebooks } = await nbQuery
+
+              if (sharedNotebooks && sharedNotebooks.length > 0) {
+                console.log('Loaded shared notebooks:', sharedNotebooks.length)
+                // Mark these as directly shared and add permission info
+                const sharedNotebooksWithPerms = sharedNotebooks.map((n: Notebook) => {
+                  const perm = notebookPerms.find(
+                    (p: { resource_id: string }) => p.resource_id === n.id
+                  )
+                  return {
+                    ...n,
+                    note_count: 0, // Will be populated later if needed
+                    notes: undefined, // Notes loaded separately
+                    shared: true,
+                    sharedDirectly: true,
+                    permission_level: perm?.permission_level || 'read',
                   }
-                  allNotebooks = [...allNotebooks, ...sharedNotebooks]
-                }
+                })
+                allNotebooks = [...allNotebooks, ...sharedNotebooksWithPerms]
+              }
+            }
 
-                // Also get notebooks from shared folders
-                if (sharedData.folders && sharedData.folders.length > 0) {
-                  const folderIds = sharedData.folders.map((f: Folder) => f.id)
-                  let folderQuery = supabase
-                    .from('notebooks')
-                    .select('*')
-                    .in('folder_id', folderIds)
+            // Also get notebooks from shared folders
+            const { data: folderPerms } = await supabase
+              .from('permissions')
+              .select('resource_id, permission_level')
+              .eq('user_id', user.id)
+              .eq('resource_type', 'folder')
+              .neq('permission_level', 'none')
 
-                  if (!includeArchived) {
-                    folderQuery = folderQuery.eq('archived', false)
+            if (folderPerms && folderPerms.length > 0) {
+              const sharedFolderIds = folderPerms.map((p: { resource_id: string }) => p.resource_id)
+              let folderQuery = supabase
+                .from('notebooks')
+                .select('*')
+                .in('folder_id', sharedFolderIds)
+
+              if (!includeArchived) {
+                folderQuery = folderQuery.eq('archived', false)
+              }
+
+              const { data: notebooksInSharedFolders } = await folderQuery
+
+              if (notebooksInSharedFolders) {
+                // Mark these as shared via folder (not directly)
+                const markedNotebooks = notebooksInSharedFolders.map((n: Notebook) => {
+                  const folderPerm = folderPerms.find(
+                    (p: { resource_id: string }) => p.resource_id === n.folder_id
+                  )
+                  return {
+                    ...n,
+                    note_count: 0, // Will be populated later if needed
+                    notes: undefined, // Notes loaded separately
+                    shared: true,
+                    sharedDirectly: false,
+                    permission_level: folderPerm?.permission_level || 'read',
                   }
-
-                  const { data: notebooksInSharedFolders } = await folderQuery
-
-                  if (notebooksInSharedFolders) {
-                    // Mark these as shared via folder (not directly)
-                    const markedNotebooks = notebooksInSharedFolders.map((n) => {
-                      const folder = sharedData.folders.find((f: Folder) => f.id === n.folder_id)
-                      return {
-                        ...n,
-                        shared: true,
-                        sharedDirectly: false,
-                        permission: folder?.permission || 'read',
-                      }
-                    })
-                    allNotebooks = [...allNotebooks, ...markedNotebooks]
-                  }
-                }
+                })
+                allNotebooks = [...allNotebooks, ...markedNotebooks]
               }
             }
           } catch (error) {
@@ -484,7 +506,7 @@ export const sharesApi = {
 
       // Get share invitations created by the user
       const { data: invitations, error: invError } = await supabase
-        .from('share_invitations')
+        .from('invitations')
         .select('*')
         .eq('invited_by', user.id)
 

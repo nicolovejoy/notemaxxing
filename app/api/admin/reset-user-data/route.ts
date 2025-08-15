@@ -108,7 +108,15 @@ export async function POST(request: NextRequest) {
     const foldersDelete = await serviceClient.from('folders').delete().eq('user_id', targetUserId)
     deleteOperations.push({ table: 'folders', result: foldersDelete })
 
-    // Clean up permissions and invitations
+    // TODO: Update after permission system migration
+    // Need to clean up new tables:
+    // - ownership (where user_id = targetUserId)
+    // - permissions (where user_id = targetUserId OR granted_by = targetUserId)
+    // - resource_states (for resources owned by targetUserId)
+    // - permission_audit (where user_id = targetUserId OR granted_by = targetUserId)
+    // - invitations (where invited_by = targetUserId OR accepted_by = targetUserId)
+    //
+    // For now, clean up old tables (will be replaced by migration)
     const permissionsDelete = await serviceClient
       .from('permissions')
       .delete()

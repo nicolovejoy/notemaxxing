@@ -4,6 +4,7 @@ import './globals.css'
 import { StoreProvider } from '@/lib/store'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { RealtimeStatus } from '@/components/RealtimeStatus'
+import { Providers } from './providers'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -34,10 +35,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ErrorBoundary>
-          <StoreProvider>
-            {children}
-            <RealtimeStatus />
-          </StoreProvider>
+          <Providers>
+            <StoreProvider>
+              {children}
+              <RealtimeStatus />
+            </StoreProvider>
+          </Providers>
         </ErrorBoundary>
       </body>
     </html>

@@ -289,7 +289,9 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
                   <div>
                     <div className="text-sm font-medium text-gray-900">{share.user?.email}</div>
                     <div className="text-xs text-gray-500">
-                      {share.permission === 'write' ? 'Can edit' : 'Can view'}
+                      {share.permission_level === 'write' || share.permission_level === 'admin'
+                        ? 'Can edit'
+                        : 'Can view'}
                     </div>
                   </div>
                   <IconButton

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { dataManager } from './data-manager'
+// import { dataManager } from './data-manager' // Disabled - using React Query now
 import { logger } from '@/lib/debug/logger'
 import { createClient } from '@/lib/supabase/client'
 
@@ -40,7 +40,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
         if (session) {
           // logger.info(`Attempting store initialization (attempt ${initializationAttempts.current + 1}/${maxRetries})`)
-          await dataManager.initialize()
+          // DISABLED: Using React Query now instead of global store initialization
+          // await dataManager.initialize()
           setHasInitialized(true)
           initializationAttempts.current = 0
           // logger.info('Store initialized successfully via auth listener')

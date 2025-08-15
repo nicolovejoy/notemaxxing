@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Plus, FolderOpen, Archive, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
@@ -14,31 +14,18 @@ import { LoadingButton } from '@/components/ui/LoadingButton'
 import { StatusMessage } from '@/components/ui/StatusMessage'
 import { Card, CardBody } from '@/components/ui/Card'
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR } from '@/lib/constants'
-import {
-  useFoldersView,
-  useViewLoading,
-  useViewError,
-  useViewActions,
-} from '@/lib/store/view-store'
+import { useFoldersView, useCreateFolder } from '@/lib/query/hooks'
 
 export default function FoldersPage() {
   const router = useRouter()
-  const foldersView = useFoldersView()
-  const loading = useViewLoading()
-  const error = useViewError()
-  const { loadFoldersView } = useViewActions()
+  // React Query - Data is cached from home page! No duplicate fetches!
+  const { data: foldersView, isLoading: loading, error } = useFoldersView()
+  const createFolderMutation = useCreateFolder()
 
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
-  const [creating, setCreating] = useState(false)
-
-  // Load folders view on mount
-  useEffect(() => {
-    loadFoldersView()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Only on mount, ignore loadFoldersView
 
   // Get folders directly - no filtering (should be done server-side)
   const folders = foldersView?.folders || []
@@ -51,44 +38,47 @@ export default function FoldersPage() {
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return
 
-    setCreating(true)
-    try {
-      // Call API to create folder
-      const response = await fetch('/api/folders', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newFolderName.trim(),
-          color: newFolderColor,
-        }),
-      })
-
-      if (!response.ok) throw new Error('Failed to create folder')
-
-      // Reload view
-      await loadFoldersView()
-
-      // Reset and close
-      setNewFolderName('')
-      setNewFolderColor(DEFAULT_FOLDER_COLOR)
-      setShowCreateModal(false)
-    } catch (err) {
-      console.error('Error creating folder:', err)
-    } finally {
-      setCreating(false)
-    }
+    // Use React Query mutation - it will automatically invalidate cache and navigate!
+    createFolderMutation.mutate(
+      {
+        name: newFolderName.trim(),
+        color: newFolderColor,
+      },
+      {
+        onSuccess: () => {
+          // Reset and close on success
+          setNewFolderName('')
+          setNewFolderColor(DEFAULT_FOLDER_COLOR)
+          setShowCreateModal(false)
+        },
+      }
+    )
   }
 
   const handleFolderClick = (folderId: string) => {
     const folder = folders.find((f) => f.id === folderId)
 
+    console.log('[FoldersPage] Folder clicked:', {
+      folderId,
+      folder,
+      most_recent_notebook_id: folder?.most_recent_notebook_id,
+      notebooks: folder?.notebooks,
+      firstNotebookId: folder?.notebooks?.[0]?.id,
+    })
+
     // Use the most_recent_notebook_id if available
     if (folder?.most_recent_notebook_id) {
+      console.log(
+        '[FoldersPage] Navigating to most recent notebook:',
+        folder.most_recent_notebook_id
+      )
       router.push(`/notebooks/${folder.most_recent_notebook_id}`)
     } else if (folder?.notebooks && folder.notebooks.length > 0) {
       // Fallback to first notebook if no most_recent_notebook_id
+      console.log('[FoldersPage] Navigating to first notebook:', folder.notebooks[0].id)
       router.push(`/notebooks/${folder.notebooks[0].id}`)
+    } else {
+      console.log('[FoldersPage] No notebooks in folder, staying on page')
     }
     // If no notebooks, just stay on folders page
   }
@@ -96,7 +86,10 @@ export default function FoldersPage() {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <StatusMessage type="error" message={error} />
+        <StatusMessage
+          type="error"
+          message={error instanceof Error ? error.message : 'Failed to load folders'}
+        />
       </div>
     )
   }
@@ -122,13 +115,13 @@ export default function FoldersPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Bar */}
         {foldersView && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-3 gap-4 mb-8">
             <Card>
               <CardBody>
                 <div className="flex items-center gap-3">
                   <FolderOpen className="h-8 w-8 text-blue-500" />
                   <div>
-                    <p className="text-2xl font-semibold">{foldersView.stats.total_folders}</p>
+                    <p className="text-2xl font-semibold">{foldersView.stats?.total_folders || 0}</p>
                     <p className="text-sm text-gray-600">Folders</p>
                   </div>
                 </div>
@@ -139,7 +132,9 @@ export default function FoldersPage() {
                 <div className="flex items-center gap-3">
                   <Archive className="h-8 w-8 text-green-500" />
                   <div>
-                    <p className="text-2xl font-semibold">{foldersView.stats.total_notebooks}</p>
+                    <p className="text-2xl font-semibold">
+                      {foldersView.stats?.total_notebooks || 0}
+                    </p>
                     <p className="text-sm text-gray-600">Notebooks</p>
                   </div>
                 </div>
@@ -150,19 +145,8 @@ export default function FoldersPage() {
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 text-purple-500">📝</div>
                   <div>
-                    <p className="text-2xl font-semibold">{foldersView.stats.total_notes}</p>
+                    <p className="text-2xl font-semibold">{foldersView.stats?.total_notes || 0}</p>
                     <p className="text-sm text-gray-600">Notes</p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3">
-                  <Archive className="h-8 w-8 text-gray-500" />
-                  <div>
-                    <p className="text-2xl font-semibold">{foldersView.stats.total_archived}</p>
-                    <p className="text-sm text-gray-600">Archived</p>
                   </div>
                 </div>
               </CardBody>
@@ -198,9 +182,9 @@ export default function FoldersPage() {
                       <div className="p-3 rounded-lg" style={{ backgroundColor: folder.color }}>
                         <FolderOpen className="h-6 w-6 text-white" />
                       </div>
-                      {folder.shared && (
+                      {folder.permission && folder.permission !== 'owner' && (
                         <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                          Shared
+                          {folder.permission}
                         </span>
                       )}
                     </div>
@@ -288,8 +272,10 @@ export default function FoldersPage() {
                       </span>
                     </div>
                     <h3 className="font-semibold">{notebook.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">Shared by {notebook.shared_by}</p>
-                    <p className="text-sm text-gray-600">{notebook.note_count} notes</p>
+                    {notebook.shared_by && (
+                      <p className="text-sm text-gray-600 mt-1">Shared by {notebook.shared_by}</p>
+                    )}
+                    <p className="text-sm text-gray-600">{notebook.note_count || 0} notes</p>
                   </CardBody>
                 </Card>
               ))}
@@ -328,7 +314,7 @@ export default function FoldersPage() {
           <LoadingButton
             variant="primary"
             onClick={handleCreateFolder}
-            loading={creating}
+            loading={createFolderMutation.isPending}
             disabled={!newFolderName.trim()}
           >
             Create Folder

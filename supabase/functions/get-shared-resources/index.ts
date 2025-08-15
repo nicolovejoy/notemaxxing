@@ -49,8 +49,9 @@ Deno.serve(async (req) => {
     // Get user's permissions
     const { data: permissions, error: permError } = await supabaseAdmin
       .from('permissions')
-      .select('resource_id, resource_type, permission')
+      .select('resource_id, resource_type, permission_level')
       .eq('user_id', user.id)
+      .neq('permission_level', 'none')
 
     if (permError) {
       console.error('Error fetching permissions:', permError)
@@ -109,13 +110,13 @@ Deno.serve(async (req) => {
     const folders = (foldersResult.data || []).map((f) => ({
       ...f,
       shared: true,
-      permission: permissions.find((p) => p.resource_id === f.id)?.permission || 'read',
+      permission_level: permissions.find((p) => p.resource_id === f.id)?.permission_level || 'read',
     }))
 
     const notebooks = (notebooksResult.data || []).map((n) => ({
       ...n,
       sharedDirectly: true,
-      permission: permissions.find((p) => p.resource_id === n.id)?.permission || 'read',
+      permission_level: permissions.find((p) => p.resource_id === n.id)?.permission_level || 'read',
     }))
 
     console.log('Returning folders:', folders.length)

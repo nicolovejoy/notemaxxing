@@ -11,14 +11,53 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get folders with stats from the view - much simpler!
-    const { data: folders, error: foldersError } = await supabase
+    // Get folders user has access to (owned or shared)
+    // First get all folders the user owns
+    const { data: ownedFolders, error: ownedError } = await supabase
       .from('folders_with_stats')
       .select('*')
       .eq('user_id', userId)
-      .order('name')
 
-    if (foldersError) throw foldersError
+    if (ownedError) throw ownedError
+
+    // Then get folders shared with the user via permissions
+    const { data: sharedPerms, error: permError } = await supabase
+      .from('permissions')
+      .select('resource_id, permission_level')
+      .eq('user_id', userId)
+      .eq('resource_type', 'folder')
+      .neq('permission_level', 'none')
+
+    if (permError) throw permError
+
+    type FolderFromView = {
+      id: string
+      name: string
+      color: string
+      notebook_count: number
+      note_count: number
+      archived_count: number
+      created_at: string
+      updated_at: string
+      user_id: string
+    }
+
+    let sharedFolders: FolderFromView[] = []
+    if (sharedPerms && sharedPerms.length > 0) {
+      const sharedFolderIds = sharedPerms.map((p: { resource_id: string }) => p.resource_id)
+      const { data: sharedFolderData, error: sharedError } = await supabase
+        .from('folders_with_stats')
+        .select('*')
+        .in('id', sharedFolderIds)
+
+      if (sharedError) throw sharedError
+      sharedFolders = sharedFolderData || []
+    }
+
+    // Combine owned and shared folders
+    const folders = [...(ownedFolders || []), ...sharedFolders].sort((a, b) =>
+      a.name.localeCompare(b.name)
+    )
 
     // Get all notebooks for these folders to show in the UI
     const folderIds = folders?.map((f: { id: string }) => f.id) || []
@@ -112,18 +151,6 @@ export async function GET() {
     )
 
     // Add notebooks and most recent notebook ID to each folder
-    type FolderFromView = {
-      id: string
-      name: string
-      color: string
-      notebook_count: number
-      note_count: number
-      archived_count: number
-      created_at: string
-      updated_at: string
-      user_id: string
-    }
-
     const foldersWithNotebooks =
       folders?.map((folder: FolderFromView) => ({
         ...folder,
@@ -131,50 +158,51 @@ export async function GET() {
         most_recent_notebook_id: mostRecentNotebookByFolder[folder.id] || null,
       })) || []
 
-    // Get orphaned shared notebooks
-    // First get permissions for notebooks
-    const { data: notebookPermissions, error: permError } = await supabase
+    // Get orphaned shared notebooks (shared notebooks whose folders we can't access)
+    // Get notebook permissions
+    const { data: notebookPerms, error: nbPermError } = await supabase
       .from('permissions')
-      .select('resource_id, permission')
+      .select('resource_id, permission_level')
       .eq('user_id', userId)
       .eq('resource_type', 'notebook')
+      .neq('permission_level', 'none')
 
-    if (permError) throw permError
+    if (nbPermError) throw nbPermError
 
-    let orphanedNotebooks: Array<{
+    type OrphanedNotebook = {
       id: string
       name: string
       color: string
       note_count: number
       shared_by: string
-      permission: 'read' | 'write'
-    }> = []
+      permission: string
+      is_owner: boolean
+    }
 
-    if (notebookPermissions && notebookPermissions.length > 0) {
-      // Get the actual notebook data
-      const notebookIds = notebookPermissions.map((p: { resource_id: string }) => p.resource_id)
-      const { data: sharedNotebooks, error: nbError } = await supabase
+    let orphanedNotebooks: OrphanedNotebook[] = []
+    if (notebookPerms && notebookPerms.length > 0) {
+      const sharedNotebookIds = notebookPerms.map((p: { resource_id: string }) => p.resource_id)
+      const { data: sharedNotebookData, error: sharedNbError } = await supabase
         .from('notebooks')
         .select('id, name, color, folder_id')
-        .in('id', notebookIds)
+        .in('id', sharedNotebookIds)
 
-      if (nbError) throw nbError
+      if (sharedNbError) throw sharedNbError
 
       // Filter orphaned notebooks (those whose folders we don't have access to)
       const accessibleFolderIds = new Set(folderIds)
-      orphanedNotebooks = (sharedNotebooks || [])
+      orphanedNotebooks = (sharedNotebookData || [])
         .filter((nb: { folder_id: string }) => !accessibleFolderIds.has(nb.folder_id))
         .map((nb: { id: string; name: string; color: string }) => {
-          const permission = notebookPermissions.find(
-            (p: { resource_id: string }) => p.resource_id === nb.id
-          )
+          const perm = notebookPerms.find((p: { resource_id: string }) => p.resource_id === nb.id)
           return {
             id: nb.id,
             name: nb.name,
             color: nb.color,
             note_count: 0, // TODO: Add count
-            shared_by: 'Someone', // TODO: Get actual sharer
-            permission: permission?.permission as 'read' | 'write',
+            shared_by: 'Shared', // TODO: Get actual sharer name
+            permission: perm?.permission_level || 'read',
+            is_owner: false,
           }
         })
     }
