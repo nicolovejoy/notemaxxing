@@ -39,7 +39,7 @@ export default function FolderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const folderId = params.id as string
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const supabase = createClient()
 
   const [folder, setFolder] = useState<Folder | null>(null)
@@ -53,13 +53,29 @@ export default function FolderDetailPage() {
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
+    console.log('[Folder Detail] Auth check:', {
+      user: user?.email,
+      authLoading,
+      folderId,
+      pathname: window.location.pathname,
+    })
+
+    // Don't redirect while auth is still loading
+    if (authLoading) {
+      console.log('[Folder Detail] Auth still loading, waiting...')
+      return
+    }
+
     if (!user) {
+      console.log('[Folder Detail] No user found, redirecting to login')
       router.push('/auth/login')
       return
     }
+
+    console.log('[Folder Detail] User found, loading folder data')
     loadFolderData()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [folderId, user])
+  }, [folderId, user, authLoading])
 
   const loadFolderData = async () => {
     if (!supabase) return
@@ -144,7 +160,7 @@ export default function FolderDetailPage() {
     ? notebooks.filter((n) => n.name.toLowerCase().includes(search.toLowerCase()))
     : notebooks
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <PageHeader backUrl="/backpack" />
