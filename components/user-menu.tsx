@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { User, LogOut, Shield } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
-// import { AdminConsole } from './admin-console'
+import { AdminConsole } from './admin-console'
 
 // Admin emails who can see admin console
 const ADMIN_EMAILS = [
@@ -17,7 +17,7 @@ const ADMIN_EMAILS = [
 export function UserMenu() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
-  // const [showAdminConsole, setShowAdminConsole] = useState(false)
+  const [showAdminConsole, setShowAdminConsole] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -76,9 +76,8 @@ export function UserMenu() {
             {isAdmin && (
               <button
                 onClick={() => {
-                  // setShowAdminConsole(true)
+                  setShowAdminConsole(true)
                   setShowDropdown(false)
-                  alert('Admin console temporarily disabled during migration')
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
               >
@@ -97,8 +96,8 @@ export function UserMenu() {
         </>
       )}
 
-      {/* Admin Console Modal - Temporarily disabled */}
-      {/* {showAdminConsole && <AdminConsole onClose={() => setShowAdminConsole(false)} />} */}
+      {/* Admin Console Modal */}
+      {showAdminConsole && <AdminConsole onClose={() => setShowAdminConsole(false)} />}
     </div>
   )
 }
