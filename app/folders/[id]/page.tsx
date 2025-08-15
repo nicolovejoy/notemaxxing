@@ -60,11 +60,13 @@ export default function FolderDetailPage() {
   }, [folderId, user])
 
   const loadFolderData = async () => {
+    if (!supabase) return
+
     try {
       setLoading(true)
 
       // Load folder details
-      const { data: folderData, error: folderError } = await supabase
+      const { data: folderData, error: folderError } = await supabase!
         .from('folders')
         .select('*')
         .eq('id', folderId)
@@ -74,18 +76,18 @@ export default function FolderDetailPage() {
       setFolder(folderData)
 
       // Load notebooks in this folder
-      const { data: notebooksData, error: notebooksError } = await supabase
+      const { data: notebooksData, error: notebooksError } = await supabase!
         .from('notebooks')
         .select('*')
         .eq('folder_id', folderId)
-        .order('display_order', { ascending: true })
+        .order('created_at', { ascending: false })
 
       if (notebooksError) throw notebooksError
 
       // Get note counts for each notebook
       const notebooksWithCounts = await Promise.all(
         (notebooksData || []).map(async (notebook) => {
-          const { count } = await supabase
+          const { count } = await supabase!
             .from('notes')
             .select('*', { count: 'exact', head: true })
             .eq('notebook_id', notebook.id)
@@ -107,7 +109,7 @@ export default function FolderDetailPage() {
 
     setCreating(true)
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('notebooks')
         .insert({
           name: newNotebookName.trim(),
