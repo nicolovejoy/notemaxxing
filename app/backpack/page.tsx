@@ -85,6 +85,7 @@ export default function BackpackPage() {
   }
 
   const handleFolderClick = (folderId: string) => {
+    console.log('Navigating to folder:', folderId)
     // Navigate to folder detail page (shows notebooks in that folder)
     router.push(`/folders/${folderId}`)
   }
@@ -182,12 +183,12 @@ export default function BackpackPage() {
               <Card key={folder.id} className="overflow-hidden">
                 <CardBody className="p-0">
                   {/* Folder Header - Clickable */}
-                  <div
-                    className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  <button
+                    className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
                     onClick={() => handleFolderClick(folder.id)}
                   >
                     <div className="flex items-start justify-between mb-3">
-                      <div className="p-3 rounded-lg" style={{ backgroundColor: folder.color }}>
+                      <div className={`p-3 rounded-lg ${folder.color}`}>
                         <FolderOpen className="h-6 w-6 text-white" />
                       </div>
                       {folder.permission && folder.permission !== 'owner' && (
@@ -202,7 +203,7 @@ export default function BackpackPage() {
                       <span>{folder.note_count} notes</span>
                       {folder.archived_count > 0 && <span>{folder.archived_count} archived</span>}
                     </div>
-                  </div>
+                  </button>
 
                   {/* Notebooks Grid */}
                   {folder.notebooks && folder.notebooks.length > 0 && (
@@ -219,10 +220,9 @@ export default function BackpackPage() {
                           >
                             <div className="flex items-start gap-2">
                               <div
-                                className="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0"
-                                style={{ backgroundColor: notebook.color + '20' }}
+                                className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 ${notebook.color} bg-opacity-20`}
                               >
-                                <BookOpen className="h-4 w-4" style={{ color: notebook.color }} />
+                                <BookOpen className="h-4 w-4 text-gray-700" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-gray-900 truncate">

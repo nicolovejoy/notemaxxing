@@ -2,148 +2,81 @@
 
 ## Core Principle: Context Determines Capability
 
-**View = Browse & Navigate**  
-**Detail = Manage & Configure**
+**Collection View = Browse & Navigate**  
+**Detail View = Manage & Configure**
 
-## Page Types & Their Roles
+## Current Implementation
 
-### Collection Pages (Browse Multiple Items)
+### Routes (✅ Implemented)
 
-**Purpose**: Discovery, navigation, status overview  
-**Examples**: `/folders`, future `/study-sessions`
+- `/` - Homepage with folders & recent notebooks
+- `/backpack` - All your folders (college-friendly!)
+- `/folders/[id]` - One folder's notebooks
+- `/notebooks/[id]` - One notebook's notes
 
-**Shows**:
-
-- Item cards with key info
-- Sharing indicators (icon/badge)
-- Quick stats (counts, dates)
-
-**Does NOT show**:
-
-- Share buttons
-- Edit controls
-- Delete buttons
-
-### Detail Pages (Focus on One Item)
-
-**Purpose**: Work within a specific context  
-**Examples**: `/folders/[id]` (one folder's notebooks), `/notebooks/[id]` (one notebook's notes)
-
-**Shows**:
-
-- Item title (editable inline)
-- Share button in header
-- "Shared with" section
-- All management controls
-
-## Sharing Rules
-
-### What Gets Shared
+### Sharing Model
 
 **Folder Sharing**:
 
 - Grants access to ALL notebooks and notes inside
 - Notebooks inherit folder permissions by default
-- ⚠️ Shows warning if any notebooks have conflicting permissions
+- Future: Warning if notebooks have conflicting permissions
 
 **Notebook Sharing**:
 
 - Can override folder permissions (more OR less restrictive)
 - Grants access to all notes within
-- Shows in recipient's "Shared with Me" if folder isn't shared
-
-### Permission Inheritance
-
-```
-Folder (write) → All notebooks inside (write) → All notes (write)
-                  ↓
-                  Unless notebook has explicit override
-                  ↓
-                  Warning shown when sharing folder
-```
+- Shows in recipient's "Shared with Me"
 
 ### Permission Levels
 
-**read**: View only  
-**write**: Edit content, add items  
-**admin**: Share, delete, manage permissions
+- **read**: View only
+- **write**: Edit content, add items
+- **admin**: Share, delete, manage permissions
 
-### Conflict Detection
+## UI Rules
 
-When sharing a folder, check for notebooks with explicit permissions:
+### On Collection Views (Homepage, Backpack)
 
-- **Match**: No warning needed
-- **More restrictive**: 🔒 "Some notebooks have restricted access"
-- **Less restrictive**: ⚠️ "Some notebooks have broader access"
+✅ **DO**:
 
-## Route Clarity (Implementation Required)
+- Navigate on click
+- Show shared indicator badges
+- Display counts and stats
 
-**Current (Confusing)**:
+❌ **DON'T**:
 
-- `/folders` - All folders
-- `/notebooks/[id]` - Actually shows ONE folder's contents
+- Show share buttons on cards
+- Allow inline editing
+- Show delete buttons
 
-**Proposed (Clear)**:
+### On Detail Pages (Folder, Notebook)
 
-- `/backpack` - All your folders (college-friendly!)
-- `/folders/[id]` - One folder's notebooks
-- `/notebooks/[id]` - One notebook's notes
+✅ **DO**:
 
-## Action Placement
+- Show share button in header
+- Allow inline title editing
+- Display "Shared with X people" section
+- Show all management controls
 
-### On Cards (Collection View)
+## Navigation Fix Needed
 
-✅ Navigate on click  
-✅ Show shared indicator  
-❌ NO inline editing  
-❌ NO share buttons  
-❌ NO delete buttons
+**Current Issue**: Clicking folder title on homepage doesn't navigate to folder detail page
 
-### In Headers (Detail View)
+**Solution**: Update folder cards on homepage to navigate to `/folders/[id]` when clicked
 
-✅ Editable title  
-✅ Share button  
-✅ Settings menu  
-✅ Navigation breadcrumbs
+## Design System Components
 
-### In Page Body (Detail View)
+Using components from [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md):
 
-✅ "Shared with X people" section  
-✅ Permission management  
-✅ Child items as cards
+- `PageHeader` - Detail page titles & share buttons
+- `Card` - Browsable items in collections
+- `ShareDialog` - Sharing UI modal
+- `SharedIndicator` - Status badges on cards
 
-## Future Collections
+## Next Steps
 
-**Study Sessions** (Planned):
-
-- Custom collections across folders/notebooks
-- For quizzing and typing practice
-- Share study sessions with others
-- Same rules: browse in collection, manage in detail
-
-## Implementation Priority
-
-1. **Fix route names** - Clear up confusion
-2. **Move share buttons** - From cards to page headers
-3. **Add detail pages** - Notebook detail view
-4. **Unify patterns** - Same behavior everywhere
-
-## Design Decisions
-
-**Inheritance by default** - Sharing a folder shares everything inside  
-**Explicit overrides allowed** - Notebooks can have different permissions  
-**Conflict warnings** - Alert when permissions don't match expectations  
-**Status everywhere** - Always show if something is shared  
-**Actions in context** - Management only on detail pages
-
-## Building It
-
-When implementing, use components from [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md):
-
-- `PageHeader` for detail page titles & share buttons
-- `Card` for browsable items
-- `IconButton` for share indicators
-- `Modal` + `ShareDialog` for sharing UI
-- `StatusMessage` for permission feedback
-
-Keep it simple: if users can't find it, they can't share it.
+1. Fix folder navigation from homepage
+2. Implement permission inheritance warnings
+3. Add breadcrumb navigation
+4. Create success toasts for actions

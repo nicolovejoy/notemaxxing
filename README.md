@@ -189,16 +189,6 @@ git push origin --delete preview/your-feature
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## Roadmap
-
-See [TODO.md](./docs/TODO.md) for planned features and improvements.
-
 ## License
 
 This project is open source and available under the MIT License.
-
-## Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- Deployed on [Vercel](https://vercel.com)
-- Icons by [Lucide](https://lucide.dev/)
