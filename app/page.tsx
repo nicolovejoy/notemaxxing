@@ -3,11 +3,8 @@
 import Link from 'next/link'
 import {
   FolderOpen,
-  Sparkles,
-  BookOpen,
   Keyboard,
   Brain,
-  Plus,
   ArrowRight,
   LogIn,
 } from 'lucide-react'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Shield,
   AlertTriangle,
@@ -466,22 +466,25 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                       </div>
 
                       <div className="flex gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          icon={Download}
-                          onClick={() => exportUserData(userData.id)}
-                          disabled={
-                            userActionLoading === userData.id || userData.id !== currentUserId
-                          }
+                        <div
                           title={
                             userData.id !== currentUserId
                               ? 'Export for other users not yet implemented'
                               : 'Export user data'
                           }
                         >
-                          Export
-                        </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            icon={Download}
+                            onClick={() => exportUserData(userData.id)}
+                            disabled={
+                              userActionLoading === userData.id || userData.id !== currentUserId
+                            }
+                          >
+                            Export
+                          </Button>
+                        </div>
                         <Button
                           variant="secondary"
                           size="sm"
