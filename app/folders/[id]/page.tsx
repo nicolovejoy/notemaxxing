@@ -22,8 +22,8 @@ interface Notebook {
   name: string
   color: string
   note_count: number
-  created_at: string
-  archived: boolean
+  created_at: string | null
+  archived: boolean | null
 }
 
 interface Folder {
@@ -216,8 +216,7 @@ export default function FolderDetailPage() {
                 name={notebook.name}
                 color={notebook.color}
                 noteCount={notebook.note_count}
-                createdAt={notebook.created_at}
-                archived={notebook.archived}
+                archived={notebook.archived || false}
                 onClick={() => handleNotebookClick(notebook.id)}
                 onUpdate={loadFolderData}
               />
