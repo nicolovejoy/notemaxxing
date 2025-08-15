@@ -6,6 +6,7 @@ import { User, LogOut, Shield } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import { AdminConsole } from './admin-console'
+import { useQueryClient } from '@tanstack/react-query'
 
 // Admin emails who can see admin console
 const ADMIN_EMAILS = [
@@ -20,6 +21,7 @@ export function UserMenu() {
   const [showAdminConsole, setShowAdminConsole] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+  const queryClient = useQueryClient()
 
   useEffect(() => {
     if (!supabase) return
@@ -47,6 +49,9 @@ export function UserMenu() {
 
   const handleSignOut = async () => {
     if (!supabase) return
+
+    // Clear all React Query caches before signing out
+    queryClient.clear()
 
     await supabase.auth.signOut()
     router.push('/')

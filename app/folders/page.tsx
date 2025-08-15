@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, FolderOpen, Archive, BookOpen } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
@@ -15,9 +15,12 @@ import { StatusMessage } from '@/components/ui/StatusMessage'
 import { Card, CardBody } from '@/components/ui/Card'
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR } from '@/lib/constants'
 import { useFoldersView, useCreateFolder } from '@/lib/query/hooks'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 export default function FoldersPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
+
   // React Query - Data is cached from home page! No duplicate fetches!
   const { data: foldersView, isLoading: loading, error } = useFoldersView()
   const createFolderMutation = useCreateFolder()
@@ -26,6 +29,32 @@ export default function FoldersPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push('/auth/login')
+    }
+  }, [user, authLoading, router])
+
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="p-8">
+        <Skeleton className="h-8 w-48 mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render if not authenticated
+  if (!user) {
+    return null
+  }
 
   // Get folders directly - no filtering (should be done server-side)
   const folders = foldersView?.folders || []

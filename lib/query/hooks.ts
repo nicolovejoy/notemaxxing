@@ -179,7 +179,7 @@ const api = {
  * Fetch folders view - NO INFINITE LOOPS POSSIBLE!
  * React Query handles all caching and deduplication
  */
-export function useFoldersView() {
+export function useFoldersView(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['folders-view'],
     queryFn: api.getFoldersView,
@@ -192,6 +192,8 @@ export function useFoldersView() {
       }
       return failureCount < 3
     },
+    // Allow disabling the query
+    enabled: options?.enabled !== false,
   })
 }
 

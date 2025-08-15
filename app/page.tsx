@@ -1,13 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import {
-  FolderOpen,
-  Keyboard,
-  Brain,
-  ArrowRight,
-  LogIn,
-} from 'lucide-react'
+import { FolderOpen, Keyboard, Brain, ArrowRight, LogIn } from 'lucide-react'
 import { UserMenu } from '@/components/user-menu'
 import { BuildTimestamp } from '@/components/build-timestamp'
 import { Logo } from '@/components/logo'
@@ -17,9 +11,12 @@ import { useFoldersView } from '@/lib/query/hooks'
 import { useAuth } from '@/lib/hooks/useAuth'
 
 export default function Home() {
-  // React Query - NO useEffect needed! No infinite loops possible!
-  const { data: foldersView, isLoading } = useFoldersView()
   const { user } = useAuth()
+
+  // Only fetch folders if user is authenticated
+  const { data: foldersView, isLoading } = useFoldersView({
+    enabled: !!user,
+  })
 
   const features = [
     {
@@ -83,29 +80,42 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats Section */}
-      {!isLoading && foldersView && (
+      {/* Stats Section - Only show for authenticated users */}
+      {user && (
         <section className="py-8 bg-white border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-3 gap-4">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-gray-900">
-                  {foldersView.stats?.total_folders || 0}
-                </p>
-                <p className="text-sm text-gray-600">Folders</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-gray-900">
-                  {foldersView.stats?.total_notebooks || 0}
-                </p>
-                <p className="text-sm text-gray-600">Notebooks</p>
-              </div>
-              <div className="text-center">
-                <p className="text-3xl font-bold text-gray-900">
-                  {foldersView.stats?.total_notes || 0}
-                </p>
-                <p className="text-sm text-gray-600">Notes</p>
-              </div>
+              {isLoading ? (
+                <>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="text-center animate-pulse">
+                      <div className="h-9 w-16 bg-gray-200 rounded mx-auto mb-2"></div>
+                      <div className="h-4 w-20 bg-gray-100 rounded mx-auto"></div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900">
+                      {foldersView?.stats?.total_folders || 0}
+                    </p>
+                    <p className="text-sm text-gray-600">Folders</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900">
+                      {foldersView?.stats?.total_notebooks || 0}
+                    </p>
+                    <p className="text-sm text-gray-600">Notebooks</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900">
+                      {foldersView?.stats?.total_notes || 0}
+                    </p>
+                    <p className="text-sm text-gray-600">Notes</p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>
