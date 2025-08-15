@@ -51,7 +51,22 @@ const api = {
   // Folders
   async getFoldersView(): Promise<FolderView> {
     const res = await fetch('/api/views/folders')
-    if (!res.ok) throw new Error('Failed to fetch folders')
+    if (!res.ok) {
+      if (res.status === 401) {
+        // Return empty data for unauthenticated users
+        return {
+          folders: [],
+          orphanedNotebooks: [],
+          stats: {
+            total_folders: 0,
+            total_notebooks: 0,
+            total_notes: 0,
+            total_archived: 0,
+          },
+        }
+      }
+      throw new Error(`Failed to fetch folders: ${res.status}`)
+    }
     return res.json()
   },
 
@@ -170,6 +185,13 @@ export function useFoldersView() {
     queryFn: api.getFoldersView,
     // This data changes infrequently, cache for 5 minutes
     staleTime: 5 * 60 * 1000,
+    // Don't retry on 401 (unauthenticated)
+    retry: (failureCount, error) => {
+      if (error instanceof Error && error.message.includes('401')) {
+        return false
+      }
+      return failureCount < 3
+    },
   })
 }
 

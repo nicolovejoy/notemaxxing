@@ -121,7 +121,9 @@ export default function FoldersPage() {
                 <div className="flex items-center gap-3">
                   <FolderOpen className="h-8 w-8 text-blue-500" />
                   <div>
-                    <p className="text-2xl font-semibold">{foldersView.stats?.total_folders || 0}</p>
+                    <p className="text-2xl font-semibold">
+                      {foldersView.stats?.total_folders || 0}
+                    </p>
                     <p className="text-sm text-gray-600">Folders</p>
                   </div>
                 </div>

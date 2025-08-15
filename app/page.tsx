@@ -1,7 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { FolderOpen, Sparkles, BookOpen, Keyboard, Brain, Plus, ArrowRight, LogIn } from 'lucide-react'
+import {
+  FolderOpen,
+  Sparkles,
+  BookOpen,
+  Keyboard,
+  Brain,
+  Plus,
+  ArrowRight,
+  LogIn,
+} from 'lucide-react'
 import { UserMenu } from '@/components/user-menu'
 import { BuildTimestamp } from '@/components/build-timestamp'
 import { Logo } from '@/components/logo'
@@ -136,7 +145,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
 
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-8">

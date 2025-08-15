@@ -3,10 +3,7 @@ import { getAuthenticatedSupabaseClient } from '@/lib/api/supabase-server-helper
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 // Admin emails allowed to use this endpoint
-const ADMIN_EMAILS = [
-  'nicholas.lovejoy@gmail.com',
-  'mlovejoy@scu.edu',
-]
+const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,10 +29,7 @@ export async function GET(request: NextRequest) {
 
     // 4. Create service role client to query auth.users
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json(
-        { error: 'Server configuration error' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
     const serviceClient = createServiceClient(
@@ -58,14 +52,12 @@ export async function GET(request: NextRequest) {
 
     if (lookupError || !users) {
       // Try alternative approach using RPC function if available
-      const { data: userData, error: rpcError } = await serviceClient
-        .rpc('get_user_id_by_email', { user_email: email })
+      const { data: userData, error: rpcError } = await serviceClient.rpc('get_user_id_by_email', {
+        user_email: email,
+      })
 
       if (rpcError || !userData) {
-        return NextResponse.json(
-          { error: 'User not found', email },
-          { status: 404 }
-        )
+        return NextResponse.json({ error: 'User not found', email }, { status: 404 })
       }
 
       return NextResponse.json({ userId: userData, email })
@@ -74,9 +66,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ userId: users.id, email: users.email })
   } catch (error) {
     console.error('Admin get-user-id error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
