@@ -49,7 +49,7 @@ export default function FolderDetailPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
   const [newNotebookName, setNewNotebookName] = useState('')
-  const [newNotebookColor, setNewNotebookColor] = useState(DEFAULT_NOTEBOOK_COLOR)
+  const [newNotebookColor, setNewNotebookColor] = useState<string>(DEFAULT_NOTEBOOK_COLOR)
   const [creating, setCreating] = useState(false)
 
   useEffect(() => {
