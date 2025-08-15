@@ -142,8 +142,20 @@ export default function FolderDetailPage() {
     }
   }
 
-  const handleNotebookClick = (notebookId: string) => {
-    router.push(`/notebooks/${notebookId}`)
+  const handleNotebookClick = (notebook: Notebook) => {
+    // Store notebook data for optimistic loading
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(
+        `notebook-preview-${notebook.id}`,
+        JSON.stringify({
+          id: notebook.id,
+          name: notebook.name,
+          color: notebook.color,
+          note_count: notebook.note_count,
+        })
+      )
+    }
+    router.push(`/notebooks/${notebook.id}?from=folder`)
   }
 
   const filteredNotebooks = search
@@ -223,7 +235,7 @@ export default function FolderDetailPage() {
                 color={notebook.color}
                 noteCount={notebook.note_count}
                 archived={notebook.archived || false}
-                onClick={() => handleNotebookClick(notebook.id)}
+                onClick={() => handleNotebookClick(notebook)}
                 onUpdate={loadFolderData}
               />
             ))}

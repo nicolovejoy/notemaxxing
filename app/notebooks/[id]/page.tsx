@@ -20,10 +20,23 @@ export default function NotebookPage() {
   const params = useParams()
   const notebookId = params.id as string
 
-  // Debug counters
-  const renderCount = useRef(0)
-  const loadCount = useRef(0)
-  console.log(`[NotebookPage] Render #${++renderCount.current}, notebookId: ${notebookId}`)
+  // Get preview data from sessionStorage for immediate display
+  const [previewData, setPreviewData] = useState<{
+    name?: string
+    color?: string
+    note_count?: number
+  } | null>(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem(`notebook-preview-${notebookId}`)
+      if (stored) {
+        setPreviewData(JSON.parse(stored))
+        // Clean up after using
+        sessionStorage.removeItem(`notebook-preview-${notebookId}`)
+      }
+    }
+  }, [notebookId])
 
   // Use ViewStore - following the folders page pattern
   const noteView = useNoteView()
@@ -51,21 +64,17 @@ export default function NotebookPage() {
 
   // Initial load - only when notebookId changes
   useEffect(() => {
-    console.log(`[NotebookPage] Initial load effect, count: ${++loadCount.current}`)
     if (notebookId) {
-      console.log(`[NotebookPage] Loading notebook: ${notebookId}`)
       loadNoteView(notebookId, {
         search: '',
         sort: 'recent',
       }).then(() => {
-        console.log(`[NotebookPage] Initial load complete`)
         setInitialLoadDone(true)
       })
     }
 
     // Cleanup on unmount
     return () => {
-      console.log(`[NotebookPage] Unmounting, clearing view`)
       clearView()
       setInitialLoadDone(false)
     }
@@ -75,7 +84,6 @@ export default function NotebookPage() {
   // Filter changes - only after initial load
   useEffect(() => {
     if (initialLoadDone && notebookId) {
-      console.log(`[NotebookPage] Filter change effect:`, { debouncedSearch, sortOption })
       loadNoteView(notebookId, {
         search: debouncedSearch,
         sort: sortOption,
@@ -300,14 +308,18 @@ export default function NotebookPage() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Notebook Header */}
+          {/* Notebook Header - Show immediately with preview data */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-lg" style={{ backgroundColor: notebook.color }}>
+              <div
+                className={`p-3 rounded-lg ${previewData?.color || notebook.color || 'bg-gray-200'}`}
+              >
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">{notebook.name}</h1>
+                <h1 className="text-2xl font-semibold text-gray-900">
+                  {previewData?.name || notebook.name || <Skeleton className="h-8 w-48" />}
+                </h1>
                 {notebook.folder_name && !noteView?.folder && (
                   <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                     <FolderOpen className="h-4 w-4" />

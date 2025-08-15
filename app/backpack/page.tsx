@@ -214,7 +214,22 @@ export default function BackpackPage() {
                             className="bg-white rounded-lg p-3 hover:shadow-sm cursor-pointer transition-all border border-gray-100 hover:border-gray-200"
                             onClick={(e) => {
                               e.stopPropagation()
-                              router.push(`/notebooks/${notebook.id}`)
+                              // Pass notebook data for optimistic loading
+                              router.push(`/notebooks/${notebook.id}?from=backpack`, {
+                                scroll: false,
+                              })
+                              // Store notebook data in sessionStorage for immediate display
+                              if (typeof window !== 'undefined') {
+                                sessionStorage.setItem(
+                                  `notebook-preview-${notebook.id}`,
+                                  JSON.stringify({
+                                    id: notebook.id,
+                                    name: notebook.name,
+                                    color: notebook.color,
+                                    note_count: notebook.note_count,
+                                  })
+                                )
+                              }
                             }}
                           >
                             <div className="flex items-start gap-2">
