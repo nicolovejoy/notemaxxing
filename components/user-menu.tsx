@@ -1,61 +1,66 @@
-"use client";
+'use client'
 
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
-import { User, LogOut, Shield } from "lucide-react";
-import { useState, useEffect } from "react";
-import type { User as SupabaseUser } from "@supabase/supabase-js";
-import { AdminConsole } from "./admin-console";
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import { User, LogOut, Shield } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
+import { AdminConsole } from './admin-console'
+import { useQueryClient } from '@tanstack/react-query'
 
 // Admin emails who can see admin console
 const ADMIN_EMAILS = [
   'nicholas.lovejoy@gmail.com',
   'mlovejoy@scu.edu',
   // Add other admin emails as needed
-];
+]
 
 export function UserMenu() {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [showAdminConsole, setShowAdminConsole] = useState(false);
-  const router = useRouter();
-  const supabase = createClient();
+  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const [showAdminConsole, setShowAdminConsole] = useState(false)
+  const router = useRouter()
+  const supabase = createClient()
+  const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!supabase) return;
-    
-    let subscription: { unsubscribe: () => void } | null = null;
-    
+    if (!supabase) return
+
+    let subscription: { unsubscribe: () => void } | null = null
+
     const initializeAuth = async () => {
       // Get initial user
-      const { data } = await supabase.auth.getUser();
-      setUser(data.user);
-      
+      const { data } = await supabase.auth.getUser()
+      setUser(data.user)
+
       // Listen for auth changes
       const authListener = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null);
-      });
-      subscription = authListener.data.subscription;
-    };
-    
-    initializeAuth();
-    
+        setUser(session?.user ?? null)
+      })
+      subscription = authListener.data.subscription
+    }
+
+    initializeAuth()
+
     return () => {
-      subscription?.unsubscribe();
-    };
-  }, [supabase]);
+      subscription?.unsubscribe()
+    }
+  }, [supabase])
 
   const handleSignOut = async () => {
-    if (!supabase) return;
-    
-    await supabase.auth.signOut();
-    router.push("/auth/login");
-    router.refresh();
-  };
+    if (!supabase) return
 
-  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email);
+    // Clear all React Query caches before signing out
+    queryClient.clear()
 
-  if (!user) return null;
+    await supabase.auth.signOut()
+    router.push('/')
+    router.refresh()
+  }
+
+  const isAdmin = user?.email && ADMIN_EMAILS.includes(user.email)
+
+  if (!user) return null
 
   return (
     <div className="relative">
@@ -68,10 +73,7 @@ export function UserMenu() {
 
       {showDropdown && (
         <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setShowDropdown(false)}
-          />
+          <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
           <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
             <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
               {user.email}
@@ -79,8 +81,8 @@ export function UserMenu() {
             {isAdmin && (
               <button
                 onClick={() => {
-                  setShowAdminConsole(true);
-                  setShowDropdown(false);
+                  setShowAdminConsole(true)
+                  setShowDropdown(false)
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
               >
@@ -98,11 +100,9 @@ export function UserMenu() {
           </div>
         </>
       )}
-      
+
       {/* Admin Console Modal */}
-      {showAdminConsole && (
-        <AdminConsole onClose={() => setShowAdminConsole(false)} />
-      )}
+      {showAdminConsole && <AdminConsole onClose={() => setShowAdminConsole(false)} />}
     </div>
-  );
+  )
 }

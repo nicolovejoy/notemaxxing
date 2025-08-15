@@ -7,10 +7,7 @@ export async function POST(request: NextRequest) {
     const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
     if (error) return error
     if (!supabase) {
-      return NextResponse.json(
-        { error: 'Service temporarily unavailable' },
-        { status: 503 }
-      )
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
     }
 
     // Parse request body
@@ -18,10 +15,7 @@ export async function POST(request: NextRequest) {
     const { invitationId } = body
 
     if (!invitationId) {
-      return NextResponse.json(
-        { error: 'Missing invitation ID' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing invitation ID' }, { status: 400 })
     }
 
     // Get invitation details
@@ -32,10 +26,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (inviteError || !invitation) {
-      return NextResponse.json(
-        { error: 'Invitation not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Invitation not found' }, { status: 404 })
     }
 
     // Check if invitation is for this user (skip for link-based invitations)
@@ -47,28 +38,19 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (!profile || profile.email !== invitation.invited_email) {
-        return NextResponse.json(
-          { error: 'This invitation is not for you' },
-          { status: 403 }
-        )
+        return NextResponse.json({ error: 'This invitation is not for you' }, { status: 403 })
       }
     }
 
     // Check if invitation is already accepted
     if (invitation.accepted_at) {
-      return NextResponse.json(
-        { error: 'Invitation already accepted' },
-        { status: 409 }
-      )
+      return NextResponse.json({ error: 'Invitation already accepted' }, { status: 409 })
     }
 
     // Check if invitation is expired
     const expiresAt = new Date(invitation.expires_at)
     if (expiresAt < new Date()) {
-      return NextResponse.json(
-        { error: 'Invitation has expired' },
-        { status: 410 }
-      )
+      return NextResponse.json({ error: 'Invitation has expired' }, { status: 410 })
     }
 
     // Check if permission already exists
@@ -89,7 +71,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: 'You already have access to this resource'
+        message: 'You already have access to this resource',
       })
     }
 
@@ -109,10 +91,7 @@ export async function POST(request: NextRequest) {
 
     if (permError) {
       console.error('Error creating permission:', permError)
-      return NextResponse.json(
-        { error: 'Failed to grant permission' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to grant permission' }, { status: 500 })
     }
 
     // Update invitation as accepted
@@ -123,16 +102,10 @@ export async function POST(request: NextRequest) {
 
     if (updateError) {
       // Try to rollback permission creation
-      await supabase
-        .from('permissions')
-        .delete()
-        .eq('id', permission.id)
+      await supabase.from('permissions').delete().eq('id', permission.id)
 
       console.error('Error updating invitation:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to accept invitation' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to accept invitation' }, { status: 500 })
     }
 
     // Get resource details for response
@@ -162,14 +135,10 @@ export async function POST(request: NextRequest) {
         permission: permission.permission,
         resourceName: resourceDetails?.name,
         resourceColor: resourceDetails?.color,
-      }
+      },
     })
-
   } catch (error) {
     console.error('Unexpected error in accept invitation:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

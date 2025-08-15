@@ -13,11 +13,11 @@ interface ShareButtonProps {
   className?: string
 }
 
-export function ShareButton({ 
-  resourceId, 
-  resourceType, 
+export function ShareButton({
+  resourceId,
+  resourceType,
   resourceName,
-  className 
+  className,
 }: ShareButtonProps) {
   const [showDialog, setShowDialog] = useState(false)
 

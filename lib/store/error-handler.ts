@@ -12,24 +12,20 @@ export class ApiError extends Error {
 }
 
 interface SupabaseError {
-  code?: string;
-  message?: string;
+  code?: string
+  message?: string
 }
 
 export function handleSupabaseError(error: unknown, operation: string): never {
   logger.error(`Supabase ${operation} failed`, error)
-  
+
   const err = error as SupabaseError
-  
+
   // Check for common Supabase errors
   if (err?.code === 'PGRST301') {
-    throw new ApiError(
-      'Not authenticated. Please sign in and try again.',
-      'AUTH_REQUIRED',
-      error
-    )
+    throw new ApiError('Not authenticated. Please sign in and try again.', 'AUTH_REQUIRED', error)
   }
-  
+
   if (err?.code === '23505') {
     throw new ApiError(
       'This item already exists. Please use a different name.',
@@ -37,7 +33,7 @@ export function handleSupabaseError(error: unknown, operation: string): never {
       error
     )
   }
-  
+
   if (err?.code === '42501') {
     throw new ApiError(
       'You do not have permission to perform this action.',
@@ -45,7 +41,7 @@ export function handleSupabaseError(error: unknown, operation: string): never {
       error
     )
   }
-  
+
   if (err?.message?.includes('Failed to fetch')) {
     throw new ApiError(
       'Network error. Please check your connection and try again.',
@@ -53,7 +49,7 @@ export function handleSupabaseError(error: unknown, operation: string): never {
       error
     )
   }
-  
+
   // Generic error
   throw new ApiError(
     err?.message || `Failed to ${operation}. Please try again.`,

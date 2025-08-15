@@ -1,4 +1,4 @@
-import { SeedTemplate } from './types';
+import { SeedTemplate } from './types'
 
 export const defaultSeedTemplate: SeedTemplate = {
   id: 'default-with-tutorials',
@@ -8,7 +8,7 @@ export const defaultSeedTemplate: SeedTemplate = {
     interests: ['science', 'chemistry', 'STEM'],
     level: 'beginner',
     style: 'casual',
-    targetAge: 'college'
+    targetAge: 'college',
   },
   folders: [
     {
@@ -41,9 +41,9 @@ export const defaultSeedTemplate: SeedTemplate = {
               </ul>
               
               <h3>Try it out!</h3>
-              <p>Click the + button to create your first folder and start organizing your notes!</p>`
-            }
-          ]
+              <p>Click the + button to create your first folder and start organizing your notes!</p>`,
+            },
+          ],
         },
         {
           name: 'Typemaxxing Tutorial',
@@ -71,9 +71,9 @@ export const defaultSeedTemplate: SeedTemplate = {
                 <li>Regular practice improves both typing and retention!</li>
               </ul>
               
-              <p>Head to the Typemaxxing section to try it out!</p>`
-            }
-          ]
+              <p>Head to the Typemaxxing section to try it out!</p>`,
+            },
+          ],
         },
         {
           name: 'Quizzing Tutorial',
@@ -101,11 +101,11 @@ export const defaultSeedTemplate: SeedTemplate = {
                 <li>Export results for tracking</li>
               </ul>
               
-              <p>Check back soon for this exciting feature!</p>`
-            }
-          ]
-        }
-      ]
+              <p>Check back soon for this exciting feature!</p>`,
+            },
+          ],
+        },
+      ],
     },
     {
       name: 'Fall Quarter (example)',
@@ -114,24 +114,24 @@ export const defaultSeedTemplate: SeedTemplate = {
         {
           name: 'Chemistry',
           color: 'bg-purple-100',
-          notes: []
+          notes: [],
         },
         {
           name: 'Intro to neuro',
           color: 'bg-pink-100',
-          notes: []
+          notes: [],
         },
         {
           name: 'Calculus II',
           color: 'bg-yellow-100',
-          notes: []
+          notes: [],
         },
         {
           name: 'Culture & Ideas',
           color: 'bg-yellow-100',
-          notes: []
-        }
-      ]
+          notes: [],
+        },
+      ],
     },
     {
       name: 'Chemistry 101 (bonus content)',
@@ -155,7 +155,7 @@ export const defaultSeedTemplate: SeedTemplate = {
               
               <p>the number of protons = atomic number = what element it is. carbon always has 6 protons, oxygen always has 8, etc. neutrons can vary tho (thats how we get isotopes)</p>
               
-              <p>wait why do electrons stay near the nucleus if theyre negative and the nucleus is positive? shouldnt they just yeet themselves into the center?? quantum mechanics: "its complicated" 🤷‍♀️</p>`
+              <p>wait why do electrons stay near the nucleus if theyre negative and the nucleus is positive? shouldnt they just yeet themselves into the center?? quantum mechanics: "its complicated" 🤷‍♀️</p>`,
             },
             {
               title: 'electron config speedrun any%',
@@ -182,9 +182,9 @@ export const defaultSeedTemplate: SeedTemplate = {
               
               <p>noble gas notation is when ur too lazy to write the whole thing so u just put the last noble gas in brackets. like iron: [Ar] 4s² 3d⁶ instead of writing out all 26 electrons</p>
               
-              <p>tbh i still dont get why 4s fills before 3d... something about energy levels but make it make sense??? 🤔</p>`
-            }
-          ]
+              <p>tbh i still dont get why 4s fills before 3d... something about energy levels but make it make sense??? 🤔</p>`,
+            },
+          ],
         },
         {
           name: 'Chemical Bonding',
@@ -219,7 +219,7 @@ export const defaultSeedTemplate: SeedTemplate = {
               
               <p>water (H2O) is covalent - oxygen shares electrons with 2 hydrogens but oxygen is kinda greedy so the electrons hang out near oxygen more (polar covalent)</p>
               
-              <p>wait so how do u know if somethings ionic or covalent?? electronegativity difference but like... i just memorize common ones ngl 💀</p>`
+              <p>wait so how do u know if somethings ionic or covalent?? electronegativity difference but like... i just memorize common ones ngl 💀</p>`,
             },
             {
               title: 'VSEPR theory (molecules be shapeshifting)',
@@ -247,9 +247,9 @@ export const defaultSeedTemplate: SeedTemplate = {
                 <li>profit</li>
               </ol>
               
-              <p>why tf is it called VSEPR and not like... electron personal space theory??? chemists love their acronyms i guess</p>`
-            }
-          ]
+              <p>why tf is it called VSEPR and not like... electron personal space theory??? chemists love their acronyms i guess</p>`,
+            },
+          ],
         },
         {
           name: 'Stoichiometry',
@@ -283,7 +283,7 @@ export const defaultSeedTemplate: SeedTemplate = {
               
               <p>my brain during mole problems: "wait did i divide or multiply there?? let me start over..." x10</p>
               
-              <p>pro tip: ALWAYS write units and cancel them out. if ur units dont work out, ur doing it wrong bestie</p>`
+              <p>pro tip: ALWAYS write units and cancel them out. if ur units dont work out, ur doing it wrong bestie</p>`,
             },
             {
               title: 'limiting reagents are the WORST',
@@ -317,9 +317,9 @@ export const defaultSeedTemplate: SeedTemplate = {
               <p>actual = what u really got in lab (usually less bc life)</p>
               <p>theoretical = what u calculated u should get</p>
               
-              <p>why is my percent yield 127%?? oh wait i forgot to dry my product... water weight strikes again 🤦‍♀️</p>`
-            }
-          ]
+              <p>why is my percent yield 127%?? oh wait i forgot to dry my product... water weight strikes again 🤦‍♀️</p>`,
+            },
+          ],
         },
         {
           name: 'Gas Laws & Thermodynamics',
@@ -353,7 +353,7 @@ export const defaultSeedTemplate: SeedTemplate = {
               
               <p>real gases vs ideal gases: ideal gases are like perfect students who follow all the rules. real gases are... real. they deviate at high pressure and low temp bc molecules actually take up space and attract each other</p>
               
-              <p>why is it called "ideal" anyway... nothing ideal about doing these calculations at 2am 😩</p>`
+              <p>why is it called "ideal" anyway... nothing ideal about doing these calculations at 2am 😩</p>`,
             },
             {
               title: 'entropy: why my room stays messy',
@@ -392,11 +392,11 @@ export const defaultSeedTemplate: SeedTemplate = {
                 <li>my notes get messier over the semester</li>
                 <li>everything eventually breaks</li>
                 <li>life is suffering??? (jk... unless? 👀)</li>
-              </ul>`
-            }
-          ]
-        }
-      ]
-    }
-  ]
-};
+              </ul>`,
+            },
+          ],
+        },
+      ],
+    },
+  ],
+}

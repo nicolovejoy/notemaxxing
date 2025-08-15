@@ -10,7 +10,8 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 
 - Create custom folders with names and colors
 - Rename folders inline
-- Delete folders with cascade deletion (not sure what this means - nico - let's discuss)
+- Delete folders with cascade deletion
+- Share folders with other users via email invitations
 
 ### 📓 Smart Notebooks
 
@@ -47,6 +48,13 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 - Add questions and answers
 - Practice mode with self-grading
 - Track your progress
+
+### 🔄 Real-Time Sync (Beta)
+
+- WebSocket-based real-time synchronization
+- Connection status indicator
+- Automatic reconnection with exponential backoff
+- Shared resource access via Supabase Edge Functions
 
 ## Tech Stack
 
@@ -110,8 +118,12 @@ notemaxxing/
 │   └── page.tsx           # Homepage
 ├── lib/                   # Utilities
 │   ├── store/            # Zustand store with hooks
+│   │   └── realtime-manager.ts  # WebSocket sync manager
 │   ├── supabase/         # Database client & schema
 │   └── storage.ts        # Legacy localStorage (being phased out)
+├── supabase/              # Supabase configuration
+│   └── functions/        # Edge Functions for shared resources
+├── scripts/               # Deployment and database scripts
 ├── public/                # Static assets
 └── components/            # React components
 ```
@@ -127,12 +139,25 @@ Data is stored in Supabase PostgreSQL with:
 
 ## Development
 
+### Design System
+
+We have a comprehensive design system with reusable components. **Always use these components instead of creating new ones.**
+
+See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for:
+
+- Complete component documentation
+- Usage examples
+- Design tokens (colors, spacing, typography)
+- Best practices
+
 ### Key Commands
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Run TypeScript compiler
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
 
 ### Testing in Production (Vercel)
 

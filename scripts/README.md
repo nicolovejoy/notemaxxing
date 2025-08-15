@@ -1,6 +1,21 @@
-# Database Scripts
+# Project Scripts
 
-This directory contains SQL scripts for managing the Notemaxxing database.
+This directory contains scripts for database management, deployments, and utilities.
+
+## Quick Start
+
+Use the master script for common operations:
+
+```bash
+# Show all available commands
+./scripts/run.sh help
+
+# Deploy Edge Functions
+./scripts/run.sh deploy-functions
+
+# Revert RLS policies (if broken)
+./scripts/run.sh revert-policies
+```
 
 ## Complete Setup
 
@@ -29,13 +44,23 @@ When making database changes:
 3. Test your changes
 4. Commit the updated setup script
 
-## Individual Scripts
+## Script Organization
 
-- **`reset-database.sql`** - Removes all data and users
-- **`complete-database-setup.sql`** - Creates entire database schema
-- **`setup-admin.sql`** - Grants admin role to specific email
-- **`fix-user-creation.sql`** - Fixes trigger conflicts (now included in complete setup)
-- **`create-profiles-table.sql`** - Creates just the profiles table (now included in complete setup)
+### SQL Scripts
+
+- **`complete-database-setup.sql`** - Complete database schema (tables, RLS, functions)
+- **`revert-broken-policies.sql`** - Emergency fix for RLS circular dependencies
+- **`fix-shared-folders-policy.sql`** - ⚠️ BROKEN - Don't use (causes recursion)
+- **`fix-sharing-properly.sql`** - ⚠️ BROKEN - Don't use (causes recursion)
+
+### Shell Scripts
+
+- **`run.sh`** - Master script for all operations
+- **`deploy-edge-functions.sh`** - Deploy Supabase Edge Functions
+
+### Utility Scripts
+
+- **`generate-build-info.js`** - Generate build timestamp (runs during build)
 
 ## Adding New Features
 

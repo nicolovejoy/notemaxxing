@@ -1,63 +1,59 @@
-# Context for Claude
+# Architecture Update - View-Based Data Loading
 
-## Important Instruction Reminders
-
-- No superlatives
-- Do what has been asked; nothing more
-- Keep things simple. When there are multiple steps needed, describe the plan and get user feedback before beginning
-- NEVER proactively create documentation files (\*.md) or README files. Only create documentation files if explicitly requested by the User
-- Avoid positive affect or opinion. Do not say "great idea!" ever again.
-- Be succinct
-- Review plans and options with user frequently
-- The user is always running the dev server - never attempt to start it
-- **ASK QUESTIONS instead of making assumptions** - When requirements are unclear, ask specific questions rather than inventing features or behaviors
-- **For SQL scripts** - If under 100 lines, show directly in console output instead of creating files
-- **ALWAYS ask before committing** - Check with user before running git commit unless explicitly pre-authorized
+**Latest Status**: See CURRENT_STATUS.md for session progress
+**Latest Fix**: Complete architecture overhaul - See HANDOFF_SESSION3.md
 
 ## Current Architecture
 
-### Sharing System
+- **ViewStore**: Each page loads only its data
+- **No Global Loading**: Never load all notes/notebooks
+- **Server Aggregation**: Counts computed in database
+- **Stable References**: No filtering in render functions
 
-- Database has `permissions` and `share_invitations` tables
-- `has_permission(resource_type, resource_id, user_id, permission)` function handles access control
-- RLS policies use this function for access control
-- Sharing works for both folders and notebooks with permission inheritance
-- Email-specific invitations (not public links) with 7-day expiry
-- Invitation preview endpoint for unauthenticated users shows minimal info
-- Self-invitations prevented at both UI and API level
-- Read-only permissions properly reflected in UI (no edit/delete buttons shown)
+## Design System
 
-### Store Architecture
+See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - use existing UI components only.
 
-We use a clean Zustand store system:
+## Rules
 
-- **Data Store**: `/lib/store/data-store.ts` - Manages all app data (folders, notebooks, notes)
-- **UI Store**: `/lib/store/ui-store.ts` - Manages UI state (selections, preferences)
-- **Data Manager**: `/lib/store/data-manager.ts` - Handles all API operations
+- Be succinct
+- No .md files unless asked
+- Ask before committing
+- Run `npm run format` after changes
 
-**Key Features**:
+## Next Tasks (Priority Order)
 
-- All data loaded at app initialization for instant access
-- Full-text search works across all content
-- Optimistic updates for better UX
-- Clean hook API that returns raw data (no wrapper objects)
+### 1. Fix Notebook Navigation
 
-### Known Issues & Bugs
+**Simple Solution**: Add `most_recent_notebook_id` to folder metadata in `/api/views/folders`
 
-- Real-time sync not implemented - changes don't appear in other accounts without refresh
-- Folder card UI has overlapping icons with title
-- Accept invitation page shows "unnamed folder" instead of actual resource name
-- Revoke access returns "permission not found" error
+- No extra API calls
+- Navigate directly to notebook ID
+- Keep notebook page simple
 
-### Notebook Management
+### 2. Fix Notebook Cards UI
 
-- **Archive**: Available on regular notebooks (puts them in archived state)
-- **Delete**: Only available on archived notebooks (permanent deletion)
-- **Restore**: Available on archived notebooks (returns to regular state)
-- To see archived notebooks: Toggle "Show archived" on folders page
+**Current**: Notebooks shown as text list items
+**Needed**: Small cards within folder cards (like production)
 
-### Key Components
+- Each notebook as a mini card with color, name, note count
+- Grid/stack layout inside folder card
+- Proper hover states and styling
 
-- `/api/shares/*` - API routes for sharing operations
-- `ShareButton`, `ShareDialog`, `SharedIndicator` - UI components
-- Folders/notebooks have `shared` and `permission` properties when loaded
+## Critical: New Data Pattern
+
+**DO NOT** use old patterns like:
+
+```typescript
+const notes = useNotes() // ❌ Loads everything
+const filtered = notes.filter(...) // ❌ Creates new arrays
+```
+
+**DO** use new ViewStore pattern:
+
+```typescript
+const foldersView = useFoldersView() // ✅ Only current view
+const { loadFoldersView } = useViewActions() // ✅ Load on demand
+```
+
+See ARCHITECTURE_V2.md for complete details.
