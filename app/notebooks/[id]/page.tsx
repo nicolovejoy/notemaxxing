@@ -13,8 +13,28 @@ import { NoteCard, AddNoteCard } from '@/components/cards/NoteCard'
 import { StatusMessage } from '@/components/ui/StatusMessage'
 import { useNoteView, useViewLoading, useViewActions, useViewError } from '@/lib/store/view-store'
 import { useDebounce } from '@/lib/hooks/useDebounce'
+import { toPlainText, toHTML } from '@/lib/utils/content'
 
 type SortOption = 'recent' | 'alphabetical' | 'created'
+
+// Helper to generate title from content
+function generateTitleFromContent(content: string): string {
+  if (!content) return ''
+
+  // Convert to plain text and get first 50 characters
+  const plainText = toPlainText(toHTML(content))
+  const words = plainText.split(/\s+/).filter((word) => word.length > 0)
+
+  // Take first 5-7 words or up to 50 characters
+  let title = ''
+  for (let i = 0; i < Math.min(words.length, 7); i++) {
+    const testTitle = title ? `${title} ${words[i]}` : words[i]
+    if (testTitle.length > 50) break
+    title = testTitle
+  }
+
+  return title || 'Untitled Note'
+}
 
 export default function NotebookPage() {
   const params = useParams()
@@ -101,7 +121,7 @@ export default function NotebookPage() {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: 'Untitled Note',
+          title: '', // Start with empty title, will be auto-generated
           content: '',
           notebook_id: notebookId,
         }),
@@ -120,8 +140,8 @@ export default function NotebookPage() {
       // Open the new note for editing
       setSelectedNote(newNote)
       setIsEditingNote(true)
-      setEditingNoteTitle(newNote.title)
-      setEditingNoteContent(newNote.content || '')
+      setEditingNoteTitle('') // Start with empty title, will auto-generate from content
+      setEditingNoteContent('')
     } catch (err) {
       console.error('Error creating note:', err)
     } finally {
@@ -135,13 +155,16 @@ export default function NotebookPage() {
 
     setIsSaving(true)
     try {
+      // Auto-generate title from content if title is empty
+      const finalTitle = editingNoteTitle.trim() || generateTitleFromContent(editingNoteContent)
+
       const response = await fetch('/api/notes', {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: selectedNote.id,
-          title: editingNoteTitle,
+          title: finalTitle,
           content: editingNoteContent,
         }),
       })
@@ -346,13 +369,19 @@ export default function NotebookPage() {
                   content={note.preview}
                   updatedAt={note.updated_at}
                   isSelected={selectedNote?.id === note.id}
-                  onClick={() => {
-                    setSelectedNote(note)
-                    setEditingNoteTitle(note.title)
-                    setEditingNoteContent('')
+                  onClick={async () => {
+                    // Load full note content and open editor
+                    await loadNoteView(notebookId, { noteId: note.id })
+                    const fullNote = noteView?.currentNote
+                    if (fullNote) {
+                      setSelectedNote(fullNote)
+                      setIsEditingNote(true)
+                      setEditingNoteTitle(fullNote.title)
+                      setEditingNoteContent(fullNote.content || '')
+                    }
                   }}
                   onEdit={async () => {
-                    // Load full note content via ViewStore
+                    // Same as onClick - open editor directly
                     await loadNoteView(notebookId, { noteId: note.id })
                     const fullNote = noteView?.currentNote
                     if (fullNote) {
