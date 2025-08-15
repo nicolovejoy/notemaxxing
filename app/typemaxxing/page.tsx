@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 // This page needs to be updated to use the new ViewStore pattern
 // Temporarily disabled to fix build errors
 
@@ -11,9 +13,9 @@ export default function TypingPage() {
         <p className="text-gray-600">
           This feature is temporarily unavailable while we update the app.
         </p>
-        <a href="/folders" className="mt-4 inline-block text-blue-600 hover:text-blue-800">
-          Return to Folders
-        </a>
+        <Link href="/backpack" className="mt-4 inline-block text-blue-600 hover:text-blue-800">
+          Return to Backpack
+        </Link>
       </div>
     </div>
   )

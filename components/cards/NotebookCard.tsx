@@ -25,7 +25,7 @@ interface NotebookCardProps {
 }
 
 export function NotebookCard({
-  id,
+  id: _id, // eslint-disable-line @typescript-eslint/no-unused-vars
   name,
   color,
   noteCount,

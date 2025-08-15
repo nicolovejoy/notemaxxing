@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, Share2, Settings, FolderOpen } from 'lucide-react'
+import { Plus, Share2, FolderOpen } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -56,6 +56,7 @@ export default function FolderDetailPage() {
       return
     }
     loadFolderData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [folderId, user])
 
   const loadFolderData = async () => {
