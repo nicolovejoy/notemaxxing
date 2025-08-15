@@ -1,6 +1,5 @@
 import React from 'react'
 import { BookOpen, Edit2, Archive, ArchiveRestore, Trash2, Check, X } from 'lucide-react'
-import { ShareButton } from '../ShareButton'
 import { SharedIndicator } from '../SharedIndicator'
 import type { Permission } from '@/lib/types/sharing'
 
@@ -105,14 +104,6 @@ export function NotebookCard({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">{noteCount} notes</span>
             <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-              {!shared && !archived && (
-                <ShareButton
-                  resourceId={id}
-                  resourceType="notebook"
-                  resourceName={name}
-                  className="p-1 hover:bg-gray-200 rounded"
-                />
-              )}
               {/* Only show edit button if user owns the notebook or has write permission */}
               {onEdit && (!shared || permission === 'write') && (
                 <button

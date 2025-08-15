@@ -23,22 +23,29 @@ See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - use existing UI components only.
 
 ## Next Tasks (Priority Order)
 
-### 1. Fix Notebook Navigation
+### 1. Route Restructuring
 
-**Simple Solution**: Add `most_recent_notebook_id` to folder metadata in `/api/views/folders`
+**Rename for clarity**:
 
-- No extra API calls
-- Navigate directly to notebook ID
-- Keep notebook page simple
+- `/folders` → `/backpack` (college-friendly)
+- `/notebooks/[id]` → `/folders/[id]` (shows folder's notebooks)
+- Create `/notebooks/[id]` for actual notebook detail
 
-### 2. Fix Notebook Cards UI
+### 2. Fix Sharing UI Placement
 
-**Current**: Notebooks shown as text list items
-**Needed**: Small cards within folder cards (like production)
+**Move share buttons from cards to headers**:
 
-- Each notebook as a mini card with color, name, note count
-- Grid/stack layout inside folder card
-- Proper hover states and styling
+- Remove from collection view cards
+- Add to detail page headers only
+- Keep share indicators on cards
+
+### 3. Implement Permission Inheritance
+
+**Folder permissions cascade to notebooks**:
+
+- Notebooks inherit folder permissions by default
+- Allow explicit overrides
+- Show warnings for conflicts
 
 ## Critical: New Data Pattern
 

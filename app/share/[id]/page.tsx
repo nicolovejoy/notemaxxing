@@ -114,7 +114,7 @@ export default function SharePage() {
       // Redirect to the appropriate page after accepting
       setTimeout(() => {
         if (invitationDetails.resourceType === 'folder') {
-          router.push('/folders')
+          router.push('/backpack')
         } else {
           // Use the resource ID from the accept response if available
           const resourceId = result.permission?.resourceId || invitationDetails.resourceId

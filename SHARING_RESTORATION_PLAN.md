@@ -1,4 +1,13 @@
-# Sharing Feature Restoration Plan
+# Sharing Feature Implementation Plan
+
+## Updated Philosophy
+
+Based on SHARING_UX_PHILOSOPHY.md:
+
+- **Inheritance by default** - Folder permissions cascade to notebooks
+- **Route restructuring** - `/backpack` → `/folders/[id]` → `/notebooks/[id]`
+- **Actions on detail pages only** - No share buttons on cards
+- **Conflict detection** - Warn when notebook permissions differ from folder
 
 ## Current Status
 
@@ -6,7 +15,7 @@
 - ShareButton component exists and integrates with ShareDialog
 - Sharing API endpoints exist (`/api/shares/*`)
 - Database has permission tables from migration
-- UI components are currently disabled/hidden
+- Share buttons currently on cards (needs moving to headers)
 
 ## Investigation Needed
 
@@ -15,35 +24,42 @@
 3. Check if API endpoints are working
 4. Verify permission system integration with React Query
 
-## Implementation Plan
+## Incremental Implementation Plan
 
-### Phase 1: Enable Basic Sharing UI
+### Phase 1: Route Restructuring (Day 1)
 
-- [ ] Re-enable ShareButton in NotebookCard component
-- [ ] Re-enable ShareButton in folder views
-- [ ] Test ShareDialog opens correctly
-- [ ] Verify share link generation works
+- [ ] Rename `/folders` → `/backpack`
+- [ ] Fix `/notebooks/[id]` to actually be `/folders/[id]`
+- [ ] Update all navigation links
+- [ ] Test existing functionality still works
 
-### Phase 2: Fix Share Invitation Flow
+### Phase 2: Move Share Actions to Headers (Day 2)
 
-- [ ] Test `/share/[id]` page for accepting invitations
-- [ ] Ensure permissions are properly created
-- [ ] Verify shared resources appear in "Shared with Me" page
+- [ ] Remove ShareButton from NotebookCard
+- [ ] Add ShareButton to folder detail page header
+- [ ] Add ShareButton to notebook detail page header (create if needed)
+- [ ] Keep share indicators on cards
+
+### Phase 3: Permission Inheritance (Day 3-4)
+
+- [ ] Update database to support inheritance
+- [ ] API: When fetching notebooks, check folder permissions
+- [ ] API: Flag notebooks with explicit overrides
+- [ ] UI: Show inheritance in ShareDialog
+
+### Phase 4: Conflict Detection (Day 5)
+
+- [ ] When sharing folder, check all notebook permissions
+- [ ] Show warning dialog if conflicts exist
+- [ ] Allow user to proceed or adjust
+- [ ] Display conflict badges in UI
+
+### Phase 5: Testing & Polish (Day 6)
+
+- [ ] Test complete sharing flow
+- [ ] Add loading states
+- [ ] Verify "Shared with Me" works
 - [ ] Test permission revocation
-
-### Phase 3: Integrate with React Query
-
-- [ ] Add React Query hooks for sharing operations
-- [ ] Ensure real-time updates when permissions change
-- [ ] Cache invalidation for shared resources
-- [ ] Optimistic updates for share operations
-
-### Phase 4: UI Polish
-
-- [ ] Add loading states for share operations
-- [ ] Improve error handling and user feedback
-- [ ] Add share indicators to folders/notebooks
-- [ ] Show permission level badges
 
 ## Technical Components
 

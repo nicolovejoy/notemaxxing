@@ -215,8 +215,8 @@ export default function NotebookPage() {
         <div className="text-center">
           <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Notebook not found</h2>
-          <Link href="/folders" className="text-blue-600 hover:underline">
-            Return to folders
+          <Link href="/backpack" className="text-blue-600 hover:underline">
+            Return to backpack
           </Link>
         </div>
       </div>
@@ -226,7 +226,7 @@ export default function NotebookPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader
-        backUrl="/folders"
+        backUrl="/backpack"
         rightContent={
           <div className="flex items-center gap-4">
             <SearchInput
@@ -257,7 +257,7 @@ export default function NotebookPage() {
             <div className="p-4">
               {/* Folder Header */}
               <Link
-                href="/folders"
+                href="/backpack"
                 className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4"
               >
                 <ArrowLeft className="h-4 w-4" />

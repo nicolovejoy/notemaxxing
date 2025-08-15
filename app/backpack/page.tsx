@@ -17,7 +17,7 @@ import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR } from '@/lib/constants'
 import { useFoldersView, useCreateFolder } from '@/lib/query/hooks'
 import { useAuth } from '@/lib/hooks/useAuth'
 
-export default function FoldersPage() {
+export default function BackpackPage() {
   const router = useRouter()
   const { user, loading: authLoading } = useAuth()
 
@@ -85,31 +85,8 @@ export default function FoldersPage() {
   }
 
   const handleFolderClick = (folderId: string) => {
-    const folder = folders.find((f) => f.id === folderId)
-
-    console.log('[FoldersPage] Folder clicked:', {
-      folderId,
-      folder,
-      most_recent_notebook_id: folder?.most_recent_notebook_id,
-      notebooks: folder?.notebooks,
-      firstNotebookId: folder?.notebooks?.[0]?.id,
-    })
-
-    // Use the most_recent_notebook_id if available
-    if (folder?.most_recent_notebook_id) {
-      console.log(
-        '[FoldersPage] Navigating to most recent notebook:',
-        folder.most_recent_notebook_id
-      )
-      router.push(`/notebooks/${folder.most_recent_notebook_id}`)
-    } else if (folder?.notebooks && folder.notebooks.length > 0) {
-      // Fallback to first notebook if no most_recent_notebook_id
-      console.log('[FoldersPage] Navigating to first notebook:', folder.notebooks[0].id)
-      router.push(`/notebooks/${folder.notebooks[0].id}`)
-    } else {
-      console.log('[FoldersPage] No notebooks in folder, staying on page')
-    }
-    // If no notebooks, just stay on folders page
+    // Navigate to folder detail page (shows notebooks in that folder)
+    router.push(`/folders/${folderId}`)
   }
 
   if (error) {

@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const protectedPaths = ['/folders', '/notebooks', '/quizzing', '/typemaxxing']
+const protectedPaths = ['/backpack', '/folders', '/notebooks', '/quizzing', '/typemaxxing']
 
 export async function middleware(request: NextRequest) {
   // Skip middleware if Supabase is not configured

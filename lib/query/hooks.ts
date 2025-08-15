@@ -270,7 +270,7 @@ export function useDeleteFolder() {
     mutationFn: api.deleteFolder,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folders-view'] })
-      router.push('/folders')
+      router.push('/backpack')
     },
   })
 }

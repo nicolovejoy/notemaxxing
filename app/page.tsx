@@ -21,9 +21,9 @@ export default function Home() {
   const features = [
     {
       icon: FolderOpen,
-      title: 'Dynamic Folders',
+      title: 'Your Backpack',
       description: 'Organize your notes with custom folders and colors',
-      href: '/folders',
+      href: '/backpack',
       color: 'text-blue-500',
     },
     {
