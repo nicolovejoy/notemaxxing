@@ -29,8 +29,10 @@ interface Notebook {
 interface Folder {
   id: string
   name: string
-  icon: string
-  notebook_count: number
+  color: string
+  created_at: string | null
+  updated_at: string | null
+  user_id: string
 }
 
 export default function FolderDetailPage() {
