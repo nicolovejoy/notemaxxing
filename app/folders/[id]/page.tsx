@@ -15,7 +15,7 @@ import { ShareDialog } from '@/components/ShareDialog'
 import { NotebookCard } from '@/components/cards/NotebookCard'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { DEFAULT_NOTEBOOK_COLOR } from '@/lib/constants'
+import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
 
 interface Notebook {
   id: string
@@ -240,7 +240,8 @@ export default function FolderDetailPage() {
             autoFocus
           />
           <ColorPicker
-            value={newNotebookColor}
+            colors={NOTEBOOK_COLORS}
+            selected={newNotebookColor}
             onChange={setNewNotebookColor}
             label="Notebook Color"
           />
