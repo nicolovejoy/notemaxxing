@@ -386,3 +386,24 @@ export function usePrefetchNotebook() {
     })
   }
 }
+
+/**
+ * Fetch folder detail view with notebooks and permissions
+ */
+export function useFolderDetailView(folderId: string | null) {
+  return useQuery({
+    queryKey: ['folder-detail', folderId],
+    queryFn: async () => {
+      if (!folderId) return null
+      const response = await fetch(`/api/views/folders/${folderId}`)
+      if (!response.ok) {
+        if (response.status === 404) throw new Error('Folder not found')
+        if (response.status === 403) throw new Error('Access denied')
+        throw new Error('Failed to fetch folder')
+      }
+      return response.json()
+    },
+    enabled: !!folderId,
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+  })
+}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { BookOpen, Edit2, Archive, ArchiveRestore, Trash2, Check, X } from 'lucide-react'
+import { BookOpen, Edit2, Archive, ArchiveRestore, Trash2, Check, X, Share2 } from 'lucide-react'
 import { SharedIndicator } from '../SharedIndicator'
 import type { Permission } from '@/lib/types/sharing'
 
@@ -20,6 +20,7 @@ interface NotebookCardProps {
   onArchive?: () => void
   onRestore?: () => void
   onDelete?: () => void
+  onShare?: () => void
   onUpdate?: (newName: string) => void
   onCancelEdit?: () => void
 }
@@ -41,6 +42,7 @@ export function NotebookCard({
   onArchive,
   onRestore,
   onDelete,
+  onShare,
   onUpdate,
   onCancelEdit,
 }: NotebookCardProps) {
@@ -98,6 +100,14 @@ export function NotebookCard({
                 sharedByMe={sharedByMe}
                 permission={permission}
                 className="ml-2"
+                onClick={
+                  sharedByMe && onShare
+                    ? (e) => {
+                        e.stopPropagation()
+                        onShare()
+                      }
+                    : undefined
+                }
               />
             )}
           </div>
@@ -114,6 +124,19 @@ export function NotebookCard({
                   className="p-1 hover:bg-gray-200 rounded"
                 >
                   <Edit2 className="h-4 w-4 text-gray-600" />
+                </button>
+              )}
+              {/* Only show share button for owned notebooks (not shared with user) */}
+              {onShare && !shared && !archived && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onShare()
+                  }}
+                  className="p-1 hover:bg-gray-200 rounded"
+                  title="Share notebook"
+                >
+                  <Share2 className="h-4 w-4 text-gray-600" />
                 </button>
               )}
               {/* Only show archive/restore for owned notebooks (not shared) */}

@@ -36,11 +36,17 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
     try {
       setLoadingShares(true)
       const shares = await sharingApi.listShares()
+      console.log('All shares loaded:', shares)
 
       // Filter to only show shares for this resource
       const relevantShares = shares.sharedByMe.filter(
         (share) => share.resourceId === resourceId && share.resourceType === resourceType
       )
+      console.log('Relevant shares for this resource:', {
+        resourceId,
+        resourceType,
+        relevantShares,
+      })
 
       setSharedWith(relevantShares)
     } catch (err) {
@@ -76,7 +82,7 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
     if (email && currentUserEmail && email.toLowerCase() === currentUserEmail.toLowerCase()) {
       return
     }
-    
+
     setLoading(true)
     setError(null)
     setSuccess(null)
@@ -291,21 +297,52 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
                   key={share.id}
                   className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
                 >
-                  <div>
+                  <div className="flex-1">
                     <div className="text-sm font-medium text-gray-900">{share.user?.email}</div>
-                    <div className="text-xs text-gray-500">
-                      {share.permission_level === 'write' || share.permission_level === 'admin'
-                        ? 'Can edit'
-                        : 'Can view'}
-                    </div>
                   </div>
-                  <IconButton
-                    icon={Trash2}
-                    onClick={() => handleRevoke(share.id)}
-                    size="sm"
-                    variant="danger"
-                    title="Revoke access"
-                  />
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={share.permission_level}
+                      onChange={async (e) => {
+                        // Update permission level
+                        const newLevel = e.target.value as Permission
+                        console.log('Updating permission:', {
+                          shareId: share.id,
+                          currentLevel: share.permission_level,
+                          newLevel,
+                          resourceId: share.resourceId,
+                          resourceType: share.resourceType,
+                        })
+
+                        const supabase = createClient()
+                        const { data, error } = await supabase
+                          .from('permissions')
+                          .update({ permission_level: newLevel })
+                          .eq('id', share.id)
+                          .select()
+
+                        console.log('Permission update result:', { data, error })
+
+                        if (!error) {
+                          // Refresh the list
+                          loadShares()
+                        } else {
+                          console.error('Failed to update permission:', error)
+                        }
+                      }}
+                      className="text-sm border border-gray-300 rounded px-2 py-1"
+                    >
+                      <option value="read">Can view</option>
+                      <option value="write">Can edit</option>
+                    </select>
+                    <IconButton
+                      icon={Trash2}
+                      onClick={() => handleRevoke(share.id)}
+                      size="sm"
+                      variant="danger"
+                      title="Revoke access"
+                    />
+                  </div>
                 </div>
               ))}
             </div>

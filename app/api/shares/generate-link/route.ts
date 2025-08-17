@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     } else {
       const { data, error } = await supabase
         .from('notebooks')
-        .select('id')
+        .select('id, folder_id')
         .eq('id', resourceId)
         .eq('owner_id', user.id)
         .single()
@@ -93,6 +93,25 @@ export async function POST(request: NextRequest) {
       if (error || !data) {
         console.error('[Generate Link] Notebook not found or unauthorized:', error)
         return NextResponse.json({ error: 'Resource not found or unauthorized' }, { status: 403 })
+      }
+
+      // Check if the parent folder is shared - folder-first sharing model
+      // Notebooks can only be shared within already-shared folders
+      const { data: folderPermissions } = await supabase
+        .from('permissions')
+        .select('id')
+        .eq('resource_id', data.folder_id)
+        .eq('resource_type', 'folder')
+        .eq('granted_by', user.id)
+
+      if (!folderPermissions || folderPermissions.length === 0) {
+        console.error('[Generate Link] Cannot share notebook - parent folder is not shared')
+        return NextResponse.json(
+          {
+            error: 'Cannot share notebook. Please share the parent folder first.',
+          },
+          { status: 400 }
+        )
       }
     }
 

@@ -33,7 +33,7 @@ export async function GET() {
     const { data: folders, error: foldersError } = await supabase
       .from('folders_with_stats')
       .select('*')
-      .eq('user_id', userId)
+      .eq('owner_id', userId)
       .order('name')
 
     if (foldersError) throw foldersError

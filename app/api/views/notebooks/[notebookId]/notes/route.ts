@@ -87,7 +87,7 @@ export async function GET(
             console.error('Access denied - no permission:', {
               notebookId,
               userId,
-              notebookOwnerId: notebook.user_id,
+              notebookOwnerId: notebook.owner_id,
             })
             return NextResponse.json({ error: 'Access denied' }, { status: 403 })
           }
@@ -208,6 +208,14 @@ export async function GET(
         }
       ) || []
 
+    // Determine permission level for response
+    let userPermission: 'owner' | 'read' | 'write' = 'owner'
+    if (!isOwner) {
+      userPermission = (permission?.permission_level || folderPerm?.permission_level || 'read') as
+        | 'read'
+        | 'write'
+    }
+
     return NextResponse.json({
       notebook: {
         id: notebook.id,
@@ -215,6 +223,8 @@ export async function GET(
         color: notebook.color,
         folder_id: notebook.folder_id,
         folder_name: folderInfo?.name || '',
+        shared: !isOwner,
+        permission: userPermission,
       },
       folder: folderInfo,
       siblingNotebooks,

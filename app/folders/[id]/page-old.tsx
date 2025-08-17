@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Plus, Share2, FolderOpen } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -17,45 +17,187 @@ import { SharedIndicator } from '@/components/SharedIndicator'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
-import { useFolderDetailView } from '@/lib/query/hooks'
+
+interface Notebook {
+  id: string
+  name: string
+  color: string
+  note_count: number
+  created_at: string | null
+  archived: boolean | null
+}
+
+interface Folder {
+  id: string
+  name: string
+  color: string
+  created_at: string | null
+  updated_at: string | null
+  owner_id: string
+}
 
 export default function FolderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const folderId = params.id as string
   const { user, loading: authLoading } = useAuth()
+  const supabase = createClient()
 
-  // Use React Query for data fetching
-  const { data: folderView, isLoading, error, refetch } = useFolderDetailView(folderId)
-
-  // Local state for UI
+  const [folder, setFolder] = useState<Folder | null>(null)
+  const [notebooks, setNotebooks] = useState<Notebook[]>([])
+  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
-  const [shareNotebook, setShareNotebook] = useState<{ id: string; name: string } | null>(null)
+  const [shareNotebook, setShareNotebook] = useState<Notebook | null>(null)
   const [newNotebookName, setNewNotebookName] = useState('')
   const [newNotebookColor, setNewNotebookColor] = useState<string>(DEFAULT_NOTEBOOK_COLOR)
   const [creating, setCreating] = useState(false)
+  const [isSharedFolder, setIsSharedFolder] = useState(false)
+  const [notebookPermissions, setNotebookPermissions] = useState<Record<string, boolean>>({})
 
-  // Extract data from view
-  const folder = folderView?.folder
-  const notebooks = folderView?.notebooks || []
-  const userPermission = folderView?.userPermission
-  const isOwner = userPermission === 'owner'
-  const canWrite = userPermission === 'write' || isOwner
+  useEffect(() => {
+    // Don't redirect while auth is still loading
+    if (authLoading) {
+      return
+    }
+
+    if (!user) {
+      router.push('/auth/login')
+      return
+    }
+
+    loadFolderData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [folderId, user, authLoading])
+
+  const loadFolderData = async () => {
+    if (!supabase || !user) return
+
+    try {
+      setLoading(true)
+
+      // Load folder details
+      const { data: folderData, error: folderError } = await supabase!
+        .from('folders')
+        .select('*')
+        .eq('id', folderId)
+        .single()
+
+      if (folderError) throw folderError
+      setFolder(folderData)
+
+      // Check if this folder is shared (user has permission but doesn't own it)
+      const isOwner = folderData.owner_id === user.id
+      let folderIsShared = false
+
+      if (!isOwner) {
+        // Check if user has permission to this folder
+        const { data: permissions } = await supabase
+          .from('permissions')
+          .select('*')
+          .eq('resource_id', folderId)
+          .eq('resource_type', 'folder')
+          .eq('user_id', user.id)
+
+        folderIsShared = !!permissions && permissions.length > 0
+      } else {
+        // Check if owner has shared this folder with anyone
+        const { data: shares } = await supabase
+          .from('permissions')
+          .select('*')
+          .eq('resource_id', folderId)
+          .eq('resource_type', 'folder')
+          .eq('granted_by', user.id)
+
+        folderIsShared = !!shares && shares.length > 0
+      }
+
+      setIsSharedFolder(folderIsShared)
+
+      // Load notebooks in this folder
+      const { data: notebooksData, error: notebooksError } = await supabase!
+        .from('notebooks')
+        .select('*')
+        .eq('folder_id', folderId)
+        .order('created_at', { ascending: false })
+
+      if (notebooksError) throw notebooksError
+
+      // Get note counts for each notebook
+      const notebooksWithCounts = await Promise.all(
+        (notebooksData || []).map(async (notebook) => {
+          const { count } = await supabase!
+            .from('notes')
+            .select('*', { count: 'exact', head: true })
+            .eq('notebook_id', notebook.id)
+
+          return { ...notebook, note_count: count || 0 }
+        })
+      )
+
+      setNotebooks(notebooksWithCounts)
+
+      // Check which notebooks have permissions (either shared with others or shared with this user)
+      if (notebooksWithCounts.length > 0) {
+        const notebookIds = notebooksWithCounts.map((n) => n.id)
+        const permissionsMap: Record<string, boolean> = {}
+
+        if (isOwner) {
+          // For owner: check which notebooks they've shared with others
+          const { data: sharedNotebooks } = await supabase
+            .from('permissions')
+            .select('resource_id')
+            .in('resource_id', notebookIds)
+            .eq('resource_type', 'notebook')
+            .eq('granted_by', user.id)
+
+          console.log('Checking shared notebooks:', {
+            notebookIds,
+            sharedNotebooks,
+            userId: user.id,
+          })
+
+          notebookIds.forEach((id) => {
+            permissionsMap[id] = sharedNotebooks?.some((p) => p.resource_id === id) || false
+          })
+        } else if (folderIsShared) {
+          // For shared folder: check which notebooks have individual permissions
+          const { data: permissions } = await supabase
+            .from('permissions')
+            .select('resource_id')
+            .in('resource_id', notebookIds)
+            .eq('resource_type', 'notebook')
+
+          notebookIds.forEach((id) => {
+            permissionsMap[id] = permissions?.some((p) => p.resource_id === id) || false
+          })
+        }
+
+        setNotebookPermissions(permissionsMap)
+      }
+    } catch (error) {
+      console.error('Error loading folder data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleCreateNotebook = async () => {
     if (!newNotebookName.trim()) return
 
+    // Note: Notebooks created by shared users remain owned by folder owner
+    // Future: Implement dual-consent transfer when created_by != owner_id
+
     setCreating(true)
     try {
-      const supabase = createClient()
-      const { data, error } = await supabase
+      const { data, error } = await supabase!
         .from('notebooks')
         .insert({
           name: newNotebookName.trim(),
           color: newNotebookColor,
           folder_id: folderId,
+          // owner_id and created_by are set automatically by database trigger
         })
         .select()
         .single()
@@ -74,7 +216,7 @@ export default function FolderDetailPage() {
     }
   }
 
-  const handleNotebookClick = (notebook: { id: string; name: string; color: string; note_count: number }) => {
+  const handleNotebookClick = (notebook: Notebook) => {
     // Store notebook data for optimistic loading
     if (typeof window !== 'undefined') {
       sessionStorage.setItem(
@@ -94,8 +236,7 @@ export default function FolderDetailPage() {
     ? notebooks.filter((n) => n.name.toLowerCase().includes(search.toLowerCase()))
     : notebooks
 
-  // Show loading state
-  if (isLoading || authLoading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <PageHeader backUrl="/backpack" />
@@ -109,27 +250,6 @@ export default function FolderDetailPage() {
         </div>
       </div>
     )
-  }
-
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <PageHeader backUrl="/backpack" />
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <EmptyState
-            title="Error loading folder"
-            description={error.message || 'Something went wrong'}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  // Redirect if not authenticated
-  if (!user) {
-    router.push('/auth/login')
-    return null
   }
 
   return (
@@ -148,7 +268,7 @@ export default function FolderDetailPage() {
               className="w-64"
             />
             {/* Only show share button for folder owners */}
-            {isOwner && (
+            {folder && user && folder.owner_id === user.id && (
               <LoadingButton
                 onClick={() => setShowShareDialog(true)}
                 icon={Share2}
@@ -158,12 +278,9 @@ export default function FolderDetailPage() {
                 Share
               </LoadingButton>
             )}
-            {/* Only show create button if user can write */}
-            {canWrite && (
-              <LoadingButton onClick={() => setShowCreateModal(true)} icon={Plus} variant="primary">
-                New Notebook
-              </LoadingButton>
-            )}
+            <LoadingButton onClick={() => setShowCreateModal(true)} icon={Plus} variant="primary">
+              New Notebook
+            </LoadingButton>
           </div>
         }
       />
@@ -174,12 +291,11 @@ export default function FolderDetailPage() {
           <div className="flex items-center gap-3 mb-2">
             <FolderOpen className="h-8 w-8 text-gray-600" />
             <h1 className="text-3xl font-bold">{folder?.name || 'Folder'}</h1>
-            {(folder?.shared || folder?.sharedByOwner) && (
+            {isSharedFolder && (
               <SharedIndicator
-                shared={folder?.shared}
-                sharedByMe={folder?.sharedByOwner}
-                permission={!isOwner ? userPermission : undefined}
-                onClick={folder?.sharedByOwner ? () => setShowShareDialog(true) : undefined}
+                shared={folder?.owner_id !== user?.id}
+                sharedByMe={folder?.owner_id === user?.id}
+                onClick={folder?.owner_id === user?.id ? () => setShowShareDialog(true) : undefined}
               />
             )}
           </div>
@@ -198,22 +314,26 @@ export default function FolderDetailPage() {
           />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredNotebooks.map((notebook) => (
-              <NotebookCard
-                key={notebook.id}
-                id={notebook.id}
-                name={notebook.name}
-                color={notebook.color}
-                noteCount={notebook.note_count}
-                archived={notebook.archived || false}
-                shared={!isOwner}
-                sharedByMe={notebook.shared_by_owner}
-                permission={!isOwner ? userPermission : undefined}
-                onClick={() => handleNotebookClick(notebook)}
-                onShare={notebook.shared_by_owner ? () => setShareNotebook(notebook) : undefined}
-                onUpdate={() => refetch()}
-              />
-            ))}
+            {filteredNotebooks.map((notebook) => {
+              const isNotebookShared = notebookPermissions[notebook.id] || false
+              const isOwner = folder?.owner_id === user?.id
+
+              return (
+                <NotebookCard
+                  key={notebook.id}
+                  id={notebook.id}
+                  name={notebook.name}
+                  color={notebook.color}
+                  noteCount={notebook.note_count}
+                  archived={notebook.archived || false}
+                  shared={!isOwner && isSharedFolder}
+                  sharedByMe={isOwner && isNotebookShared}
+                  onClick={() => handleNotebookClick(notebook)}
+                  onShare={isSharedFolder && isOwner ? () => setShareNotebook(notebook) : undefined}
+                  onUpdate={loadFolderData}
+                />
+              )
+            })}
           </div>
         )}
       </main>
@@ -260,10 +380,7 @@ export default function FolderDetailPage() {
           resourceId={folderId}
           resourceType="folder"
           resourceName={folder.name}
-          onClose={() => {
-            setShowShareDialog(false)
-            refetch() // Refresh data after sharing changes
-          }}
+          onClose={() => setShowShareDialog(false)}
         />
       )}
 
@@ -273,10 +390,7 @@ export default function FolderDetailPage() {
           resourceId={shareNotebook.id}
           resourceType="notebook"
           resourceName={shareNotebook.name}
-          onClose={() => {
-            setShareNotebook(null)
-            refetch() // Refresh data after sharing changes
-          }}
+          onClose={() => setShareNotebook(null)}
         />
       )}
     </div>

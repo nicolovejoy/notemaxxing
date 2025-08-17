@@ -1,0 +1,7 @@
+-- Add UPDATE policy for permissions table
+-- Allow users who granted permissions to update them (e.g., change permission level)
+
+CREATE POLICY "Users can update permissions they granted" ON permissions
+  FOR UPDATE 
+  USING (granted_by = auth.uid())
+  WITH CHECK (granted_by = auth.uid());

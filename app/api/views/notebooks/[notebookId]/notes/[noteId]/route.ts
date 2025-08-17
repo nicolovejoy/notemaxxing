@@ -38,7 +38,7 @@ export async function GET(
 
     // Check if user has access (owner or has permission)
     const isOwner = notebook.owner_id === userId
-    
+
     if (!isOwner) {
       // Check for permissions
       const { data: permission } = await supabase
@@ -48,7 +48,7 @@ export async function GET(
         .eq('resource_id', notebookId)
         .eq('resource_type', 'notebook')
         .single()
-      
+
       if (!permission) {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }

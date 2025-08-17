@@ -81,20 +81,27 @@ export async function GET() {
       if (item.invited_by) userIds.add(item.invited_by)
     })
 
-    // TODO: Create a database function to get user emails from auth.users
-    // For now, we'll show the last 8 digits of the user ID
+    // Get user emails using the database function
     const userProfiles: Record<string, { email: string; full_name: string | null }> = {}
     if (userIds.size > 0) {
-      // Since we can't access auth.users directly and don't have a profiles table,
-      // we'll use the user ID as a temporary display value
-      userIds.forEach((userId) => {
-        // Show last 8 characters of UUID for identification
-        const shortId = userId.slice(-8)
+      // Fetch emails for all user IDs
+      const userIdArray = Array.from(userIds)
+      const { data: emails, error: emailError } = await supabase.rpc('get_user_email', {
+        user_id: userIdArray[0],
+      })
+
+      // For multiple users, we'll fetch them individually
+      // This is not ideal but works until we create a batch function
+      for (const userId of userIdArray) {
+        const { data: email } = await supabase.rpc('get_user_email', {
+          user_id: userId,
+        })
+
         userProfiles[userId] = {
-          email: `User ...${shortId}`, // Temporary until we add user email lookup
+          email: email || `User ...${userId.slice(-8)}`, // Fallback if function fails
           full_name: null,
         }
-      })
+      }
     }
 
     // Get resource details for all shared items
@@ -162,7 +169,7 @@ export async function GET() {
         resourceId: item.resource_id,
         resourceName: resource?.name || 'Unknown',
         resourceColor: resource?.color || '',
-        permission: item.permission_level,
+        permission_level: item.permission_level,
         user:
           type === 'shared_by'
             ? {
@@ -192,7 +199,7 @@ export async function GET() {
         resourceId: invitation.resource_id,
         resourceName: resource?.name || 'Unknown',
         resourceColor: resource?.color || '',
-        permission: invitation.permission_level,
+        permission_level: invitation.permission_level,
         invitedBy: {
           email: userProfiles[invitation.invited_by || '']?.email || '',
           name: userProfiles[invitation.invited_by || '']?.full_name || '',

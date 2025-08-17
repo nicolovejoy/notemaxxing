@@ -372,7 +372,7 @@ export default function NotebookPage() {
                     className="bg-white border border-gray-300 shadow-sm hover:shadow-md"
                   />
                 ) : notebook.shared ? (
-                  <SharedIndicator 
+                  <SharedIndicator
                     shared={true}
                     sharedByMe={false}
                     permission={notebook.permission}
@@ -385,11 +385,17 @@ export default function NotebookPage() {
           {/* Notes Grid */}
           {notes.length === 0 && !search ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
+              {/* Only show Add Note if user owns notebook or has write permission */}
+              {(!notebook.shared || notebook.permission === 'write') && (
+                <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
+              {/* Only show Add Note if user owns notebook or has write permission */}
+              {(!notebook.shared || notebook.permission === 'write') && (
+                <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
+              )}
               {notes.map((note) => (
                 <NoteCard
                   key={note.id}
@@ -399,27 +405,38 @@ export default function NotebookPage() {
                   updatedAt={note.updated_at}
                   isSelected={selectedNote?.id === note.id}
                   onClick={async () => {
-                    // Load full note content and open editor
+                    // For read-only users, just show the note without edit mode
+                    const canEdit = !notebook.shared || notebook.permission === 'write'
+
                     await loadNoteView(notebookId, { noteId: note.id })
                     const fullNote = noteView?.currentNote
                     if (fullNote) {
                       setSelectedNote(fullNote)
-                      setIsEditingNote(true)
-                      setEditingNoteTitle(fullNote.title)
-                      setEditingNoteContent(fullNote.content || '')
+                      if (canEdit) {
+                        setIsEditingNote(true)
+                        setEditingNoteTitle(fullNote.title)
+                        setEditingNoteContent(fullNote.content || '')
+                      }
+                      // For read-only, we could show a read-only view
+                      // but for now just don't open the editor
                     }
                   }}
-                  onEdit={async () => {
-                    // Same as onClick - open editor directly
-                    await loadNoteView(notebookId, { noteId: note.id })
-                    const fullNote = noteView?.currentNote
-                    if (fullNote) {
-                      setSelectedNote(fullNote)
-                      setIsEditingNote(true)
-                      setEditingNoteTitle(fullNote.title)
-                      setEditingNoteContent(fullNote.content || '')
-                    }
-                  }}
+                  onEdit={
+                    // Only allow edit if user owns notebook or has write permission
+                    !notebook.shared || notebook.permission === 'write'
+                      ? async () => {
+                          // Same as onClick - open editor directly
+                          await loadNoteView(notebookId, { noteId: note.id })
+                          const fullNote = noteView?.currentNote
+                          if (fullNote) {
+                            setSelectedNote(fullNote)
+                            setIsEditingNote(true)
+                            setEditingNoteTitle(fullNote.title)
+                            setEditingNoteContent(fullNote.content || '')
+                          }
+                        }
+                      : undefined
+                  }
                   onDelete={() => handleDeleteNote(note.id)}
                 />
               ))}

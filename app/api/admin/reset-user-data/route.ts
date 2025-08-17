@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     deleteOperations.push({ table: 'notebooks', result: notebooksDelete })
 
     // Delete folders
-    const foldersDelete = await serviceClient.from('folders').delete().eq('user_id', targetUserId)
+    const foldersDelete = await serviceClient.from('folders').delete().eq('owner_id', targetUserId)
     deleteOperations.push({ table: 'folders', result: foldersDelete })
 
     // TODO: Update after permission system migration
@@ -158,9 +158,9 @@ export async function POST(request: NextRequest) {
 
     // 10. Verify deletion
     const [foldersAfter, notebooksAfter, notesAfter] = await Promise.all([
-      serviceClient.from('folders').select('id', { count: 'exact' }).eq('user_id', targetUserId),
-      serviceClient.from('notebooks').select('id', { count: 'exact' }).eq('user_id', targetUserId),
-      serviceClient.from('notes').select('id', { count: 'exact' }).eq('user_id', targetUserId),
+      serviceClient.from('folders').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
+      serviceClient.from('notebooks').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
+      serviceClient.from('notes').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
     ])
 
     const afterCounts = {
