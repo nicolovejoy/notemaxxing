@@ -1,21 +1,21 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 interface DropdownOption {
-  value: string;
-  label: string;
-  icon?: React.ReactNode;
+  value: string
+  label: string
+  icon?: React.ReactNode
 }
 
 interface DropdownProps {
-  label: string;
-  icon?: React.ReactNode;
-  options: DropdownOption[];
-  value?: string;
-  onChange: (value: string) => void;
-  className?: string;
-  buttonClassName?: string;
-  menuClassName?: string;
+  label: string
+  icon?: React.ReactNode
+  options: DropdownOption[]
+  value?: string
+  onChange: (value: string) => void
+  className?: string
+  buttonClassName?: string
+  menuClassName?: string
 }
 
 export function Dropdown({
@@ -28,24 +28,24 @@ export function Dropdown({
   buttonClassName = '',
   menuClassName = '',
 }: DropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleSelect = (optionValue: string) => {
-    onChange(optionValue);
-    setIsOpen(false);
-  };
+    onChange(optionValue)
+    setIsOpen(false)
+  }
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
@@ -58,7 +58,9 @@ export function Dropdown({
         <ChevronDown className="h-4 w-4" />
       </button>
       {isOpen && (
-        <div className={`absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${menuClassName}`}>
+        <div
+          className={`absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${menuClassName}`}
+        >
           {options.map((option) => (
             <button
               key={option.value}
@@ -74,5 +76,5 @@ export function Dropdown({
         </div>
       )}
     </div>
-  );
+  )
 }

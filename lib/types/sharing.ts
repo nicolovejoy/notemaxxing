@@ -1,16 +1,19 @@
-export type Permission = 'read' | 'write'
-export type ResourceType = 'folder' | 'notebook'
+export type Permission = 'none' | 'read' | 'write' | 'admin'
+export type ResourceType = 'folder' | 'notebook' | 'note'
 
 export interface ShareInvitation {
   id: string
   resource_type: ResourceType
   resource_id: string
-  invited_email: string
-  permission: Permission
+  invitee_email: string
+  permission_level: Permission
   invited_by: string
-  created_at: string
+  created_at: string | null
   expires_at: string
   accepted_at: string | null
+  accepted_by: string | null
+  token: string
+  transfer_ownership_on_accept: boolean | null
 }
 
 export interface ResourcePermission {
@@ -18,9 +21,11 @@ export interface ResourcePermission {
   resource_type: ResourceType
   resource_id: string
   user_id: string
-  permission: Permission
+  permission_level: Permission
   granted_by: string
-  created_at: string
+  created_at: string | null
+  updated_at: string | null
+  expires_at: string | null
 }
 
 export interface SharedResource {
@@ -30,7 +35,7 @@ export interface SharedResource {
   resourceId: string
   resourceName: string
   resourceColor: string
-  permission: Permission
+  permission_level: Permission
   user?: {
     id: string
     email: string
@@ -48,7 +53,7 @@ export interface ShareInviteRequest {
   resourceType: ResourceType
   resourceId: string
   invitedEmail: string
-  permission: Permission
+  permission_level: Permission
 }
 
 export interface ShareListResponse {

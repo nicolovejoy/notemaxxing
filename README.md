@@ -6,25 +6,24 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 
 ## Features
 
-### 📁 Dynamic Folders
+### 📁 Folders
 
-- Create custom folders with names and colors
-- Rename folders inline
-- Delete folders with cascade deletion (not sure what this means - nico - let's discuss)
+- Create folders (in your backpack) with names and colors
+- Rename folders
+- Delete folders (need to test if this works)
+- Share folders with other users via email invitations (working as of 8/16)
 
-### 📓 Smart Notebooks
+### 📓 Notebooks
 
 - Create notebooks within folders
-- Rename notebooks anytime
-- Archive notebooks instead of deleting
-- Restore archived notebooks
-- Permanent delete option for archived items
+- Archive notebooks (need to review if this exists and works at some point)
+- Permanent delete option for archived items (need to review if this exists and works at some point)
 
 ### 📝 Note Taking
 
 - Create and edit notes within notebooks
 - **Rich Text Editor**: Bold, italic, lists, headings with TipTap
-- **AI Enhancement**: Improve grammar and clarity with Claude AI
+- **AI Enhancement**: Improve grammar and clarity with Claude AI, for all or part of a Note
 - **Text Selection Enhancement**: Enhance specific portions of text
 - **Preview Before Apply**: See AI changes side-by-side before accepting
 - **Undo Support**: Revert AI enhancements with dedicated undo
@@ -48,18 +47,9 @@ A modern note-taking application built with Next.js, TypeScript, and Tailwind CS
 - Practice mode with self-grading
 - Track your progress
 
-## Tech Stack
+### 🔄 Real-Time Sync (Beta)
 
-- **Framework**: Next.js 15.4.4 with App Router
-- **Language**: TypeScript 5.7.3
-- **UI**: React 19.1.0 + Tailwind CSS 4
-- **Rich Text**: TipTap 3.0 Editor
-- **AI Integration**: Anthropic Claude 3.5 Sonnet
-- **State Management**: Zustand 5.0.6 with Immer middleware
-- **Auth & Database**: Supabase (PostgreSQL)
-- **Icons**: Lucide React
-- **Code Quality**: ESLint, Prettier, Husky pre-commit hooks
-- **Deployment**: Vercel
+- unclear what's here. need to revisit
 
 ## Getting Started
 
@@ -98,24 +88,6 @@ npm run build
 npm start
 ```
 
-## Project Structure
-
-```
-notemaxxing/
-├── app/                    # Next.js app directory
-│   ├── folders/           # Folder management page
-│   ├── notebooks/[id]/    # Individual notebook pages
-│   ├── typemaxxing/       # Typing practice
-│   ├── quizzing/          # Quiz feature
-│   └── page.tsx           # Homepage
-├── lib/                   # Utilities
-│   ├── store/            # Zustand store with hooks
-│   ├── supabase/         # Database client & schema
-│   └── storage.ts        # Legacy localStorage (being phased out)
-├── public/                # Static assets
-└── components/            # React components
-```
-
 ## Data Storage
 
 Data is stored in Supabase PostgreSQL with:
@@ -127,12 +99,25 @@ Data is stored in Supabase PostgreSQL with:
 
 ## Development
 
+### Design System
+
+We have a comprehensive design system with reusable components. **Always use these components instead of creating new ones.**
+
+See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for:
+
+- Complete component documentation
+- Usage examples
+- Design tokens (colors, spacing, typography)
+- Best practices
+
 ### Key Commands
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
 - `npm run type-check` - Run TypeScript compiler
+- `npm run format` - Format code with Prettier
+- `npm run format:check` - Check code formatting
 
 ### Testing in Production (Vercel)
 
@@ -164,16 +149,6 @@ git push origin --delete preview/your-feature
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## Roadmap
-
-See [TODO.md](./docs/TODO.md) for planned features and improvements.
-
 ## License
 
 This project is open source and available under the MIT License.
-
-## Acknowledgments
-
-- Built with [Next.js](https://nextjs.org/)
-- Deployed on [Vercel](https://vercel.com)
-- Icons by [Lucide](https://lucide.dev/)

@@ -7,10 +7,7 @@ export async function POST(request: NextRequest) {
     const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
     if (error) return error
     if (!supabase) {
-      return NextResponse.json(
-        { error: 'Service temporarily unavailable' },
-        { status: 503 }
-      )
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
     }
 
     // Parse request body
@@ -18,158 +15,75 @@ export async function POST(request: NextRequest) {
     const { invitationId } = body
 
     if (!invitationId) {
-      return NextResponse.json(
-        { error: 'Missing invitation ID' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing invitation ID' }, { status: 400 })
     }
 
-    // Get invitation details
-    const { data: invitation, error: inviteError } = await supabase
-      .from('share_invitations')
-      .select('*')
-      .eq('id', invitationId)
-      .single()
+    console.log('[Accept Invitation] User:', user.id, 'accepting invitation:', invitationId)
 
-    if (inviteError || !invitation) {
-      return NextResponse.json(
-        { error: 'Invitation not found' },
-        { status: 404 }
-      )
-    }
+    // Use the database function to accept the invitation
+    const { error: acceptError } = await supabase.rpc('accept_invitation', {
+      p_invitation_id: invitationId,
+      p_user_id: user.id,
+    })
 
-    // Check if invitation is for this user (skip for link-based invitations)
-    if (invitation.invited_email !== 'link@share.notemaxxing') {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', user.id)
-        .single()
+    if (acceptError) {
+      console.error('[Accept Invitation] Error:', acceptError)
 
-      if (!profile || profile.email !== invitation.invited_email) {
-        return NextResponse.json(
-          { error: 'This invitation is not for you' },
-          { status: 403 }
-        )
+      // Parse specific error messages from the function
+      if (acceptError.message.includes('not found or not for this user')) {
+        return NextResponse.json({ error: 'Invitation not found or not for you' }, { status: 403 })
       }
+      if (acceptError.message.includes('already accepted')) {
+        return NextResponse.json({ error: 'Invitation already accepted' }, { status: 409 })
+      }
+      if (acceptError.message.includes('expired')) {
+        return NextResponse.json({ error: 'Invitation has expired' }, { status: 410 })
+      }
+
+      return NextResponse.json({ error: 'Failed to accept invitation' }, { status: 500 })
     }
 
-    // Check if invitation is already accepted
-    if (invitation.accepted_at) {
-      return NextResponse.json(
-        { error: 'Invitation already accepted' },
-        { status: 409 }
+    // Get the resource details for the response
+    const { data: details } = await supabase
+      .from('invitation_details')
+      .select(
+        'resource_id, resource_type: public_store.invitation_previews(resource_type, resource_name)'
       )
-    }
-
-    // Check if invitation is expired
-    const expiresAt = new Date(invitation.expires_at)
-    if (expiresAt < new Date()) {
-      return NextResponse.json(
-        { error: 'Invitation has expired' },
-        { status: 410 }
-      )
-    }
-
-    // Check if permission already exists
-    const { data: existingPermission } = await supabase
-      .from('permissions')
-      .select('id')
-      .eq('resource_type', invitation.resource_type)
-      .eq('resource_id', invitation.resource_id)
-      .eq('user_id', user.id)
-      .single()
-
-    if (existingPermission) {
-      // Update invitation status anyway
-      await supabase
-        .from('share_invitations')
-        .update({ accepted_at: new Date().toISOString() })
-        .eq('id', invitationId)
-
-      return NextResponse.json({
-        success: true,
-        message: 'You already have access to this resource'
-      })
-    }
-
-    // Start a transaction to ensure both operations succeed
-    // Create permission
-    const { data: permission, error: permError } = await supabase
-      .from('permissions')
-      .insert({
-        resource_type: invitation.resource_type,
-        resource_id: invitation.resource_id,
-        user_id: user.id,
-        permission: invitation.permission,
-        granted_by: invitation.invited_by,
-      })
-      .select()
-      .single()
-
-    if (permError) {
-      console.error('Error creating permission:', permError)
-      return NextResponse.json(
-        { error: 'Failed to grant permission' },
-        { status: 500 }
-      )
-    }
-
-    // Update invitation as accepted
-    const { error: updateError } = await supabase
-      .from('share_invitations')
-      .update({ accepted_at: new Date().toISOString() })
       .eq('id', invitationId)
+      .single()
 
-    if (updateError) {
-      // Try to rollback permission creation
-      await supabase
-        .from('permissions')
-        .delete()
-        .eq('id', permission.id)
+    // Get the actual permission that was created
+    const { data: permission } = await supabase
+      .from('permissions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('resource_id', details?.resource_id)
+      .single()
 
-      console.error('Error updating invitation:', updateError)
-      return NextResponse.json(
-        { error: 'Failed to accept invitation' },
-        { status: 500 }
-      )
-    }
+    console.log('[Accept Invitation] Success - permission created:', permission?.id)
 
-    // Get resource details for response
-    let resourceDetails
-    if (invitation.resource_type === 'folder') {
-      const { data } = await supabase
-        .from('folders')
-        .select('name, color')
-        .eq('id', invitation.resource_id)
-        .single()
-      resourceDetails = data
-    } else {
-      const { data } = await supabase
-        .from('notebooks')
-        .select('name, color')
-        .eq('id', invitation.resource_id)
-        .single()
-      resourceDetails = data
-    }
+    // Clear any cached data
+    await fetch(`${request.nextUrl.origin}/api/views/folders`, {
+      method: 'GET',
+      headers: {
+        cookie: request.headers.get('cookie') || '',
+      },
+    })
 
     return NextResponse.json({
       success: true,
-      permission: {
-        id: permission.id,
-        resourceType: permission.resource_type,
-        resourceId: permission.resource_id,
-        permission: permission.permission,
-        resourceName: resourceDetails?.name,
-        resourceColor: resourceDetails?.color,
-      }
+      message: 'Invitation accepted successfully',
+      permission: permission
+        ? {
+            id: permission.id,
+            resourceType: permission.resource_type,
+            resourceId: permission.resource_id,
+            permission: permission.permission_level,
+          }
+        : null,
     })
-
   } catch (error) {
-    console.error('Unexpected error in accept invitation:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('[Accept Invitation] Unexpected error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

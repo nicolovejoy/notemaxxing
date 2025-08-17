@@ -1,47 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
-  X,
+  Shield,
+  AlertTriangle,
+  RefreshCw,
+  Users,
+  Database,
+  Download,
+  Trash2,
+  Plus,
   ChevronDown,
   ChevronRight,
-  RefreshCw,
-  Trash2,
-  Copy,
-  AlertCircle,
-  CheckCircle,
-  Info,
-  AlertTriangle,
-  Database,
-  Users,
-  Loader,
+  Clock,
+  FolderOpen,
+  BookOpen,
+  FileText,
 } from 'lucide-react'
-import { Modal, Button, IconButton } from './ui'
-import { logger } from '@/lib/debug/logger'
-import { 
-  useFolders, 
-  useNotebooks, 
-  useNotes, 
-  useSyncState, 
-  useIsInitialized,
-  useDataActions 
-} from '@/lib/store'
-import { dataManager } from '@/lib/store/data-manager'
-import { createClient } from '@/lib/supabase/client'
+import { Modal } from './ui/Modal'
+import { LoadingButton } from './ui/LoadingButton'
+import { FormField } from './ui/FormField'
+import { StatusMessage } from './ui/StatusMessage'
+import { Button } from './ui/Button'
+import { useAuth } from '@/lib/hooks/useAuth'
 
-// Admin emails who can access debug console
-const ADMIN_EMAILS = [
-  'nicholas.lovejoy@gmail.com', // Nico - Developer
-  'mlovejoy@scu.edu', // Max - UX Designer & Co-developer
-  // Add other admin emails as needed
-]
-
-interface LogEntry {
-  timestamp: Date
-  level: string
-  message: string
-  data?: unknown
-  stack?: string
+interface AdminConsoleProps {
+  onClose: () => void
 }
 
 interface UserData {
@@ -55,95 +39,51 @@ interface UserData {
   quiz_count: number
 }
 
-interface AdminConsoleProps {
-  onClose?: () => void
-}
+export function AdminConsole({ onClose }: AdminConsoleProps) {
+  const { user, client: supabase } = useAuth()
+  const currentUserId = user?.id
+  const currentUserEmail = user?.email
 
-export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
-  const [isOpen, setIsOpen] = useState(true)
-  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [activeTab, setActiveTab] = useState<'database' | 'users' | 'reset' | 'permissions'>(
+    'database'
+  )
   const [expandedSections, setExpandedSections] = useState({
-    logs: true,
-    store: false,
-    auth: false,
-    env: false,
-    database: false,
-    users: false,
+    quickActions: true,
+    userStats: false,
   })
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [isAdmin, setIsAdmin] = useState(false)
+
+  // Reset user data state
+  const [targetEmail, setTargetEmail] = useState('')
+
+  // Permissions state
+  interface EnhancedPermission {
+    id: string
+    user_id: string
+    resource_type: string
+    resource_id: string
+    permission_level: string
+    created_at: string | null
+    updated_at?: string | null
+    expires_at?: string | null
+    granted_by?: string
+    resourceName: string
+    ownerEmail: string
+    userEmail: string
+  }
+  const [permissions, setPermissions] = useState<EnhancedPermission[]>([])
+  const [loadingPermissions, setLoadingPermissions] = useState(false)
+  const [adminPassword, setAdminPassword] = useState('')
+  const [isResetting, setIsResetting] = useState(false)
+  const [resetResult, setResetResult] = useState<{
+    success?: boolean
+    message?: string
+    deleted?: { folders: number; notebooks: number; notes: number }
+  } | null>(null)
+
+  // User management state
   const [allUsers, setAllUsers] = useState<UserData[]>([])
   const [loadingUsers, setLoadingUsers] = useState(false)
-
-  // Get store state using new hooks
-  const folders = useFolders()
-  const notebooks = useNotebooks(true) // include archived
-  const notes = useNotes()
-  const syncState = useSyncState()
-  const isInitialized = useIsInitialized()
-  const { seedInitialData } = useDataActions()
-
-  // Check if user is admin
-  useEffect(() => {
-    const checkAuth = async () => {
-      const supabase = createClient()
-      if (!supabase) return
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user?.email) {
-        setUserEmail(user.email)
-        setCurrentUserId(user.id)
-        setIsAdmin(ADMIN_EMAILS.includes(user.email))
-      }
-    }
-    checkAuth()
-  }, [])
-
-  // Listen for keyboard shortcut (triple press 'd')
-  useEffect(() => {
-    if (!isAdmin) return
-
-    let keyPresses: number[] = []
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'd' || e.key === 'D') {
-        const now = Date.now()
-        keyPresses.push(now)
-
-        // Keep only presses within last second
-        keyPresses = keyPresses.filter((time) => now - time < 1000)
-
-        if (keyPresses.length >= 3) {
-          if (onClose) {
-            onClose()
-          } else {
-            setIsOpen(!isOpen)
-          }
-          keyPresses = []
-        }
-      }
-    }
-
-    window.addEventListener('keypress', handleKeyPress)
-    return () => window.removeEventListener('keypress', handleKeyPress)
-  }, [isAdmin, isOpen, onClose])
-
-  // Update logs periodically
-  useEffect(() => {
-    if (!isOpen) return
-
-    const updateLogs = () => {
-      setLogs(logger.getLogs())
-    }
-
-    updateLogs()
-    const interval = setInterval(updateLogs, 1000)
-    return () => clearInterval(interval)
-  }, [isOpen])
-
-  if (!isAdmin) return null
+  const [userActionLoading, setUserActionLoading] = useState<string | null>(null)
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -152,167 +92,64 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
     }))
   }
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-  }
-
-  const clearLogs = () => {
-    logger.clearLogs()
-    setLogs([])
-  }
-
-  const refreshStore = async () => {
-    logger.info('Manually refreshing store...')
-    await dataManager.refresh()
-  }
-
-  // Admin functions
   const loadAllUsers = async () => {
     setLoadingUsers(true)
     try {
-      const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
-      // Get all users using our admin function
+      // Get all users using admin function
       const { data: users, error } = await supabase.rpc('get_all_users_admin')
-      
+
       if (error) {
-        logger.error('Failed to load users', error)
+        console.error('Failed to load users:', error)
         throw error
       }
 
       setAllUsers(users || [])
-      logger.info(`Loaded ${users?.length || 0} users`)
     } catch (error) {
-      logger.error('Failed to load users', error)
+      console.error('Failed to load users:', error)
     } finally {
       setLoadingUsers(false)
     }
   }
 
-  const resetUserData = async (userId: string) => {
-    if (
-      !confirm('Are you sure you want to delete ALL data for this user? This cannot be undone!')
-    ) {
-      return
-    }
-
-    // Prompt for admin password
-    const adminPassword = prompt('Enter admin password to confirm deletion:')
-    if (!adminPassword) {
-      alert('Operation cancelled')
-      return
-    }
-
-    logger.info('Starting reset for user', { userId })
-    console.log('🔒 Using secure admin endpoint for user:', userId)
-    
-    try {
-
-      // Call the secure admin API endpoint
-      const response = await fetch('/api/admin/reset-user-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          targetUserId: userId,
-          adminPassword: adminPassword
-        })
-      })
-
-      const result = await response.json()
-      
-      console.log('📥 API Response:', { status: response.status, result })
-
-      if (!response.ok) {
-        if (response.status === 403 && result.error === 'Invalid admin password') {
-          throw new Error('Invalid admin password')
-        }
-        throw new Error(result.error || 'Failed to reset user data')
-      }
-
-      // Success!
-      logger.info('Reset successful via admin API', { userId, result })
-      console.log('✅ Successfully deleted:', result.deleted)
-      console.log('📊 Remaining (should be 0):', result.remaining)
-      
-      if (result.remaining.folders > 0 || result.remaining.notebooks > 0 || result.remaining.notes > 0) {
-        alert(`Warning: Some data may remain. Check console for details.`)
-      } else {
-        alert(`User data reset successfully!\n\nDeleted:\n- ${result.deleted.folders} folders\n- ${result.deleted.notebooks} notebooks\n- ${result.deleted.notes} notes`)
-      }
-
-      // Refresh store if it's the current user
-      if (userId === currentUserId) {
-        await dataManager.refresh()
-      }
-      
-      // Refresh user list to update counts
-      await loadAllUsers()
-    } catch (error) {
-      logger.error('Failed to reset user data', { 
-        error, 
-        message: (error as Error).message,
-        stack: (error as Error).stack 
-      })
-      console.error('Full error object:', error)
-      alert('Failed to reset user data: ' + (error as Error).message + '\n\nCheck console for details.')
-    }
-  }
-
   const seedUserData = async (userId: string) => {
+    if (!confirm('Add starter content for this user?')) return
+
+    setUserActionLoading(userId)
     try {
-      const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
-      // Use the admin function to seed data for any user
       const { error } = await supabase.rpc('create_starter_content_for_specific_user', {
-        target_user_id: userId
+        target_user_id: userId,
       })
 
-      if (error) {
-        // If the function doesn't exist or fails, fall back to current user only
-        if (userId === currentUserId) {
-          const result = await seedInitialData('default-with-tutorials')
-          if (result.success) {
-            logger.info('Seeded data for current user', { userId })
-            alert('Starter content added successfully!')
-          } else {
-            throw new Error(result.error || 'Failed to seed data')
-          }
-        } else {
-          throw new Error('Cannot seed data for other users')
-        }
-      } else {
-        logger.info('Seeded data for user', { userId })
-        alert('Starter content added successfully!')
-      }
+      if (error) throw error
 
-      // Refresh store if it's the current user
-      if (userId === currentUserId) {
-        await dataManager.refresh()
-      }
-      
-      // Refresh user list to update counts
-      await loadAllUsers()
+      alert('Starter content added successfully!')
+      await loadAllUsers() // Refresh counts
     } catch (error) {
-      logger.error('Failed to seed user data', error)
-      alert('Failed to seed user data: ' + (error as Error).message)
+      console.error('Failed to seed user data:', error)
+      alert('Failed to add starter content')
+    } finally {
+      setUserActionLoading(null)
     }
   }
 
   const exportUserData = async (userId: string) => {
+    setUserActionLoading(userId)
     try {
-      const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
+      // NOTE: Currently only works for the current user due to RLS policies
+      // Exporting other users' data returns empty results
+      // TODO: Create admin-specific RPC function to export any user's data
+
       // Get all user data
-      const [folders, notebooks, notes, quizzes] = await Promise.all([
+      const [folders, notebooks, notes] = await Promise.all([
         supabase.from('folders').select('*').eq('user_id', userId),
         supabase.from('notebooks').select('*').eq('user_id', userId),
         supabase.from('notes').select('*').eq('user_id', userId),
-        supabase.from('quizzes').select('*').eq('user_id', userId),
       ])
 
       const exportData = {
@@ -321,7 +158,6 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
         folders: folders.data || [],
         notebooks: notebooks.data || [],
         notes: notes.data || [],
-        quizzes: quizzes.data || [],
       }
 
       // Download as JSON
@@ -331,352 +167,643 @@ export function AdminConsole({ onClose }: AdminConsoleProps = {}) {
       a.href = url
       a.download = `notemaxxing-export-${userId}-${new Date().toISOString().split('T')[0]}.json`
       a.click()
-
-      logger.info('Exported data for user', { userId })
+      URL.revokeObjectURL(url)
     } catch (error) {
-      logger.error('Failed to export user data', error)
-      alert('Failed to export user data: ' + (error as Error).message)
+      console.error('Failed to export user data:', error)
+      alert('Failed to export user data')
+    } finally {
+      setUserActionLoading(null)
+    }
+  }
+
+  const fetchPermissions = async () => {
+    if (!supabase) return
+    setLoadingPermissions(true)
+
+    try {
+      // Get all permissions with user details
+      const { data: perms, error } = await supabase
+        .from('permissions')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      // Get resource names and user emails for better display
+      const enhancedPerms = await Promise.all(
+        (perms || []).map(async (perm) => {
+          let resourceName = 'Unknown'
+          const ownerEmail = 'Unknown'
+
+          if (perm.resource_type === 'folder') {
+            const { data } = await supabase
+              .from('folders')
+              .select('name, user_id')
+              .eq('id', perm.resource_id)
+              .single()
+            resourceName = data?.name || 'Deleted Folder'
+
+            // Get owner email
+            // TODO: Need API endpoint to fetch auth user data
+            // if (data?.user_id) {
+            //   const { data: owner } = await supabase
+            //     .from('auth.users')
+            //     .select('email')
+            //     .eq('id', data.user_id)
+            //     .single()
+            //   ownerEmail = owner?.email || 'Unknown'
+            // }
+          } else if (perm.resource_type === 'notebook') {
+            const { data } = await supabase
+              .from('notebooks')
+              .select('name, user_id')
+              .eq('id', perm.resource_id)
+              .single()
+            resourceName = data?.name || 'Deleted Notebook'
+
+            // Get owner email
+            // TODO: Need API endpoint to fetch auth user data
+            // if (data?.user_id) {
+            //   const { data: owner } = await supabase
+            //     .from('auth.users')
+            //     .select('email')
+            //     .eq('id', data.user_id)
+            //     .single()
+            //   ownerEmail = owner?.email || 'Unknown'
+            // }
+          }
+
+          // Get permission holder email
+          // TODO: Need API endpoint to fetch auth user data
+          // const { data: user } = await supabase
+          //   .from('auth.users')
+          //   .select('email')
+          //   .eq('id', perm.user_id)
+          //   .single()
+
+          return {
+            ...perm,
+            resourceName,
+            ownerEmail,
+            userEmail: 'Unknown', // user?.email || 'Unknown',
+          }
+        })
+      )
+
+      setPermissions(enhancedPerms)
+      console.log('Permissions loaded:', enhancedPerms)
+    } catch (error) {
+      console.error('Error fetching permissions:', error)
+    } finally {
+      setLoadingPermissions(false)
+    }
+  }
+
+  const resetUserData = async (userId: string, userEmail: string) => {
+    if (!confirm(`Delete ALL data for ${userEmail}?\n\nThis cannot be undone!`)) return
+
+    const password = prompt('Enter admin password to confirm:')
+    if (!password) return
+
+    setUserActionLoading(userId)
+    try {
+      const response = await fetch('/api/admin/reset-user-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId: userId,
+          adminPassword: password,
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Failed to reset')
+
+      alert(
+        `Deleted: ${result.deleted.folders} folders, ${result.deleted.notebooks} notebooks, ${result.deleted.notes} notes`
+      )
+      await loadAllUsers()
+    } catch (error) {
+      alert('Failed to reset: ' + (error as Error).message)
+    } finally {
+      setUserActionLoading(null)
     }
   }
 
   const deleteUser = async (userId: string, userEmail: string) => {
-    if (!confirm(`Are you sure you want to DELETE the user account: ${userEmail}?\n\nThis will permanently delete:\n- The user account\n- All folders\n- All notebooks\n- All notes\n- All quizzes\n\nThis CANNOT be undone!`)) {
-      return
-    }
+    if (!confirm(`DELETE user account ${userEmail}?\n\nThis will delete EVERYTHING!`)) return
 
-    // Double confirmation for safety
-    const confirmEmail = prompt(`Type the user's email (${userEmail}) to confirm deletion:`)
+    const confirmEmail = prompt(`Type "${userEmail}" to confirm:`)
     if (confirmEmail !== userEmail) {
-      alert('Email does not match. Deletion cancelled.')
+      alert('Email does not match')
       return
     }
 
+    setUserActionLoading(userId)
     try {
-      const supabase = createClient()
       if (!supabase) throw new Error('No Supabase client')
 
-      const { error } = await supabase.rpc('delete_user_admin', {
-        user_id: userId
-      })
+      const { error } = await supabase.rpc('delete_user_admin', { user_id: userId })
+      if (error) throw error
 
-      if (error) {
-        throw error
-      }
-
-      logger.info('Deleted user', { userId, userEmail })
-      alert(`User ${userEmail} has been deleted successfully.`)
-
-      // Refresh the user list
+      alert(`User ${userEmail} deleted successfully`)
       await loadAllUsers()
     } catch (error) {
-      logger.error('Failed to delete user', error)
       alert('Failed to delete user: ' + (error as Error).message)
+    } finally {
+      setUserActionLoading(null)
     }
   }
 
-  const getLogIcon = (level: string) => {
-    switch (level) {
-      case 'error':
-        return <AlertCircle className="w-4 h-4 text-red-500" />
-      case 'warn':
-        return <AlertTriangle className="w-4 h-4 text-yellow-500" />
-      case 'info':
-        return <Info className="w-4 h-4 text-blue-500" />
-      default:
-        return <CheckCircle className="w-4 h-4 text-gray-500" />
+  const handleResetUserData = async () => {
+    if (!targetEmail || !adminPassword) {
+      setResetResult({ success: false, message: 'Please fill in all fields' })
+      return
     }
-  }
 
-  const getStoreStats = () => {
-    return {
-      folders: folders.length,
-      notebooks: notebooks.length,
-      notes: notes.length,
-      quizzes: 0, // Quizzes not implemented in new store
-      initialized: isInitialized,
-      syncStatus: syncState.status,
-      syncError: syncState.error,
-      lastSync: syncState.lastSyncTime,
+    setIsResetting(true)
+    setResetResult(null)
+
+    try {
+      // First, get the user ID from the email
+      const userResponse = await fetch(
+        `/api/admin/get-user-id?email=${encodeURIComponent(targetEmail)}`
+      )
+
+      let targetUserId: string
+
+      if (!userResponse.ok) {
+        // For now, use the email as the user ID (you may need to implement the get-user-id endpoint)
+        console.warn('Could not fetch user ID, using email as placeholder')
+        targetUserId = targetEmail
+      } else {
+        const userData = await userResponse.json()
+        targetUserId = userData.userId
+      }
+
+      // Reset the user's data
+      const response = await fetch('/api/admin/reset-user-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          targetUserId,
+          adminPassword,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset user data')
+      }
+
+      setResetResult({
+        success: true,
+        message: `Successfully reset data for ${targetEmail}`,
+        deleted: data.deleted,
+      })
+
+      // Clear form
+      setTargetEmail('')
+      setAdminPassword('')
+    } catch (error) {
+      setResetResult({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to reset user data',
+      })
+    } finally {
+      setIsResetting(false)
     }
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={() => onClose ? onClose() : setIsOpen(false)} size="lg">
-      <div className="h-[80vh] flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b">
-          <div>
-            <h2 className="text-xl font-semibold">Admin Console</h2>
-            <p className="text-sm text-gray-500 mt-1">Logged in as: {userEmail}</p>
-            {!isAdmin && (
-              <p className="text-sm text-red-600 mt-1">⚠️ You are not an admin</p>
-            )}
-          </div>
-          <IconButton
-            icon={X}
-            onClick={() => onClose ? onClose() : setIsOpen(false)}
-            size="sm"
-            variant="ghost"
-          />
+    <Modal isOpen={true} onClose={onClose} title="Admin Console" size="lg">
+      {/* Admin Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2 text-red-600">
+          <Shield className="h-5 w-5" />
+          <span className="font-semibold">Administrator Access</span>
         </div>
+        <span className="text-sm text-gray-500">{currentUserEmail}</span>
+      </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto py-4 space-y-4">
-          {/* Database Management Section */}
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6 border-b">
+        <button
+          onClick={() => setActiveTab('database')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'database'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Database Management
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('users')
+            if (allUsers.length === 0) loadAllUsers()
+          }}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'users'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          User Stats
+        </button>
+        <button
+          onClick={() => setActiveTab('reset')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'reset'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Reset User Data
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('permissions')
+            fetchPermissions()
+          }}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'permissions'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Permissions
+        </button>
+      </div>
+
+      {/* Database Management Tab */}
+      {activeTab === 'database' && (
+        <div className="space-y-4">
+          {/* Quick Actions Section */}
           <div className="border rounded-lg">
             <button
-              onClick={() => toggleSection('database')}
-              className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50"
+              onClick={() => toggleSection('quickActions')}
+              className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
             >
               <span className="font-medium flex items-center gap-2">
-                <Database className="w-4 h-4" />
-                Database Management
+                <Database className="h-4 w-4" />
+                Quick Actions
               </span>
-              {expandedSections.database ? (
-                <ChevronDown className="w-4 h-4" />
+              {expandedSections.quickActions ? (
+                <ChevronDown className="h-4 w-4" />
               ) : (
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="h-4 w-4" />
               )}
             </button>
-            {expandedSections.database && (
-              <div className="p-4 space-y-3">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium">Quick Actions</h4>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => currentUserId && seedUserData(currentUserId)}
-                      variant="primary"
-                      size="sm"
-                      disabled={!currentUserId}
-                    >
-                      Add Starter Content
-                    </Button>
-                    <Button
-                      onClick={() => currentUserId && resetUserData(currentUserId)}
-                      variant="danger"
-                      size="sm"
-                      disabled={!currentUserId}
-                    >
-                      Reset My Data
-                    </Button>
-                    <Button
-                      onClick={() => currentUserId && exportUserData(currentUserId)}
-                      variant="secondary"
-                      size="sm"
-                      disabled={!currentUserId}
-                    >
-                      Export My Data
-                    </Button>
-                  </div>
+            {expandedSections.quickActions && (
+              <div className="p-4 border-t space-y-3">
+                <p className="text-sm text-gray-600 mb-3">Manage your own data quickly</p>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={Plus}
+                    onClick={() => currentUserId && seedUserData(currentUserId)}
+                    disabled={!currentUserId}
+                  >
+                    Add Starter Content
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    icon={Download}
+                    onClick={() => currentUserId && exportUserData(currentUserId)}
+                    disabled={!currentUserId}
+                  >
+                    Export My Data
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    icon={RefreshCw}
+                    onClick={() =>
+                      currentUserId &&
+                      currentUserEmail &&
+                      resetUserData(currentUserId, currentUserEmail)
+                    }
+                    disabled={!currentUserId}
+                  >
+                    Reset My Data
+                  </Button>
                 </div>
-                <div className="text-xs text-gray-500">
+                <p className="text-xs text-gray-500 mt-2">
                   Note: Starter content can only be added if you have no existing folders
-                </div>
+                </p>
               </div>
             )}
           </div>
+        </div>
+      )}
 
-          {/* Users Management Section */}
+      {/* User Stats Tab */}
+      {activeTab === 'users' && (
+        <div className="space-y-4">
           <div className="border rounded-lg">
-            <button
-              onClick={() => {
-                toggleSection('users')
-                if (!expandedSections.users) loadAllUsers()
-              }}
-              className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50"
-            >
+            <div className="px-4 py-3 border-b flex items-center justify-between">
               <span className="font-medium flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                User Stats
+                <Users className="h-4 w-4" />
+                All Users ({allUsers.length})
               </span>
-              {expandedSections.users ? (
-                <ChevronDown className="w-4 h-4" />
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={RefreshCw}
+                onClick={loadAllUsers}
+                disabled={loadingUsers}
+              >
+                Refresh
+              </Button>
+            </div>
+            <div className="p-4">
+              {loadingUsers ? (
+                <div className="text-center py-8 text-gray-500">Loading users...</div>
+              ) : allUsers.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No users found. Click refresh to load.
+                </div>
               ) : (
-                <ChevronRight className="w-4 h-4" />
-              )}
-            </button>
-            {expandedSections.users && (
-              <div className="p-4 space-y-3">
-                {loadingUsers ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader className="w-5 h-5 animate-spin" />
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {allUsers.map((user) => (
-                      <div key={user.id} className="border rounded p-3 text-sm">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <div className="font-medium">{user.email}</div>
-                            <div className="text-xs text-gray-500 mt-1">ID: {user.id}</div>
-                            <div className="text-xs text-gray-500">
-                              Created: {new Date(user.created_at).toLocaleDateString()}
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {allUsers.map((userData) => (
+                    <div key={userData.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="font-medium">{userData.email}</div>
+                          <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                            <div>ID: {userData.id}</div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              Created: {new Date(userData.created_at).toLocaleDateString()}
                             </div>
-                            {user.last_sign_in_at && (
-                              <div className="text-xs text-gray-500">
-                                Last login: {new Date(user.last_sign_in_at).toLocaleDateString()}
+                            {userData.last_sign_in_at && (
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                Last login: {new Date(userData.last_sign_in_at).toLocaleString()}
                               </div>
                             )}
                           </div>
-                          <IconButton
-                            icon={Trash2}
-                            onClick={() => deleteUser(user.id, user.email)}
-                            size="sm"
-                            variant="danger"
-                            title="Delete user"
-                          />
                         </div>
-                        <div className="grid grid-cols-4 gap-2 mt-2">
-                          <div className="text-center">
-                            <div className="text-lg font-semibold">{user.folder_count}</div>
-                            <div className="text-xs text-gray-500">Folders</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-semibold">{user.notebook_count}</div>
-                            <div className="text-xs text-gray-500">Notebooks</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-semibold">{user.note_count}</div>
-                            <div className="text-xs text-gray-500">Notes</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-lg font-semibold">{user.quiz_count}</div>
-                            <div className="text-xs text-gray-500">Quizzes</div>
-                          </div>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          icon={Trash2}
+                          onClick={() => deleteUser(userData.id, userData.email)}
+                          disabled={userActionLoading === userData.id}
+                        >
+                          Delete
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-4 gap-2 mb-3">
+                        <div className="text-center p-2 bg-gray-50 rounded">
+                          <FolderOpen className="h-4 w-4 mx-auto mb-1 text-gray-600" />
+                          <div className="text-lg font-semibold">{userData.folder_count}</div>
+                          <div className="text-xs text-gray-500">Folders</div>
                         </div>
-                        <div className="flex gap-2 mt-2">
+                        <div className="text-center p-2 bg-gray-50 rounded">
+                          <BookOpen className="h-4 w-4 mx-auto mb-1 text-gray-600" />
+                          <div className="text-lg font-semibold">{userData.notebook_count}</div>
+                          <div className="text-xs text-gray-500">Notebooks</div>
+                        </div>
+                        <div className="text-center p-2 bg-gray-50 rounded">
+                          <FileText className="h-4 w-4 mx-auto mb-1 text-gray-600" />
+                          <div className="text-lg font-semibold">{userData.note_count}</div>
+                          <div className="text-xs text-gray-500">Notes</div>
+                        </div>
+                        <div className="text-center p-2 bg-gray-50 rounded">
+                          <div className="text-lg font-semibold">{userData.quiz_count}</div>
+                          <div className="text-xs text-gray-500">Quizzes</div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <div
+                          title={
+                            userData.id !== currentUserId
+                              ? 'Export for other users not yet implemented'
+                              : 'Export user data'
+                          }
+                        >
                           <Button
-                            onClick={() => exportUserData(user.id)}
-                            variant="ghost"
+                            variant="secondary"
                             size="sm"
+                            icon={Download}
+                            onClick={() => exportUserData(userData.id)}
+                            disabled={
+                              userActionLoading === userData.id || userData.id !== currentUserId
+                            }
                           >
                             Export
                           </Button>
-                          <Button
-                            onClick={() => seedUserData(user.id)}
-                            variant="ghost"
-                            size="sm"
-                          >
-                            Add Starter
-                          </Button>
-                          <Button
-                            onClick={() => resetUserData(user.id)}
-                            variant="ghost"
-                            size="sm"
-                          >
-                            Clear Data
-                          </Button>
                         </div>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={Plus}
+                          onClick={() => seedUserData(userData.id)}
+                          disabled={userActionLoading === userData.id}
+                        >
+                          Add Starter
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={RefreshCw}
+                          onClick={() => resetUserData(userData.id, userData.email)}
+                          disabled={userActionLoading === userData.id}
+                        >
+                          Clear Data
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Logs Section */}
-          <div className="border rounded-lg">
-            <button
-              onClick={() => toggleSection('logs')}
-              className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50"
-            >
-              <span className="font-medium">Logs ({logs.length})</span>
-              <div className="flex items-center gap-2">
-                <IconButton
-                  icon={Trash2}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    clearLogs()
-                  }}
-                  size="sm"
-                  variant="ghost"
-                />
-                {expandedSections.logs ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
-              </div>
-            </button>
-            {expandedSections.logs && (
-              <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
-                {logs.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No logs yet</p>
-                ) : (
-                  logs.map((log, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm">
-                      {getLogIcon(log.level)}
-                      <div className="flex-1">
-                        <span className="text-gray-500">
-                          {new Date(log.timestamp).toLocaleTimeString()}
-                        </span>
-                        <span className="ml-2">{log.message}</span>
-                        {log.data !== undefined && (
-                          <pre className="text-xs bg-gray-100 p-1 rounded mt-1">
-                            {JSON.stringify(log.data, null, 2)}
-                          </pre>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Store State Section */}
-          <div className="border rounded-lg">
-            <button
-              onClick={() => toggleSection('store')}
-              className="w-full px-4 py-2 flex items-center justify-between hover:bg-gray-50"
-            >
-              <span className="font-medium">Store State</span>
-              <div className="flex items-center gap-2">
-                <IconButton
-                  icon={RefreshCw}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    refreshStore()
-                  }}
-                  size="sm"
-                  variant="ghost"
-                />
-                {expandedSections.store ? (
-                  <ChevronDown className="w-4 h-4" />
-                ) : (
-                  <ChevronRight className="w-4 h-4" />
-                )}
-              </div>
-            </button>
-            {expandedSections.store && (
-              <div className="p-4 space-y-2">
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  {Object.entries(getStoreStats()).map(([key, value]) => (
-                    <div key={key} className="flex justify-between">
-                      <span className="text-gray-600">{key}:</span>
-                      <span className="font-mono">{value?.toString() || 'null'}</span>
                     </div>
                   ))}
                 </div>
-                <Button
-                  onClick={() => copyToClipboard(JSON.stringify(getStoreStats(), null, 2))}
-                  variant="ghost"
-                  size="sm"
-                  icon={Copy}
-                >
-                  Copy store stats
-                </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Footer */}
-        <div className="pt-4 border-t text-xs text-gray-500">
-          Press &apos;d&apos; 3 times to toggle • Admin mode
+      {/* Reset User Data Tab */}
+      {activeTab === 'reset' && (
+        <div className="space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-900">Danger Zone</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  This action will permanently delete all folders, notebooks, and notes for the
+                  specified user. This cannot be undone.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <FormField
+            label="Target User Email"
+            value={targetEmail}
+            onChange={(e) => setTargetEmail(e.target.value)}
+            placeholder="user@example.com"
+            type="email"
+          />
+
+          <FormField
+            label="Admin Password"
+            value={adminPassword}
+            onChange={(e) => setAdminPassword(e.target.value)}
+            placeholder="Enter admin password"
+            type="password"
+          />
+
+          {resetResult && (
+            <>
+              <StatusMessage
+                type={resetResult.success ? 'success' : 'error'}
+                message={resetResult.message || ''}
+              />
+              {resetResult.success && resetResult.deleted && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-2">
+                  <p className="text-sm font-medium text-green-900">Deletion Summary:</p>
+                  <ul className="list-disc list-inside ml-2 text-sm text-green-800 mt-1">
+                    <li>{resetResult.deleted.folders} folders</li>
+                    <li>{resetResult.deleted.notebooks} notebooks</li>
+                    <li>{resetResult.deleted.notes} notes</li>
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+
+          <div className="flex gap-3 justify-end pt-4">
+            <LoadingButton variant="secondary" onClick={onClose}>
+              Cancel
+            </LoadingButton>
+            <LoadingButton
+              variant="danger"
+              onClick={handleResetUserData}
+              loading={isResetting}
+              disabled={!targetEmail || !adminPassword}
+              icon={RefreshCw}
+            >
+              Reset User Data
+            </LoadingButton>
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Permissions Tab */}
+      {activeTab === 'permissions' && (
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900">All Permissions</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  View all sharing permissions in the system. Debug tool for understanding access
+                  control.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {loadingPermissions ? (
+            <div className="text-center py-8">
+              <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+              <p className="text-gray-500 mt-2">Loading permissions...</p>
+            </div>
+          ) : permissions.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No permissions found in the system</div>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600 mb-2">
+                Found {permissions.length} permission entries
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Resource
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Type
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Owner
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Shared With
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Permission
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Created
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {permissions.map((perm) => (
+                      <tr key={perm.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 text-sm font-medium text-gray-900">
+                          {perm.resourceName}
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-500">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              perm.resource_type === 'folder'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}
+                          >
+                            {perm.resource_type}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-500">{perm.ownerEmail}</td>
+                        <td className="px-3 py-2 text-sm text-gray-500">{perm.userEmail}</td>
+                        <td className="px-3 py-2 text-sm">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              perm.permission_level === 'write'
+                                ? 'bg-orange-100 text-orange-800'
+                                : perm.permission_level === 'read'
+                                  ? 'bg-gray-100 text-gray-800'
+                                  : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {perm.permission_level}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-500">
+                          {perm.created_at ? new Date(perm.created_at).toLocaleDateString() : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4">
+            <LoadingButton
+              variant="secondary"
+              onClick={fetchPermissions}
+              loading={loadingPermissions}
+              icon={RefreshCw}
+            >
+              Refresh Permissions
+            </LoadingButton>
+          </div>
+        </div>
+      )}
     </Modal>
   )
 }

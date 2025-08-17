@@ -1,42 +1,39 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, BookOpen } from "lucide-react";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { SearchInput } from "@/components/ui/SearchInput";
-import { NotebookCard } from "@/components/cards/NotebookCard";
-import { useNotes, useSyncState, useOrphanedSharedNotebooks, useIsInitialized } from "@/lib/store";
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { BookOpen } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { SearchInput } from '@/components/ui/SearchInput'
+import { NotebookCard } from '@/components/cards/NotebookCard'
+import { useFoldersView, useViewActions, useViewLoading } from '@/lib/store/view-store'
 
 export default function SharedWithMePage() {
-  const router = useRouter();
-  const [search, setSearch] = useState("");
-  
-  const notes = useNotes();
-  const syncState = useSyncState();
-  const isInitialized = useIsInitialized();
-  
-  // Use the same hook as folders page to ensure consistency
-  const sharedNotebooks = useOrphanedSharedNotebooks();
-  
+  const router = useRouter()
+  const [search, setSearch] = useState('')
+  const foldersView = useFoldersView()
+  const loading = useViewLoading()
+  const { loadFoldersView } = useViewActions()
+
+  // Load folders view on mount
+  useEffect(() => {
+    loadFoldersView()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const sharedNotebooks = foldersView?.orphanedNotebooks || []
+
   // Filter by search
-  const filteredNotebooks = sharedNotebooks.filter(notebook => {
-    if (!search) return true;
-    const searchLower = search.toLowerCase();
-    return notebook.name.toLowerCase().includes(searchLower);
-  });
-  
-  const getNotesCount = (notebookId: string) => {
-    return notes.filter(n => n.notebook_id === notebookId).length;
-  };
-  
-  // Show loading state until store is initialized
-  const loading = !isInitialized;
+  const filteredNotebooks = sharedNotebooks.filter((notebook) => {
+    if (!search) return true
+    const searchLower = search.toLowerCase()
+    return notebook.name.toLowerCase().includes(searchLower)
+  })
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PageHeader 
-        backUrl="/folders"
+      <PageHeader
+        breadcrumbs={[{ label: 'Shared with Me' }]}
         rightContent={
           <div className="flex items-center gap-4">
             <SearchInput
@@ -75,21 +72,23 @@ export default function SharedWithMePage() {
           <div className="text-center py-12">
             <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600">
-              {search ? 'No shared notebooks match your search' : 'No notebooks have been shared with you yet'}
+              {search
+                ? 'No shared notebooks match your search'
+                : 'No notebooks have been shared with you yet'}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredNotebooks.map(notebook => (
+            {filteredNotebooks.map((notebook) => (
               <NotebookCard
                 key={notebook.id}
                 id={notebook.id}
                 name={notebook.name}
                 color={notebook.color}
-                noteCount={getNotesCount(notebook.id)}
-                archived={notebook.archived}
-                shared={notebook.shared}
-                sharedByMe={notebook.sharedByMe}
+                noteCount={notebook.note_count}
+                archived={false}
+                shared={true}
+                sharedByMe={false}
                 permission={notebook.permission}
                 isEditing={false}
                 editingName=""
@@ -107,5 +106,5 @@ export default function SharedWithMePage() {
         )}
       </main>
     </div>
-  );
+  )
 }

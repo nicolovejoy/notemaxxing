@@ -1,15 +1,15 @@
-import React from 'react';
-import { LucideIcon } from 'lucide-react';
+import React from 'react'
+import { LucideIcon } from 'lucide-react'
 
 interface ButtonProps {
-  children: React.ReactNode;
-  onClick?: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
-  size?: 'sm' | 'md' | 'lg';
-  icon?: LucideIcon;
-  disabled?: boolean;
-  className?: string;
-  type?: 'button' | 'submit' | 'reset';
+  children: React.ReactNode
+  onClick?: () => void
+  variant?: 'primary' | 'secondary' | 'danger' | 'ghost'
+  size?: 'sm' | 'md' | 'lg'
+  icon?: LucideIcon
+  disabled?: boolean
+  className?: string
+  type?: 'button' | 'submit' | 'reset'
 }
 
 export function Button({
@@ -22,20 +22,20 @@ export function Button({
   className = '',
   type = 'button',
 }: ButtonProps) {
-  const baseClasses = 'font-medium rounded-lg transition-colors flex items-center gap-2';
+  const baseClasses = 'font-medium rounded-lg transition-colors flex items-center gap-2'
 
   const sizeClasses = {
     sm: 'px-3 py-1.5 text-sm',
     md: 'px-4 py-2',
     lg: 'px-6 py-3 text-lg',
-  };
+  }
 
   const variantClasses = {
     primary: 'bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300',
     secondary: 'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:bg-gray-100',
     danger: 'bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300',
     ghost: 'text-gray-600 hover:bg-gray-100 disabled:text-gray-400',
-  };
+  }
 
   return (
     <button
@@ -53,5 +53,5 @@ export function Button({
       {Icon && <Icon className="h-4 w-4" />}
       {children}
     </button>
-  );
+  )
 }

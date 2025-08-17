@@ -1,53 +1,53 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Menu,
-  Search,
-  Grid3X3,
-  FolderOpen,
-  Sparkles,
-} from "lucide-react";
-import { UserMenu } from "@/components/user-menu";
-import { BuildTimestamp } from "@/components/build-timestamp";
-import { Logo } from "@/components/logo";
-import { useFolders, useNotebooks, useSyncState, useDataActions } from "@/lib/store";
-import { Card, Button } from "@/components/ui";
-import { useNavigateToRecentNotebook } from "@/lib/hooks/useNavigateToRecentNotebook";
-import { useState, useEffect } from "react";
+import Link from 'next/link'
+import { FolderOpen, Keyboard, Brain, ArrowRight, LogIn, Users } from 'lucide-react'
+import { UserMenu } from '@/components/user-menu'
+import { BuildTimestamp } from '@/components/build-timestamp'
+import { Logo } from '@/components/logo'
+import { Card, CardBody } from '@/components/ui'
+import { LoadingButton } from '@/components/ui/LoadingButton'
+import { useFoldersView } from '@/lib/query/hooks'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 export default function Home() {
-  const router = useRouter();
-  const folders = useFolders();
-  const notebooks = useNotebooks();
-  const syncState = useSyncState();
-  const { seedInitialData } = useDataActions();
-  const navigateToRecentNotebook = useNavigateToRecentNotebook();
-  const [seedMessage, setSeedMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-  const [showSeedButton, setShowSeedButton] = useState(false);
-  
-  const loading = syncState.status === 'loading';
-  
-  // Check if user has no data and show seed button
-  useEffect(() => {
-    if (!loading && folders.length === 0 && notebooks.length === 0) {
-      setShowSeedButton(true);
-    } else {
-      setShowSeedButton(false);
-    }
-  }, [loading, folders.length, notebooks.length]);
-  
-  const handleSeedData = async () => {
-    setSeedMessage(null);
-    const result = await seedInitialData('default-with-tutorials');
-    if (result.success) {
-      setSeedMessage({ type: 'success', text: 'Sample data added successfully! Check your folders.' });
-      setShowSeedButton(false);
-    } else {
-      setSeedMessage({ type: 'error', text: result.error || 'Failed to add sample data' });
-    }
-  };
+  const { user } = useAuth()
+
+  // Only fetch folders if user is authenticated
+  const { data: foldersView, isLoading } = useFoldersView({
+    enabled: !!user,
+  })
+
+  const features = [
+    {
+      icon: FolderOpen,
+      title: 'Your Backpack',
+      description: 'Organize your notes with custom folders and colors',
+      href: '/backpack',
+      color: 'text-blue-500',
+    },
+    {
+      icon: Users,
+      title: 'Shared with Me',
+      description: 'Access notebooks and folders shared by others',
+      href: '/shared-with-me',
+      color: 'text-purple-500',
+    },
+    {
+      icon: Keyboard,
+      title: 'Typemaxxing',
+      description: 'Practice typing with your own notes',
+      href: '/typemaxxing',
+      color: 'text-orange-500',
+    },
+    {
+      icon: Brain,
+      title: 'Quizzing',
+      description: 'Create custom quizzes to test your knowledge',
+      href: '/quizzing',
+      color: 'text-pink-500',
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -55,154 +55,118 @@ export default function Home() {
       <header className="bg-white border-b border-gray-200">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <button className="p-2 rounded-md hover:bg-gray-100">
-                <Menu className="h-5 w-5 text-gray-800" />
-              </button>
-              <div className="flex items-center gap-3 ml-4">
-                <Logo size={36} />
-                <div className="relative group">
-                  <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
-                  <BuildTimestamp />
-                </div>
+            <div className="flex items-center gap-3">
+              <Logo size={36} />
+              <div className="relative group">
+                <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
+                <BuildTimestamp />
               </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <button className="p-2 rounded-md hover:bg-gray-100">
-                <Search className="h-5 w-5 text-gray-800" />
-              </button>
-              <button className="p-2 rounded-md hover:bg-gray-100">
-                <Grid3X3 className="h-5 w-5 text-gray-800" />
-              </button>
-              <UserMenu />
-            </div>
+            <UserMenu />
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="flex flex-col items-center justify-center px-4 py-16">
-        <Logo size={48} />
-        <h1 className="text-4xl font-light italic mb-4 mt-4">Home</h1>
-        <div className="w-24 h-0.5 bg-gray-300 mb-8"></div>
-
-        {/* Seed Data Section */}
-        {showSeedButton && (
-          <div className="mb-8 max-w-md text-center">
-            <p className="text-gray-600 mb-4">
-              Welcome! Get started with tutorials and sample notes to explore all features.
-            </p>
-            <Button
-              onClick={handleSeedData}
-              disabled={false}
-              className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg flex items-center gap-2 mx-auto"
-            >
-              <Sparkles className="h-5 w-5" />
-              {'Add Starter Content'}
-            </Button>
-            {seedMessage && (
-              <p className={`mt-4 text-sm ${
-                seedMessage.type === 'success' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                {seedMessage.text}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
-          {/* Folders Card */}
-          <div 
-            className="block cursor-pointer"
-            onClick={(e) => {
-              // Only navigate to folders page if clicking on the card background
-              if (e.target === e.currentTarget || e.currentTarget.contains(e.target as Node)) {
-                router.push('/folders');
-              }
-            }}
-          >
-            <Card className="p-6 h-64 flex flex-col" hover>
-              <h2 className="text-lg font-medium mb-4 italic">Folders</h2>
-              <div className="flex-1 grid grid-cols-2 gap-2 overflow-hidden">
-                {loading ? (
-                  <div className="col-span-2 flex items-center justify-center">
-                    <p className="text-gray-500">Loading...</p>
-                  </div>
-                ) : folders.slice(0, 4).map((folder) => {
-                  const notebookCount = notebooks.filter(
-                    (n) => n.folder_id === folder.id && !n.archived
-                  ).length;
-
-                  return (
-                    <div
-                      key={folder.id}
-                      className={`${folder.color} rounded-lg p-2 flex flex-col items-center justify-center text-white cursor-pointer hover:opacity-90 transition-opacity`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigateToRecentNotebook(folder.id);
-                      }}
-                    >
-                      <FolderOpen className="h-5 w-5 opacity-80" />
-                      <span className="font-semibold text-xs truncate max-w-full px-1">{folder.name}</span>
-                      <span className="text-[10px] opacity-80">
-                        {notebookCount} {notebookCount === 1 ? 'notebook' : 'notebooks'}
-                      </span>
-                    </div>
-                  );
-                })}
-                {!loading && folders.length === 0 && (
-                  <div className="col-span-2 text-center py-8 text-gray-600">
-                    <FolderOpen className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm">No folders yet</p>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-
-          {/* Typemaxxing Card */}
-          <Link href="/typemaxxing" className="block">
-            <Card className="p-6 h-64 flex flex-col" hover>
-              <h2 className="text-lg font-medium mb-4 italic">Typemaxxing</h2>
-              <div className="flex-1 flex items-center justify-center">
-                <div className="w-full max-w-xs">
-                  <div className="border-2 border-gray-300 rounded-lg p-2">
-                    <div className="grid grid-cols-12 gap-1">
-                      {Array.from({ length: 48 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="aspect-square border border-gray-200 rounded-sm"
-                        ></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          {/* Quizzing Card */}
-          <Link href="/quizzing" className="block md:col-span-2 md:max-w-md">
-            <Card className="p-6 h-64" hover>
-              <h2 className="text-lg font-medium mb-4 italic">Quizzing</h2>
-              <div className="flex items-center justify-center h-32 relative">
-                <div className="bg-gray-100 rounded-lg p-4 w-48 h-24 flex items-center justify-center">
-                  <div className="bg-gray-200 w-full h-full rounded"></div>
-                </div>
-                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-white border border-gray-200 rounded-lg px-4 py-2 shadow-sm">
-                  <span className="text-sm italic">Test Prepara...</span>
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="bg-gray-50 rounded-lg px-3 py-2 inline-flex items-center">
-                  <span className="text-sm italic">Neuroscience...</span>
-                </div>
-              </div>
-            </Card>
-          </Link>
+      {/* Hero Section */}
+      <section className="bg-gradient-to-b from-blue-50 to-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">Your Second Brain, Perfected</h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Organize your thoughts, enhance your writing, and master your knowledge with AI-powered
+            note-taking
+          </p>
+          {!user && (
+            <div className="flex justify-center">
+              <Link href="/auth/login">
+                <LoadingButton size="lg" icon={LogIn} variant="primary">
+                  Sign In / Get Started
+                </LoadingButton>
+              </Link>
+            </div>
+          )}
         </div>
-      </main>
+      </section>
+
+      {/* Stats Section - Only show for authenticated users */}
+      {user && (
+        <section className="py-8 bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-3 gap-4">
+              {isLoading ? (
+                <>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="text-center animate-pulse">
+                      <div className="h-9 w-16 bg-gray-200 rounded mx-auto mb-2"></div>
+                      <div className="h-4 w-20 bg-gray-100 rounded mx-auto"></div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900">
+                      {foldersView?.stats?.total_folders || 0}
+                    </p>
+                    <p className="text-sm text-gray-600">Folders</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900">
+                      {foldersView?.stats?.total_notebooks || 0}
+                    </p>
+                    <p className="text-sm text-gray-600">Notebooks</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-gray-900">
+                      {foldersView?.stats?.total_notes || 0}
+                    </p>
+                    <p className="text-sm text-gray-600">Notes</p>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Features Grid */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+            Everything You Need to Stay Organized
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {features.map((feature) => {
+              const Icon = feature.icon
+              return (
+                <Link key={feature.title} href={feature.href}>
+                  <Card hover className="h-full">
+                    <CardBody>
+                      <div className="flex items-start gap-4">
+                        <div className={`p-3 bg-gray-50 rounded-lg ${feature.color}`}>
+                          <Icon className="h-6 w-6" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-lg mb-1">{feature.title}</h4>
+                          <p className="text-gray-600 text-sm">{feature.description}</p>
+                        </div>
+                        <ArrowRight className="h-5 w-5 text-gray-400" />
+                      </div>
+                    </CardBody>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-white border-t border-gray-200 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600">
+          <p>Built with Next.js, TypeScript, and Tailwind CSS</p>
+          <p className="mt-2">© 2024 Notemaxxing. All rights reserved.</p>
+        </div>
+      </footer>
     </div>
-  );
+  )
 }

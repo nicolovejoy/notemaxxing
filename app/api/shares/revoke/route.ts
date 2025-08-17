@@ -15,10 +15,7 @@ async function handleRevoke(request: NextRequest) {
     const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
     if (error) return error
     if (!supabase) {
-      return NextResponse.json(
-        { error: 'Service temporarily unavailable' },
-        { status: 503 }
-      )
+      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
     }
 
     // Parse request body
@@ -28,10 +25,7 @@ async function handleRevoke(request: NextRequest) {
     console.log('[Revoke API] Received request with permissionId:', permissionId)
 
     if (!permissionId) {
-      return NextResponse.json(
-        { error: 'Missing permission ID' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Missing permission ID' }, { status: 400 })
     }
 
     // Get permission details - first try without the join to see if permission exists
@@ -40,7 +34,7 @@ async function handleRevoke(request: NextRequest) {
       .select('*')
       .eq('id', permissionId)
       .single()
-    
+
     console.log('[Revoke API] Basic permission lookup:', { basicPermission, error: basicError })
 
     if (basicError || !basicPermission) {
@@ -57,7 +51,7 @@ async function handleRevoke(request: NextRequest) {
       .select('*, profiles!permissions_user_id_fkey(email)')
       .eq('id', permissionId)
       .single()
-    
+
     console.log('[Revoke API] Full permission lookup result:', { permission, error: permError })
 
     // Use basic permission if the join failed
@@ -68,14 +62,14 @@ async function handleRevoke(request: NextRequest) {
     {
       // Additional check: is the user the owner of the resource?
       let isOwner = false
-      
+
       if (permissionData.resource_type === 'folder') {
         const { data: folder } = await supabase
           .from('folders')
           .select('user_id')
           .eq('id', permissionData.resource_id)
           .single()
-        
+
         isOwner = folder?.user_id === user.id
       } else if (permissionData.resource_type === 'notebook') {
         const { data: notebook } = await supabase
@@ -83,12 +77,15 @@ async function handleRevoke(request: NextRequest) {
           .select('user_id')
           .eq('id', permissionData.resource_id)
           .single()
-        
+
         isOwner = notebook?.user_id === user.id
       }
 
       if (!isOwner) {
-        console.log('[Revoke API] User not authorized:', { userId: user.id, resourceOwnerId: isOwner })
+        console.log('[Revoke API] User not authorized:', {
+          userId: user.id,
+          resourceOwnerId: isOwner,
+        })
         return NextResponse.json(
           { error: 'You are not authorized to revoke this permission' },
           { status: 403 }
@@ -104,20 +101,17 @@ async function handleRevoke(request: NextRequest) {
 
     if (deleteError) {
       console.error('Error deleting permission:', deleteError)
-      return NextResponse.json(
-        { error: 'Failed to revoke permission' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to revoke permission' }, { status: 500 })
     }
 
     // Also delete any pending invitations for the same resource/user combination
     if (permission?.profiles?.email) {
       await supabase
-        .from('share_invitations')
+        .from('invitations')
         .delete()
         .eq('resource_type', permissionData.resource_type)
         .eq('resource_id', permissionData.resource_id)
-        .eq('invited_email', permission.profiles.email)
+        .eq('invitee_email', permission.profiles.email)
         .is('accepted_at', null)
     }
 
@@ -127,15 +121,11 @@ async function handleRevoke(request: NextRequest) {
       revokedPermission: {
         resourceType: permissionData.resource_type,
         resourceId: permissionData.resource_id,
-        userEmail: permission?.profiles?.email
-      }
+        userEmail: permission?.profiles?.email,
+      },
     })
-
   } catch (error) {
     console.error('Unexpected error in revoke permission:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

@@ -12,6 +12,7 @@ export type Notebook = Database['public']['Tables']['notebooks']['Row'] & {
   sharedDirectly?: boolean // True only if directly shared (not through folder)
   sharedByMe?: boolean
   permission?: 'read' | 'write'
+  note_count?: number // Populated by server for performance
 }
 export type Note = Database['public']['Tables']['notes']['Row']
 export type Quiz = Database['public']['Tables']['quizzes']['Row'] & {
@@ -28,7 +29,12 @@ export interface QuizQuestion {
 }
 
 // Sharing types
-export type { Permission, ResourceType, ShareInvitation, ResourcePermission } from '../types/sharing'
+export type {
+  Permission,
+  ResourceType,
+  ShareInvitation,
+  ResourcePermission,
+} from '../types/sharing'
 
 // Store types
 export interface SyncState {
