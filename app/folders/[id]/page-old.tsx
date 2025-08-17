@@ -197,7 +197,8 @@ export default function FolderDetailPage() {
           name: newNotebookName.trim(),
           color: newNotebookColor,
           folder_id: folderId,
-          // owner_id and created_by are set automatically by database trigger
+          owner_id: folder?.owner_id || user?.id || '', // Use folder owner or fallback to current user
+          created_by: user?.id || '',
         })
         .select()
         .single()

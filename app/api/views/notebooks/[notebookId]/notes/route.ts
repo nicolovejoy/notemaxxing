@@ -60,9 +60,13 @@ export async function GET(
     // First check if user is the owner (simple check via owner_id field)
     const isOwner = notebook.owner_id === userId
 
+    // Variables to hold permissions
+    let permission = null
+    let folderPerm = null
+
     if (!isOwner) {
       // Not owner, check if user has explicit permission
-      const { data: permission } = await supabase
+      const { data: notebookPerm } = await supabase
         .from('permissions')
         .select('permission_level')
         .eq('user_id', userId)
@@ -71,10 +75,12 @@ export async function GET(
         .neq('permission_level', 'none')
         .single()
 
+      permission = notebookPerm
+
       if (!permission) {
         // Check for folder-level permission (inherited)
         if (notebook.folder_id) {
-          const { data: folderPerm } = await supabase
+          const { data: folderPermData } = await supabase
             .from('permissions')
             .select('permission_level')
             .eq('user_id', userId)
@@ -82,6 +88,8 @@ export async function GET(
             .eq('resource_type', 'folder')
             .neq('permission_level', 'none')
             .single()
+
+          folderPerm = folderPermData
 
           if (!folderPerm) {
             console.error('Access denied - no permission:', {
@@ -95,7 +103,7 @@ export async function GET(
           console.error('Access denied - no permission and no folder:', {
             notebookId,
             userId,
-            notebookOwnerId: notebook.user_id,
+            notebookOwnerId: notebook.owner_id,
           })
           return NextResponse.json({ error: 'Access denied' }, { status: 403 })
         }

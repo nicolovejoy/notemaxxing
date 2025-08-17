@@ -200,7 +200,12 @@ export default function BackpackPage() {
                         {folder.notebooks.slice(0, NOTEBOOKS_PREVIEW_COUNT).map((notebook) => (
                           <button
                             key={notebook.id}
-                            onClick={() => handleNotebookNavigation(notebook)}
+                            onClick={() =>
+                              handleNotebookNavigation({
+                                ...notebook,
+                                note_count: notebook.note_count || 0,
+                              })
+                            }
                             className="w-full px-3 py-2 rounded hover:bg-gray-50 transition-colors text-left"
                           >
                             <div className="flex items-center justify-between">

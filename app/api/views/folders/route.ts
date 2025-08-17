@@ -66,7 +66,8 @@ export async function GET() {
         .eq('granted_by', userId)
 
       if (sharedByMe) {
-        sharedByMeFolderIds = new Set(sharedByMe.map((p) => p.resource_id))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sharedByMeFolderIds = new Set(sharedByMe.map((p: any) => p.resource_id))
       }
     }
 

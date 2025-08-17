@@ -80,7 +80,8 @@ export async function GET(
 
     // Get note counts and check which notebooks are shared
     const notebooksWithDetails = await Promise.all(
-      (notebooks || []).map(async (notebook) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (notebooks || []).map(async (notebook: any) => {
         // Get note count
         const { count } = await supabase
           .from('notes')

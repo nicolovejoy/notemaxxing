@@ -42,7 +42,14 @@ export default function FolderDetailPage() {
 
   // Extract data from view
   const folder = folderView?.folder
-  const notebooks = folderView?.notebooks || []
+  const notebooks: Array<{ 
+    id: string; 
+    name: string; 
+    color: string; 
+    note_count?: number;
+    archived?: boolean;
+    shared_by_owner?: boolean;
+  }> = folderView?.notebooks || []
   const userPermission = folderView?.userPermission
   const isOwner = userPermission === 'owner'
   const canWrite = userPermission === 'write' || isOwner
@@ -53,12 +60,31 @@ export default function FolderDetailPage() {
     setCreating(true)
     try {
       const supabase = createClient()
+      if (!supabase) throw new Error('Supabase client not available')
+
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // Get folder owner_id
+      const { data: folderData, error: folderError } = await supabase
+        .from('folders')
+        .select('owner_id')
+        .eq('id', folderId)
+        .single()
+
+      if (folderError || !folderData) throw new Error('Folder not found')
+
       const { data, error } = await supabase
         .from('notebooks')
         .insert({
           name: newNotebookName.trim(),
           color: newNotebookColor,
           folder_id: folderId,
+          owner_id: folderData.owner_id, // Inherit from folder
+          created_by: user.id, // Current user who created it
         })
         .select()
         .single()
@@ -192,12 +218,17 @@ export default function FolderDetailPage() {
                 id={notebook.id}
                 name={notebook.name}
                 color={notebook.color}
-                noteCount={notebook.note_count}
+                noteCount={notebook.note_count || 0}
                 archived={notebook.archived || false}
                 shared={!isOwner}
                 sharedByMe={notebook.shared_by_owner}
                 permission={!isOwner ? userPermission : undefined}
-                onClick={() => handleNotebookClick(notebook)}
+                onClick={() => handleNotebookClick({
+                  id: notebook.id,
+                  name: notebook.name,
+                  color: notebook.color,
+                  note_count: notebook.note_count || 0
+                })}
                 onShare={notebook.shared_by_owner ? () => setShareNotebook(notebook) : undefined}
                 onUpdate={() => refetch()}
               />

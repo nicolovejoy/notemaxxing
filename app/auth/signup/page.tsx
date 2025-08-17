@@ -70,7 +70,7 @@ export default function SignupPage() {
         const setupResult = await setupNewUser(data.user.id, data.user.email!)
 
         if (!setupResult.success) {
-          console.error('Failed to set up user profile:', setupResult.error)
+          console.error('Failed to set up user profile')
           // Continue anyway - the user is created, just missing profile/role
         }
 

@@ -34,7 +34,7 @@ export class SeedService {
           .insert({
             name: folderData.name,
             color: folderData.color,
-            user_id: options.userId,
+            owner_id: options.userId,
           })
           .select()
           .single()
@@ -52,7 +52,8 @@ export class SeedService {
               name: notebookData.name,
               color: notebookData.color,
               folder_id: folder.id,
-              user_id: options.userId,
+              owner_id: options.userId,
+              created_by: options.userId,
             })
             .select()
             .single()
@@ -68,7 +69,8 @@ export class SeedService {
               title: noteData.title,
               content: noteData.content,
               notebook_id: notebook.id,
-              user_id: options.userId,
+              owner_id: options.userId,
+              created_by: options.userId,
             })
 
             if (noteError) {
@@ -92,7 +94,7 @@ export class SeedService {
     const { data, error } = await this.supabase
       .from('folders')
       .select('id')
-      .eq('user_id', userId)
+      .eq('owner_id', userId)
       .limit(1)
 
     return !error && data && data.length > 0
