@@ -18,6 +18,12 @@ import { ShareDialog } from '@/components/ShareDialog'
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR } from '@/lib/constants'
 import { useFoldersView, useCreateFolder } from '@/lib/query/hooks'
 import { useAuth } from '@/lib/hooks/useAuth'
+import type { Folder } from '@/lib/types/entities'
+import { StatsBar } from '@/components/common/StatsBar'
+import { LoadingGrid } from '@/components/common/LoadingGrid'
+import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
+
+const NOTEBOOKS_PREVIEW_COUNT = 3
 
 export default function BackpackPage() {
   const router = useRouter()
@@ -31,7 +37,7 @@ export default function BackpackPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
-  const [shareFolder, setShareFolder] = useState<{ id: string; name: string } | null>(null)
+  const [shareFolder, setShareFolder] = useState<Pick<Folder, 'id' | 'name'> | null>(null)
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -45,11 +51,7 @@ export default function BackpackPage() {
     return (
       <div className="p-8">
         <Skeleton className="h-8 w-48 mb-4" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
+        <LoadingGrid />
       </div>
     )
   }
@@ -92,6 +94,11 @@ export default function BackpackPage() {
     router.push(`/folders/${folderId}`)
   }
 
+  const handleNotebookNavigation = (notebook: NotebookPreview) => {
+    storeNotebookPreview(notebook)
+    router.push(`/notebooks/${notebook.id}?from=backpack`)
+  }
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -124,39 +131,11 @@ export default function BackpackPage() {
 
       {/* Stats Bar - Horizontal strip below header */}
       {foldersView && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-center gap-12">
-              <div className="flex items-center gap-3">
-                <FolderOpen className="h-5 w-5 text-blue-500" />
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold text-gray-900">
-                    {foldersView.stats?.total_folders || 0}
-                  </span>
-                  <span className="text-sm text-gray-600">Folders</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <BookOpen className="h-5 w-5 text-green-500" />
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold text-gray-900">
-                    {foldersView.stats?.total_notebooks || 0}
-                  </span>
-                  <span className="text-sm text-gray-600">Notebooks</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-purple-500">📝</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold text-gray-900">
-                    {foldersView.stats?.total_notes || 0}
-                  </span>
-                  <span className="text-sm text-gray-600">Notes</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatsBar
+          folders={foldersView.stats?.total_folders || 0}
+          notebooks={foldersView.stats?.total_notebooks || 0}
+          notes={foldersView.stats?.total_notes || 0}
+        />
       )}
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -218,24 +197,10 @@ export default function BackpackPage() {
                   {folder.notebooks && folder.notebooks.length > 0 ? (
                     <div className="p-3">
                       <div className="space-y-2">
-                        {folder.notebooks.slice(0, 3).map((notebook) => (
+                        {folder.notebooks.slice(0, NOTEBOOKS_PREVIEW_COUNT).map((notebook) => (
                           <button
                             key={notebook.id}
-                            onClick={() => {
-                              // Store notebook data for optimistic loading
-                              if (typeof window !== 'undefined') {
-                                sessionStorage.setItem(
-                                  `notebook-preview-${notebook.id}`,
-                                  JSON.stringify({
-                                    id: notebook.id,
-                                    name: notebook.name,
-                                    color: notebook.color,
-                                    note_count: notebook.note_count,
-                                  })
-                                )
-                              }
-                              router.push(`/notebooks/${notebook.id}?from=backpack`)
-                            }}
+                            onClick={() => handleNotebookNavigation(notebook)}
                             className="w-full px-3 py-2 rounded hover:bg-gray-50 transition-colors text-left"
                           >
                             <div className="flex items-center justify-between">
@@ -249,13 +214,13 @@ export default function BackpackPage() {
                             </div>
                           </button>
                         ))}
-                        {folder.notebooks.length > 3 && (
+                        {folder.notebooks.length > NOTEBOOKS_PREVIEW_COUNT && (
                           <button
                             onClick={() => handleFolderClick(folder.id)}
                             className="w-full px-3 py-2 rounded hover:bg-gray-50 transition-colors text-left"
                           >
                             <span className="text-xs text-gray-600 font-medium">
-                              +{folder.notebooks.length - 3} more notebooks
+                              +{folder.notebooks.length - NOTEBOOKS_PREVIEW_COUNT} more notebooks
                             </span>
                           </button>
                         )}

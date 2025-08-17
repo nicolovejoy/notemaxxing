@@ -72,8 +72,6 @@ export async function GET(
       .select('*')
       .eq('folder_id', folderId)
       .order('created_at', { ascending: false })
-    
-    type Notebook = typeof notebooks extends (infer T)[] ? T : never
 
     if (notebooksError) {
       console.error('Error fetching notebooks:', notebooksError)
@@ -82,7 +80,7 @@ export async function GET(
 
     // Get note counts and check which notebooks are shared
     const notebooksWithDetails = await Promise.all(
-      (notebooks || []).map(async (notebook: Notebook) => {
+      (notebooks || []).map(async (notebook) => {
         // Get note count
         const { count } = await supabase
           .from('notes')

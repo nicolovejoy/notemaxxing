@@ -18,6 +18,9 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
 import { useFolderDetailView } from '@/lib/query/hooks'
+import type { Notebook } from '@/lib/types/entities'
+import { LoadingGrid } from '@/components/common/LoadingGrid'
+import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
 
 export default function FolderDetailPage() {
   const params = useParams()
@@ -32,7 +35,7 @@ export default function FolderDetailPage() {
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
-  const [shareNotebook, setShareNotebook] = useState<{ id: string; name: string } | null>(null)
+  const [shareNotebook, setShareNotebook] = useState<Pick<Notebook, 'id' | 'name'> | null>(null)
   const [newNotebookName, setNewNotebookName] = useState('')
   const [newNotebookColor, setNewNotebookColor] = useState<string>(DEFAULT_NOTEBOOK_COLOR)
   const [creating, setCreating] = useState(false)
@@ -74,19 +77,8 @@ export default function FolderDetailPage() {
     }
   }
 
-  const handleNotebookClick = (notebook: { id: string; name: string; color: string; note_count: number }) => {
-    // Store notebook data for optimistic loading
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(
-        `notebook-preview-${notebook.id}`,
-        JSON.stringify({
-          id: notebook.id,
-          name: notebook.name,
-          color: notebook.color,
-          note_count: notebook.note_count,
-        })
-      )
-    }
+  const handleNotebookClick = (notebook: NotebookPreview) => {
+    storeNotebookPreview(notebook)
     router.push(`/notebooks/${notebook.id}?from=folder`)
   }
 
@@ -101,11 +93,7 @@ export default function FolderDetailPage() {
         <PageHeader backUrl="/backpack" />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
+          <LoadingGrid count={3} />
         </div>
       </div>
     )

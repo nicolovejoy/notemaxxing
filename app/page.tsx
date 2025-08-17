@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FolderOpen, Keyboard, Brain, ArrowRight, LogIn, BookOpen } from 'lucide-react'
+import { FolderOpen, Keyboard, Brain, ArrowRight, LogIn } from 'lucide-react'
 import { UserMenu } from '@/components/user-menu'
 import { BuildTimestamp } from '@/components/build-timestamp'
 import { Logo } from '@/components/logo'
@@ -9,6 +9,7 @@ import { Card, CardBody } from '@/components/ui'
 import { LoadingButton } from '@/components/ui/LoadingButton'
 import { useFoldersView } from '@/lib/query/hooks'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { StatsBar } from '@/components/common/StatsBar'
 
 export default function Home() {
   const { user } = useAuth()
@@ -82,39 +83,11 @@ export default function Home() {
 
       {/* Stats Section - Only show for authenticated users */}
       {user && foldersView && (
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-center gap-12">
-              <div className="flex items-center gap-3">
-                <FolderOpen className="h-5 w-5 text-blue-500" />
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold text-gray-900">
-                    {foldersView.stats?.total_folders || 0}
-                  </span>
-                  <span className="text-sm text-gray-600">Folders</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <BookOpen className="h-5 w-5 text-green-500" />
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold text-gray-900">
-                    {foldersView.stats?.total_notebooks || 0}
-                  </span>
-                  <span className="text-sm text-gray-600">Notebooks</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-purple-500">📝</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-semibold text-gray-900">
-                    {foldersView.stats?.total_notes || 0}
-                  </span>
-                  <span className="text-sm text-gray-600">Notes</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <StatsBar
+          folders={foldersView.stats?.total_folders || 0}
+          notebooks={foldersView.stats?.total_notebooks || 0}
+          notes={foldersView.stats?.total_notes || 0}
+        />
       )}
 
       {/* Features Grid */}
