@@ -17,6 +17,37 @@ A collaborative note-taking application with folders, notebooks, and real-time s
 - **Schema**: Single migration file at `/supabase/migrations/20250101000000_complete_schema.sql`
 - **Architecture**: Infrastructure-as-code (no console modifications)
 
+### ⚠️ IMPORTANT: Database Management Rules
+
+**The code defines the database, not the other way around.**
+
+1. **NEVER modify tables/columns in Supabase console** - all changes must be in migration files
+2. **To make database changes**:
+
+   ```bash
+   # Create a new migration file
+   supabase migration new your_change_description
+
+   # Edit the generated file in supabase/migrations/
+   # Write your SQL changes there
+
+   # Test locally first
+   supabase db reset  # Rebuilds from migrations
+
+   # Deploy to production
+   supabase db push --db-url [production-url]
+
+   # Generate new TypeScript types
+   npm run generate-types
+   ```
+
+3. **Why this matters**:
+   - Database schema is version-controlled in git
+   - Changes are reviewable in PRs
+   - Can recreate exact database anywhere
+   - Rollback is possible
+   - Code and database stay in sync
+
 ### Local Development
 
 1. Clone the repository
