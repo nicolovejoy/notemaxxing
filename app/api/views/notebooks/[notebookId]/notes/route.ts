@@ -55,17 +55,11 @@ export async function GET(
       return NextResponse.json({ error: 'Notebook not found', notebookId }, { status: 404 })
     }
 
-    // Check permissions using the new system
-    // First check if user is owner
-    const { data: ownership } = await supabase
-      .from('ownership')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('resource_id', notebookId)
-      .eq('resource_type', 'notebook')
-      .single()
+    // Check permissions
+    // First check if user is the owner (simple check via user_id field)
+    const isOwner = notebook.user_id === userId
 
-    if (!ownership) {
+    if (!isOwner) {
       // Not owner, check if user has explicit permission
       const { data: permission } = await supabase
         .from('permissions')

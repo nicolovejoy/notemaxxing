@@ -8,7 +8,7 @@ interface PermissionItem {
   resource_id: string
   user_id?: string
   granted_by?: string
-  permission: string
+  permission_level: string
   created_at: string
 }
 
@@ -17,8 +17,8 @@ interface InvitationItem {
   resource_type: string
   resource_id: string
   invited_by?: string
-  invited_email: string
-  permission: string
+  invitee_email: string
+  permission_level: string
   created_at: string
   expires_at: string
   accepted_at?: string | null
@@ -34,11 +34,7 @@ export async function GET() {
     }
 
     // Get user's email for pending invitations
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', user.id)
-      .single()
+    const userEmail = user.email?.toLowerCase()
 
     // Get resources shared BY the user
     const { data: sharedByUser } = await supabase
@@ -58,11 +54,11 @@ export async function GET() {
 
     // Get pending invitations for the user
     let pendingInvitations = []
-    if (profile?.email) {
+    if (userEmail) {
       const { data: invitations, error: inviteError } = await supabase
-        .from('share_invitations')
+        .from('invitations')
         .select('*')
-        .eq('invited_email', profile.email)
+        .eq('invitee_email', userEmail)
         .is('accepted_at', null)
         .gt('expires_at', new Date().toISOString())
 
@@ -168,7 +164,7 @@ export async function GET() {
         resourceId: item.resource_id,
         resourceName: resource?.name || 'Unknown',
         resourceColor: resource?.color || '',
-        permission: item.permission,
+        permission: item.permission_level,
         user:
           type === 'shared_by'
             ? {
@@ -198,7 +194,7 @@ export async function GET() {
         resourceId: invitation.resource_id,
         resourceName: resource?.name || 'Unknown',
         resourceColor: resource?.color || '',
-        permission: invitation.permission,
+        permission: invitation.permission_level,
         invitedBy: {
           email: userProfiles[invitation.invited_by || '']?.email || '',
           name: userProfiles[invitation.invited_by || '']?.full_name || '',

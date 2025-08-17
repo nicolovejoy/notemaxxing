@@ -110,50 +110,61 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create invitation with specific email - expires in 7 days
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + 7)
-
-    const insertData = {
-      resource_type: resourceType,
-      resource_id: resourceId,
-      invited_email: email.toLowerCase(),
-      permission: permission,
-      invited_by: user.id,
-      expires_at: expiresAt.toISOString(),
+    // Get resource name for the public preview
+    let resourceName = 'Shared Resource'
+    if (resourceType === 'folder') {
+      const { data: folder } = await supabase
+        .from('folders')
+        .select('name')
+        .eq('id', resourceId)
+        .single()
+      resourceName = folder?.name || 'Shared Folder'
+    } else if (resourceType === 'notebook') {
+      const { data: notebook } = await supabase
+        .from('notebooks')
+        .select('name')
+        .eq('id', resourceId)
+        .single()
+      resourceName = notebook?.name || 'Shared Notebook'
     }
 
-    console.log('[Generate Link] Creating invitation with data:', insertData)
+    console.log('[Generate Link] Creating invitation for:', resourceName)
 
-    const { data: invitation, error: inviteError } = await supabase
-      .from('share_invitations')
-      .insert(insertData)
-      .select()
-      .single()
+    // Use the database function to create the invitation
+    const { data: invitationId, error: inviteError } = await supabase.rpc('create_invitation', {
+      p_resource_id: resourceId,
+      p_resource_type: resourceType,
+      p_resource_name: resourceName,
+      p_invitee_email: email.toLowerCase(),
+      p_permission_level: permission,
+      p_invited_by: user.id,
+    })
 
     if (inviteError) {
       console.error('[Generate Link] Error creating invitation:', inviteError)
 
       // Check if it's a duplicate invitation error
-      if (
-        inviteError.code === '23505' &&
-        inviteError.message.includes('share_invitations_resource_id_invited_email_key')
-      ) {
+      if (inviteError.code === '23505') {
         // Check if there's an existing active invitation
         const { data: existingInvitation } = await supabase
-          .from('share_invitations')
-          .select('*')
-          .eq('resource_type', resourceType)
+          .from('invitation_details')
+          .select('id')
           .eq('resource_id', resourceId)
-          .eq('invited_email', email.toLowerCase())
-          .gte('expires_at', new Date().toISOString())
+          .eq('invitee_email', email.toLowerCase())
           .single()
 
         if (existingInvitation) {
+          // Get the expiry from the public table
+          const { data: preview } = await supabase
+            .from('public_invitation_previews')
+            .select('expires_at')
+            .eq('id', existingInvitation.id)
+            .single()
+
           return NextResponse.json({
             success: true,
             invitationId: existingInvitation.id,
-            expiresAt: existingInvitation.expires_at,
+            expiresAt: preview?.expires_at,
             existing: true,
           })
         }
@@ -167,10 +178,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 })
     }
 
+    // Get the expiry date from the public preview
+    const { data: preview } = await supabase
+      .from('public_invitation_previews')
+      .select('expires_at')
+      .eq('id', invitationId)
+      .single()
+
     return NextResponse.json({
       success: true,
-      invitationId: invitation.id,
-      expiresAt: invitation.expires_at,
+      invitationId: invitationId,
+      expiresAt:
+        preview?.expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     })
   } catch (error) {
     console.error('Unexpected error in generate share link:', error)

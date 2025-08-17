@@ -44,7 +44,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
   const currentUserId = user?.id
   const currentUserEmail = user?.email
 
-  const [activeTab, setActiveTab] = useState<'database' | 'users' | 'reset'>('database')
+  const [activeTab, setActiveTab] = useState<'database' | 'users' | 'reset' | 'permissions'>(
+    'database'
+  )
   const [expandedSections, setExpandedSections] = useState({
     quickActions: true,
     userStats: false,
@@ -52,6 +54,24 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
 
   // Reset user data state
   const [targetEmail, setTargetEmail] = useState('')
+
+  // Permissions state
+  interface EnhancedPermission {
+    id: string
+    user_id: string
+    resource_type: string
+    resource_id: string
+    permission_level: string
+    created_at: string | null
+    updated_at?: string | null
+    expires_at?: string | null
+    granted_by?: string
+    resourceName: string
+    ownerEmail: string
+    userEmail: string
+  }
+  const [permissions, setPermissions] = useState<EnhancedPermission[]>([])
+  const [loadingPermissions, setLoadingPermissions] = useState(false)
   const [adminPassword, setAdminPassword] = useState('')
   const [isResetting, setIsResetting] = useState(false)
   const [resetResult, setResetResult] = useState<{
@@ -153,6 +173,89 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
       alert('Failed to export user data')
     } finally {
       setUserActionLoading(null)
+    }
+  }
+
+  const fetchPermissions = async () => {
+    if (!supabase) return
+    setLoadingPermissions(true)
+
+    try {
+      // Get all permissions with user details
+      const { data: perms, error } = await supabase
+        .from('permissions')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+
+      // Get resource names and user emails for better display
+      const enhancedPerms = await Promise.all(
+        (perms || []).map(async (perm) => {
+          let resourceName = 'Unknown'
+          const ownerEmail = 'Unknown'
+
+          if (perm.resource_type === 'folder') {
+            const { data } = await supabase
+              .from('folders')
+              .select('name, user_id')
+              .eq('id', perm.resource_id)
+              .single()
+            resourceName = data?.name || 'Deleted Folder'
+
+            // Get owner email
+            // TODO: Need API endpoint to fetch auth user data
+            // if (data?.user_id) {
+            //   const { data: owner } = await supabase
+            //     .from('auth.users')
+            //     .select('email')
+            //     .eq('id', data.user_id)
+            //     .single()
+            //   ownerEmail = owner?.email || 'Unknown'
+            // }
+          } else if (perm.resource_type === 'notebook') {
+            const { data } = await supabase
+              .from('notebooks')
+              .select('name, user_id')
+              .eq('id', perm.resource_id)
+              .single()
+            resourceName = data?.name || 'Deleted Notebook'
+
+            // Get owner email
+            // TODO: Need API endpoint to fetch auth user data
+            // if (data?.user_id) {
+            //   const { data: owner } = await supabase
+            //     .from('auth.users')
+            //     .select('email')
+            //     .eq('id', data.user_id)
+            //     .single()
+            //   ownerEmail = owner?.email || 'Unknown'
+            // }
+          }
+
+          // Get permission holder email
+          // TODO: Need API endpoint to fetch auth user data
+          // const { data: user } = await supabase
+          //   .from('auth.users')
+          //   .select('email')
+          //   .eq('id', perm.user_id)
+          //   .single()
+
+          return {
+            ...perm,
+            resourceName,
+            ownerEmail,
+            userEmail: 'Unknown', // user?.email || 'Unknown',
+          }
+        })
+      )
+
+      setPermissions(enhancedPerms)
+      console.log('Permissions loaded:', enhancedPerms)
+    } catch (error) {
+      console.error('Error fetching permissions:', error)
+    } finally {
+      setLoadingPermissions(false)
     }
   }
 
@@ -318,6 +421,19 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
           }`}
         >
           Reset User Data
+        </button>
+        <button
+          onClick={() => {
+            setActiveTab('permissions')
+            fetchPermissions()
+          }}
+          className={`px-4 py-2 font-medium transition-colors ${
+            activeTab === 'permissions'
+              ? 'text-blue-600 border-b-2 border-blue-600'
+              : 'text-gray-600 hover:text-gray-900'
+          }`}
+        >
+          Permissions
         </button>
       </div>
 
@@ -576,6 +692,114 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
               icon={RefreshCw}
             >
               Reset User Data
+            </LoadingButton>
+          </div>
+        </div>
+      )}
+
+      {/* Permissions Tab */}
+      {activeTab === 'permissions' && (
+        <div className="space-y-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-blue-900">All Permissions</h3>
+                <p className="text-sm text-blue-700 mt-1">
+                  View all sharing permissions in the system. Debug tool for understanding access
+                  control.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {loadingPermissions ? (
+            <div className="text-center py-8">
+              <RefreshCw className="h-8 w-8 animate-spin mx-auto text-gray-400" />
+              <p className="text-gray-500 mt-2">Loading permissions...</p>
+            </div>
+          ) : permissions.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">No permissions found in the system</div>
+          ) : (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600 mb-2">
+                Found {permissions.length} permission entries
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Resource
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Type
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Owner
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Shared With
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Permission
+                      </th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                        Created
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {permissions.map((perm) => (
+                      <tr key={perm.id} className="hover:bg-gray-50">
+                        <td className="px-3 py-2 text-sm font-medium text-gray-900">
+                          {perm.resourceName}
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-500">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              perm.resource_type === 'folder'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}
+                          >
+                            {perm.resource_type}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-500">{perm.ownerEmail}</td>
+                        <td className="px-3 py-2 text-sm text-gray-500">{perm.userEmail}</td>
+                        <td className="px-3 py-2 text-sm">
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              perm.permission_level === 'write'
+                                ? 'bg-orange-100 text-orange-800'
+                                : perm.permission_level === 'read'
+                                  ? 'bg-gray-100 text-gray-800'
+                                  : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {perm.permission_level}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-sm text-gray-500">
+                          {perm.created_at ? new Date(perm.created_at).toLocaleDateString() : 'N/A'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-4">
+            <LoadingButton
+              variant="secondary"
+              onClick={fetchPermissions}
+              loading={loadingPermissions}
+              icon={RefreshCw}
+            >
+              Refresh Permissions
             </LoadingButton>
           </div>
         </div>

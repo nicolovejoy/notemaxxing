@@ -92,9 +92,10 @@ class DataManager {
           permissionsMap.get(key).push(p)
         })
 
-        shares.invitations?.forEach((i) => {
-          invitationsMap.set(i.id, i)
-        })
+        // Skip invitations processing since they're not being loaded
+        // shares.invitations?.forEach((i) => {
+        //   invitationsMap.set(i.id, i)
+        // })
 
         dataStore.getState().setPermissions(permissionsMap)
         dataStore.getState().setShareInvitations(invitationsMap)

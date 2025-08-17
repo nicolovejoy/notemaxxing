@@ -33,7 +33,7 @@ export default function SharedWithMePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader
-        backUrl="/folders"
+        breadcrumbs={[{ label: 'Shared with Me' }]}
         rightContent={
           <div className="flex items-center gap-4">
             <SearchInput

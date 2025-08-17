@@ -19,12 +19,16 @@ interface FolderWithStats extends Folder {
   owner_email?: string
   shared_by?: string
   shared_at?: string
+  sharedByMe?: boolean
+  sharedWithMe?: boolean
 }
 
 interface NotebookWithStats extends Notebook {
   note_count?: number
   permission?: 'owner' | 'write' | 'read'
   shared_by?: string
+  sharedByMe?: boolean
+  sharedWithMe?: boolean
 }
 
 interface FolderView {

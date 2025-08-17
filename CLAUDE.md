@@ -1,66 +1,53 @@
-# Architecture Update - View-Based Data Loading
+# Project Guidelines
 
-**Latest Status**: See CURRENT_STATUS.md for session progress
-**Latest Fix**: Complete architecture overhaul - See HANDOFF_SESSION3.md
-
-## Current Architecture
+## Architecture
 
 - **ViewStore**: Each page loads only its data
 - **No Global Loading**: Never load all notes/notebooks
 - **Server Aggregation**: Counts computed in database
-- **Stable References**: No filtering in render functions
 
-## Design System
+## Sharing System
+
+see [SHARING_ARCHITECTURE.MD](./SHARING_ARCHITECTURE.md)
+
+## Design
 
 See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - use existing UI components only.
 
-## Rules
+## Rules for Claude
 
 - Be succinct
-- No .md files unless asked
+- Ask before coding. discuss first
 - Ask before committing
 - Run `npm run format` after changes
+- Be careful, check in with user frequently
+- Don't trust markdown files - verify in code that what they say is up to date
+- keep a neutral tone
+- Don't assume success
+- work in smaller chunks. suggest we write a plan if you think that's wise.
 
-## Next Tasks (Priority Order)
+## Current Issues
 
-### 1. Route Restructuring
+- Notebook visibility in shared folders partially working
+- Need to add share indicators to cards
+- Need notebook-level sharing -- code and UI
 
-**Rename for clarity**:
+## Supabase Setup
 
-- `/folders` → `/backpack` (college-friendly)
-- `/notebooks/[id]` → `/folders/[id]` (shows folder's notebooks)
-- Create `/notebooks/[id]` for actual notebook detail
+- Project ref: ywfogxzhofecvuhrngnv
+- CLI linked and configured -- let the user run the commands though
+- See [SUPABASE_CLI_SETUP.md](./SUPABASE_CLI_SETUP.md) for details
 
-### 2. Fix Sharing UI Placement
+## Critical: Data Pattern
 
-**Move share buttons from cards to headers**:
-
-- Remove from collection view cards
-- Add to detail page headers only
-- Keep share indicators on cards
-
-### 3. Implement Permission Inheritance
-
-**Folder permissions cascade to notebooks**:
-
-- Notebooks inherit folder permissions by default
-- Allow explicit overrides
-- Show warnings for conflicts
-
-## Critical: New Data Pattern
-
-**DO NOT** use old patterns like:
+**DO NOT** use old patterns:
 
 ```typescript
 const notes = useNotes() // ❌ Loads everything
-const filtered = notes.filter(...) // ❌ Creates new arrays
 ```
 
-**DO** use new ViewStore pattern:
+**DO** use ViewStore pattern:
 
 ```typescript
 const foldersView = useFoldersView() // ✅ Only current view
-const { loadFoldersView } = useViewActions() // ✅ Load on demand
 ```
-
-See ARCHITECTURE_V2.md for complete details.

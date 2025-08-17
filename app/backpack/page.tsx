@@ -13,6 +13,7 @@ import { FormField } from '@/components/ui/FormField'
 import { LoadingButton } from '@/components/ui/LoadingButton'
 import { StatusMessage } from '@/components/ui/StatusMessage'
 import { Card, CardBody } from '@/components/ui/Card'
+import { SharedIndicator } from '@/components/SharedIndicator'
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR } from '@/lib/constants'
 import { useFoldersView, useCreateFolder } from '@/lib/query/hooks'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -103,6 +104,7 @@ export default function BackpackPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader
+        breadcrumbs={[{ label: 'Backpack' }]}
         rightContent={
           <div className="flex items-center gap-4">
             <SearchInput
@@ -190,11 +192,11 @@ export default function BackpackPage() {
                       <div className={`p-3 rounded-lg ${folder.color}`}>
                         <FolderOpen className="h-6 w-6 text-white" />
                       </div>
-                      {folder.permission && folder.permission !== 'owner' && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                          {folder.permission}
-                        </span>
-                      )}
+                      <SharedIndicator
+                        sharedByMe={folder.sharedByMe}
+                        shared={folder.sharedWithMe}
+                        permission={folder.permission === 'owner' ? undefined : folder.permission}
+                      />
                     </div>
                     <h3 className="font-semibold text-lg mb-1">{folder.name}</h3>
                     <div className="flex gap-4 text-sm text-gray-600">
@@ -239,9 +241,23 @@ export default function BackpackPage() {
                                 <BookOpen className="h-4 w-4 text-gray-700" />
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate">
-                                  {notebook.name}
-                                </p>
+                                <div className="flex items-center gap-1">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {notebook.name}
+                                  </p>
+                                  {(notebook.sharedByMe || notebook.sharedWithMe) && (
+                                    <SharedIndicator
+                                      sharedByMe={notebook.sharedByMe}
+                                      shared={notebook.sharedWithMe}
+                                      permission={
+                                        notebook.permission === 'owner'
+                                          ? undefined
+                                          : notebook.permission
+                                      }
+                                      className="scale-75 -ml-1"
+                                    />
+                                  )}
+                                </div>
                                 <p className="text-xs text-gray-500 mt-0.5">
                                   {notebook.note_count}{' '}
                                   {notebook.note_count === 1 ? 'note' : 'notes'}

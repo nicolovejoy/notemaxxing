@@ -13,20 +13,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const { id: invitationId } = await params
     console.log('[Invitation Preview] Looking for invitation:', invitationId)
 
-    // Query invitation with minimal fields
-    const { data: invitation, error: inviteError } = await supabase
-      .from('share_invitations')
-      .select('resource_type, resource_id, invited_email, expires_at, accepted_at, invited_by')
+    // Query public invitation preview (no auth needed, no RLS)
+    const { data: preview, error: previewError } = await supabase
+      .from('public_invitation_previews')
+      .select('resource_type, resource_name, permission_level, expires_at, status')
       .eq('id', invitationId)
       .single()
 
-    if (inviteError || !invitation) {
-      console.error('[Invitation Preview] Error:', inviteError)
+    if (previewError || !preview) {
+      console.error('[Invitation Preview] Error:', previewError)
       return NextResponse.json({ valid: false, error: 'Invitation not found' }, { status: 404 })
     }
 
     // Check if invitation has expired
-    if (new Date(invitation.expires_at) < new Date()) {
+    if (new Date(preview.expires_at) < new Date()) {
       return NextResponse.json(
         { valid: false, error: 'This invitation has expired' },
         { status: 410 }
@@ -34,55 +34,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     // Check if already accepted
-    if (invitation.accepted_at) {
+    if (preview.status === 'accepted') {
       return NextResponse.json(
         { valid: false, error: 'This invitation has already been accepted' },
         { status: 409 }
       )
     }
 
-    // Get minimal resource details
-    let resourceName = ''
-    if (invitation.resource_type === 'folder') {
-      const { data: folder } = await supabase
-        .from('folders')
-        .select('name')
-        .eq('id', invitation.resource_id)
-        .single()
+    // Resource name is already in the public preview
+    // No need to fetch it again
 
-      resourceName = folder?.name || 'Unnamed folder'
-    } else {
-      const { data: notebook } = await supabase
-        .from('notebooks')
-        .select('name')
-        .eq('id', invitation.resource_id)
-        .single()
-
-      resourceName = notebook?.name || 'Unnamed notebook'
-    }
-
-    // Get inviter's email (not the user ID)
-    let inviterEmail = 'Someone'
-    if (invitation.invited_by) {
-      const { data: inviterProfile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', invitation.invited_by)
-        .single()
-
-      if (inviterProfile) {
-        inviterEmail = inviterProfile.email
-      }
-    }
-
-    // Return minimal, safe information
+    // Return minimal, safe information from public preview
     return NextResponse.json({
       valid: true,
-      resourceType: invitation.resource_type,
-      resourceName,
-      invitedBy: inviterEmail,
-      requiresEmail: invitation.invited_email,
-      expiresAt: invitation.expires_at,
+      resourceType: preview.resource_type,
+      resourceName: preview.resource_name,
+      permissionLevel: preview.permission_level,
+      expiresAt: preview.expires_at,
+      // Note: No emails exposed in public preview
     })
   } catch (error) {
     console.error('Unexpected error in invitation preview:', error)

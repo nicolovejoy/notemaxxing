@@ -181,7 +181,10 @@ export default function FolderDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader
-        backUrl="/backpack"
+        breadcrumbs={[
+          { label: 'Backpack', href: '/backpack' },
+          { label: folder?.name || 'Folder' },
+        ]}
         rightContent={
           <div className="flex items-center gap-4">
             <SearchInput

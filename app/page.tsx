@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FolderOpen, Keyboard, Brain, ArrowRight, LogIn } from 'lucide-react'
+import { FolderOpen, Keyboard, Brain, ArrowRight, LogIn, Users } from 'lucide-react'
 import { UserMenu } from '@/components/user-menu'
 import { BuildTimestamp } from '@/components/build-timestamp'
 import { Logo } from '@/components/logo'
@@ -25,6 +25,13 @@ export default function Home() {
       description: 'Organize your notes with custom folders and colors',
       href: '/backpack',
       color: 'text-blue-500',
+    },
+    {
+      icon: Users,
+      title: 'Shared with Me',
+      description: 'Access notebooks and folders shared by others',
+      href: '/shared-with-me',
+      color: 'text-purple-500',
     },
     {
       icon: Keyboard,
@@ -127,7 +134,7 @@ export default function Home() {
           <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
             Everything You Need to Stay Organized
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature) => {
               const Icon = feature.icon
               return (

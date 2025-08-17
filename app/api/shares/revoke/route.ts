@@ -107,11 +107,11 @@ async function handleRevoke(request: NextRequest) {
     // Also delete any pending invitations for the same resource/user combination
     if (permission?.profiles?.email) {
       await supabase
-        .from('share_invitations')
+        .from('invitations')
         .delete()
         .eq('resource_type', permissionData.resource_type)
         .eq('resource_id', permissionData.resource_id)
-        .eq('invited_email', permission.profiles.email)
+        .eq('invitee_email', permission.profiles.email)
         .is('accepted_at', null)
     }
 

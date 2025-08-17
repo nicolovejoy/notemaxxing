@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Folder, Notebook, Note, Quiz, ShareInvitation, ResourcePermission } from './types'
+import type { Folder, Notebook, Note, Quiz, ResourcePermission } from './types'
 import { logger, logApiCall } from '@/lib/debug/logger'
 import { handleSupabaseError } from './error-handler'
 
@@ -504,17 +504,17 @@ export const sharesApi = {
 
       if (permError) throw permError
 
-      // Get share invitations created by the user
-      const { data: invitations, error: invError } = await supabase
-        .from('invitations')
-        .select('*')
-        .eq('invited_by', user.id)
-
-      if (invError) throw invError
+      // Skip loading invitations for now - not used in the UI
+      // and causes RLS errors on initial load
+      // const { data: invitations, error: invError } = await supabase
+      //   .from('invitations')
+      //   .select('*')
+      //   .eq('invited_by', user.id)
+      // if (invError) throw invError
 
       return {
         permissions: permissions as ResourcePermission[],
-        invitations: invitations as ShareInvitation[],
+        invitations: [] as never[], // Type as never[] since we're not loading invitations
       }
     } catch {
       // Silently fail - sharing metadata is optional
