@@ -57,18 +57,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       resourceName = notebook?.name || 'Unnamed notebook'
     }
 
-    // Get inviter's profile if we have invited_by
+    // TODO: Add profiles table or database function to get user emails
+    // For now, show last 8 digits of inviter's ID
     let inviterEmail = 'Unknown user'
     if (invitation.invited_by) {
-      const { data: inviterProfile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', invitation.invited_by)
-        .single()
-
-      if (inviterProfile) {
-        inviterEmail = inviterProfile.email
-      }
+      // Show last 8 characters of UUID for identification
+      const shortId = invitation.invited_by.slice(-8)
+      inviterEmail = `User ...${shortId}`
     }
 
     return NextResponse.json({

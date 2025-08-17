@@ -406,7 +406,7 @@ export const notesApi = {
     }
   },
 
-  async create(note: Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
+  async create(note: Omit<Note, 'id' | 'owner_id' | 'created_by' | 'created_at' | 'updated_at'>) {
     const supabase = await getSupabaseClient()
     const { data, error } = await supabase.from('notes').insert(note).select().single()
 
@@ -416,7 +416,7 @@ export const notesApi = {
 
   async update(
     id: string,
-    updates: Partial<Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+    updates: Partial<Omit<Note, 'id' | 'owner_id' | 'created_by' | 'created_at' | 'updated_at'>>
   ) {
     const supabase = await getSupabaseClient()
     const { data, error } = await supabase

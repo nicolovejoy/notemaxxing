@@ -14,16 +14,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [redirectTo, setRedirectTo] = useState<string>('/')
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
+    // Get redirect URL from query params
+    const params = new URLSearchParams(window.location.search)
+    const redirect = params.get('redirectTo')
+    if (redirect) {
+      setRedirectTo(redirect)
+    }
+
     const checkSession = async () => {
       if (!supabase) return
 
       const { data } = await supabase.auth.getSession()
       if (data.session) {
-        router.push('/')
+        router.push(redirect || '/')
         router.refresh()
       }
     }
@@ -58,10 +66,6 @@ export default function LoginPage() {
         // Refresh data store to load user's data
         await dataManager.refresh()
 
-        // Get the intended destination or default to home
-        const params = new URLSearchParams(window.location.search)
-        const redirectTo = params.get('redirectTo') || '/'
-
         // Use replace to avoid back button issues
         router.replace(redirectTo)
         router.refresh()
@@ -81,7 +85,14 @@ export default function LoginPage() {
           <h2 className="mt-6 text-center text-2xl font-semibold text-gray-900">Welcome back</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
-            <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link
+              href={
+                redirectTo !== '/'
+                  ? `/auth/signup?redirectTo=${encodeURIComponent(redirectTo)}`
+                  : '/auth/signup'
+              }
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
               create a new account
             </Link>
           </p>

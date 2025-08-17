@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         name,
         color,
         folder_id,
-        user_id: userId,
+        // owner_id and created_by are set automatically by database trigger
       })
       .select()
       .single()

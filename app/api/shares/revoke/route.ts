@@ -45,17 +45,9 @@ async function handleRevoke(request: NextRequest) {
       )
     }
 
-    // Now get with profile info
-    const { data: permission, error: permError } = await supabase
-      .from('permissions')
-      .select('*, profiles!permissions_user_id_fkey(email)')
-      .eq('id', permissionId)
-      .single()
-
-    console.log('[Revoke API] Full permission lookup result:', { permission, error: permError })
-
-    // Use basic permission if the join failed
-    const permissionData = permission || basicPermission
+    // TODO: Add profiles table or database function to get user emails
+    // For now, we'll just use the basic permission data
+    const permissionData = basicPermission
 
     // Check if user is authorized to revoke
     // For now, only check if user owns the resource (granted_by might not exist)
@@ -66,19 +58,19 @@ async function handleRevoke(request: NextRequest) {
       if (permissionData.resource_type === 'folder') {
         const { data: folder } = await supabase
           .from('folders')
-          .select('user_id')
+          .select('owner_id')
           .eq('id', permissionData.resource_id)
           .single()
 
-        isOwner = folder?.user_id === user.id
+        isOwner = folder?.owner_id === user.id
       } else if (permissionData.resource_type === 'notebook') {
         const { data: notebook } = await supabase
           .from('notebooks')
-          .select('user_id')
+          .select('owner_id')
           .eq('id', permissionData.resource_id)
           .single()
 
-        isOwner = notebook?.user_id === user.id
+        isOwner = notebook?.owner_id === user.id
       }
 
       if (!isOwner) {
@@ -104,16 +96,7 @@ async function handleRevoke(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to revoke permission' }, { status: 500 })
     }
 
-    // Also delete any pending invitations for the same resource/user combination
-    if (permission?.profiles?.email) {
-      await supabase
-        .from('invitations')
-        .delete()
-        .eq('resource_type', permissionData.resource_type)
-        .eq('resource_id', permissionData.resource_id)
-        .eq('invitee_email', permission.profiles.email)
-        .is('accepted_at', null)
-    }
+    // TODO: Also delete pending invitations once we can lookup user emails
 
     return NextResponse.json({
       success: true,
@@ -121,7 +104,7 @@ async function handleRevoke(request: NextRequest) {
       revokedPermission: {
         resourceType: permissionData.resource_type,
         resourceId: permissionData.resource_id,
-        userEmail: permission?.profiles?.email,
+        userId: permissionData.user_id,
       },
     })
   } catch (error) {

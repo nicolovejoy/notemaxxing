@@ -5,13 +5,14 @@ export interface BaseEntity {
   updated_at: string
 }
 
-// User-owned entity
-export interface UserEntity extends BaseEntity {
-  user_id: string
+// Owned entity - has an owner
+export interface OwnedEntity extends BaseEntity {
+  owner_id: string
+  created_by?: string // User who created it (may differ from owner)
 }
 
 // Main entities
-export interface Folder extends UserEntity {
+export interface Folder extends OwnedEntity {
   name: string
   color: string
   // Sharing properties (optional, added at runtime)
@@ -19,7 +20,7 @@ export interface Folder extends UserEntity {
   permission?: 'read' | 'write'
 }
 
-export interface Notebook extends UserEntity {
+export interface Notebook extends OwnedEntity {
   folder_id: string
   name: string
   color: string
@@ -30,13 +31,13 @@ export interface Notebook extends UserEntity {
   permission?: 'read' | 'write'
 }
 
-export interface Note extends UserEntity {
+export interface Note extends OwnedEntity {
   notebook_id: string
   title: string
   content: string
 }
 
-export interface Quiz extends UserEntity {
+export interface Quiz extends OwnedEntity {
   subject: string
   questions: QuizQuestion[]
 }

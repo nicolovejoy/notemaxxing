@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { setupNewUser } from '@/lib/auth/setup-new-user'
 import { FormField } from '@/components/ui/FormField'
@@ -15,8 +15,18 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [redirectTo, setRedirectTo] = useState<string>('/')
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
+
+  useEffect(() => {
+    // Get redirect URL from query params
+    const redirect = searchParams.get('redirectTo')
+    if (redirect) {
+      setRedirectTo(redirect)
+    }
+  }, [searchParams])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,7 +74,7 @@ export default function SignupPage() {
           // Continue anyway - the user is created, just missing profile/role
         }
 
-        router.push('/')
+        router.push(redirectTo)
         router.refresh()
       }
     } catch (error) {
@@ -84,7 +94,14 @@ export default function SignupPage() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{' '}
-            <Link href="/auth/login" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link
+              href={
+                redirectTo !== '/'
+                  ? `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`
+                  : '/auth/login'
+              }
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
               sign in to existing account
             </Link>
           </p>

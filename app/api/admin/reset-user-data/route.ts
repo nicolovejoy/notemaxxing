@@ -69,9 +69,9 @@ export async function POST(request: NextRequest) {
 
     // 7. Get current data counts for logging
     const [folders, notebooks, notes] = await Promise.all([
-      serviceClient.from('folders').select('id', { count: 'exact' }).eq('user_id', targetUserId),
-      serviceClient.from('notebooks').select('id', { count: 'exact' }).eq('user_id', targetUserId),
-      serviceClient.from('notes').select('id', { count: 'exact' }).eq('user_id', targetUserId),
+      serviceClient.from('folders').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
+      serviceClient.from('notebooks').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
+      serviceClient.from('notes').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
     ])
 
     const beforeCounts = {
@@ -89,11 +89,11 @@ export async function POST(request: NextRequest) {
     }> = []
 
     // Delete notes first (depends on notebooks)
-    const notesDelete = await serviceClient.from('notes').delete().eq('user_id', targetUserId)
+    const notesDelete = await serviceClient.from('notes').delete().eq('owner_id', targetUserId)
     deleteOperations.push({ table: 'notes', result: notesDelete })
 
     // Delete quizzes (independent)
-    const quizzesDelete = await serviceClient.from('quizzes').delete().eq('user_id', targetUserId)
+    const quizzesDelete = await serviceClient.from('quizzes').delete().eq('owner_id', targetUserId)
     // Ignore errors for quizzes as table might not have any entries
     deleteOperations.push({ table: 'quizzes', result: quizzesDelete, optional: true })
 
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const notebooksDelete = await serviceClient
       .from('notebooks')
       .delete()
-      .eq('user_id', targetUserId)
+      .eq('owner_id', targetUserId)
     deleteOperations.push({ table: 'notebooks', result: notebooksDelete })
 
     // Delete folders

@@ -10,18 +10,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
     }
 
-    const { id: invitationId } = await params
-    console.log('[Invitation Preview] Looking for invitation:', invitationId)
+    const { id: invitationToken } = await params
+    console.log('[Invitation Preview] Looking for invitation with token:', invitationToken)
 
-    // Query public invitation preview (no auth needed, no RLS)
+    // Query public invitation preview by token (no auth needed, no RLS)
     const { data: preview, error: previewError } = await supabase
       .from('public_invitation_previews')
-      .select('resource_type, resource_name, permission_level, expires_at, status')
-      .eq('id', invitationId)
+      .select('resource_type, resource_name, inviter_name, expires_at')
+      .eq('token', invitationToken)
       .single()
 
+    console.log('[Invitation Preview] Query result:', { preview, error: previewError })
+
     if (previewError || !preview) {
-      console.error('[Invitation Preview] Error:', previewError)
+      console.error(
+        '[Invitation Preview] Not found or error:',
+        previewError?.message || 'No preview data'
+      )
       return NextResponse.json({ valid: false, error: 'Invitation not found' }, { status: 404 })
     }
 
@@ -33,25 +38,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       )
     }
 
-    // Check if already accepted
-    if (preview.status === 'accepted') {
-      return NextResponse.json(
-        { valid: false, error: 'This invitation has already been accepted' },
-        { status: 409 }
-      )
-    }
-
-    // Resource name is already in the public preview
-    // No need to fetch it again
-
     // Return minimal, safe information from public preview
     return NextResponse.json({
       valid: true,
       resourceType: preview.resource_type,
       resourceName: preview.resource_name,
-      permissionLevel: preview.permission_level,
+      invitedBy: preview.inviter_name,
       expiresAt: preview.expires_at,
-      // Note: No emails exposed in public preview
+      // Note: No emails or permission levels exposed in public preview for security
     })
   } catch (error) {
     console.error('Unexpected error in invitation preview:', error)

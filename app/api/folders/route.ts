@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       .insert({
         name,
         color,
-        user_id: userId,
+        owner_id: userId,
       })
       .select()
       .single()

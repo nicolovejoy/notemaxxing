@@ -56,23 +56,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'You cannot share with yourself' }, { status: 400 })
     }
 
-    // Also check profiles table
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError) {
-      console.error('[Generate Link] Error fetching profile:', profileError)
-    } else {
-      console.log('[Generate Link] Profile found:', profile)
-    }
-
-    if (profile?.email && profile.email.toLowerCase() === email.toLowerCase()) {
-      console.log('[Generate Link] User trying to share with themselves (profile email match)')
-      return NextResponse.json({ error: 'You cannot share with yourself' }, { status: 400 })
-    }
+    // TODO: Add profiles table or database function to get user emails
+    // The auth email check above should be sufficient for now
+    // Removed profiles table check since the table doesn't exist
 
     if (!['folder', 'notebook'].includes(resourceType)) {
       return NextResponse.json({ error: 'Invalid resource type' }, { status: 400 })
@@ -89,7 +75,7 @@ export async function POST(request: NextRequest) {
         .from('folders')
         .select('id')
         .eq('id', resourceId)
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .single()
 
       if (error || !data) {
@@ -101,7 +87,7 @@ export async function POST(request: NextRequest) {
         .from('notebooks')
         .select('id')
         .eq('id', resourceId)
-        .eq('user_id', user.id)
+        .eq('owner_id', user.id)
         .single()
 
       if (error || !data) {
@@ -134,10 +120,9 @@ export async function POST(request: NextRequest) {
     const { data: invitationId, error: inviteError } = await supabase.rpc('create_invitation', {
       p_resource_id: resourceId,
       p_resource_type: resourceType,
-      p_resource_name: resourceName,
-      p_invitee_email: email.toLowerCase(),
       p_permission_level: permission,
-      p_invited_by: user.id,
+      p_invitee_email: email.toLowerCase(),
+      p_expires_in_days: 7,
     })
 
     if (inviteError) {

@@ -16,7 +16,7 @@ export async function GET() {
     const { data: ownedFolders, error: ownedError } = await supabase
       .from('folders_with_stats')
       .select('*')
-      .eq('user_id', userId)
+      .eq('owner_id', userId)
 
     if (ownedError) throw ownedError
 
@@ -39,7 +39,7 @@ export async function GET() {
       archived_count: number
       created_at: string
       updated_at: string
-      user_id: string
+      owner_id: string
     }
 
     let sharedFolders: FolderFromView[] = []
@@ -212,7 +212,7 @@ export async function GET() {
       .from('user_stats')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle() // Use maybeSingle() since user might have no folders yet
 
     if (statsError) {
       console.error('Error fetching user stats:', statsError)

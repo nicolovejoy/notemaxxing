@@ -141,7 +141,7 @@ class DataManager {
     const tempId = `temp-${Date.now()}`
     const tempFolder: Folder = {
       id: tempId,
-      user_id: 'temp',
+      owner_id: 'temp',
       name,
       color,
       created_at: new Date().toISOString(),
@@ -230,7 +230,7 @@ class DataManager {
     const tempId = `temp-${Date.now()}`
     const tempNotebook: Notebook = {
       id: tempId,
-      user_id: 'temp',
+      owner_id: 'temp',
       folder_id: folderId,
       name,
       color,
@@ -298,7 +298,7 @@ class DataManager {
     const tempId = `temp-${Date.now()}`
     const tempNote: Note = {
       id: tempId,
-      user_id: 'temp',
+      owner_id: 'temp',
       notebook_id: notebookId,
       title,
       content,

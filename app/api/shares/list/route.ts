@@ -81,22 +81,20 @@ export async function GET() {
       if (item.invited_by) userIds.add(item.invited_by)
     })
 
-    // Fetch all user profiles at once
+    // TODO: Create a database function to get user emails from auth.users
+    // For now, we'll show the last 8 digits of the user ID
     const userProfiles: Record<string, { email: string; full_name: string | null }> = {}
     if (userIds.size > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', Array.from(userIds))
-
-      if (profiles) {
-        profiles.forEach((profile: { id: string; email: string; full_name: string | null }) => {
-          userProfiles[profile.id] = {
-            email: profile.email,
-            full_name: profile.full_name,
-          }
-        })
-      }
+      // Since we can't access auth.users directly and don't have a profiles table,
+      // we'll use the user ID as a temporary display value
+      userIds.forEach((userId) => {
+        // Show last 8 characters of UUID for identification
+        const shortId = userId.slice(-8)
+        userProfiles[userId] = {
+          email: `User ...${shortId}`, // Temporary until we add user email lookup
+          full_name: null,
+        }
+      })
     }
 
     // Get resource details for all shared items

@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       .from('notebooks')
       .select('id')
       .eq('id', notebook_id)
-      .eq('user_id', userId)
+      .eq('owner_id', userId)
       .single()
 
     if (!notebook) {
@@ -70,9 +70,9 @@ export async function PATCH(request: NextRequest) {
     // Verify note ownership through notebook
     const { data: note } = await supabase
       .from('notes')
-      .select('notebooks!inner(user_id)')
+      .select('notebooks!inner(owner_id)')
       .eq('id', id)
-      .eq('notebooks.user_id', userId)
+      .eq('notebooks.owner_id', userId)
       .single()
 
     if (!note) {
@@ -115,9 +115,9 @@ export async function DELETE(request: NextRequest) {
     // Verify note ownership through notebook
     const { data: note } = await supabase
       .from('notes')
-      .select('notebooks!inner(user_id)')
+      .select('notebooks!inner(owner_id)')
       .eq('id', id)
-      .eq('notebooks.user_id', userId)
+      .eq('notebooks.owner_id', userId)
       .single()
 
     if (!note) {

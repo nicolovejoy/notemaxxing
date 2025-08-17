@@ -72,6 +72,11 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
   }, [])
 
   const handleSendInvitation = async () => {
+    // Don't send if email matches current user
+    if (email && currentUserEmail && email.toLowerCase() === currentUserEmail.toLowerCase()) {
+      return
+    }
+    
     setLoading(true)
     setError(null)
     setSuccess(null)

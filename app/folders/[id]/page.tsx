@@ -123,7 +123,7 @@ export default function FolderDetailPage() {
           name: newNotebookName.trim(),
           color: newNotebookColor,
           folder_id: folderId,
-          user_id: user?.id,
+          // owner_id and created_by are set automatically by database trigger
         })
         .select()
         .single()
@@ -193,14 +193,17 @@ export default function FolderDetailPage() {
               placeholder="Search notebooks..."
               className="w-64"
             />
-            <LoadingButton
-              onClick={() => setShowShareDialog(true)}
-              icon={Share2}
-              variant="secondary"
-              title="Share this folder"
-            >
-              Share
-            </LoadingButton>
+            {/* Only show share button for folder owners */}
+            {folder && user && folder.owner_id === user.id && (
+              <LoadingButton
+                onClick={() => setShowShareDialog(true)}
+                icon={Share2}
+                variant="secondary"
+                title="Share this folder"
+              >
+                Share
+              </LoadingButton>
+            )}
             <LoadingButton onClick={() => setShowCreateModal(true)} icon={Plus} variant="primary">
               New Notebook
             </LoadingButton>

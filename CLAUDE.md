@@ -1,53 +1,50 @@
-# Project Guidelines
+# Project Guidelines for Claude
 
-## Architecture
+## Current State (August 2024)
 
-- **ViewStore**: Each page loads only its data
-- **No Global Loading**: Never load all notes/notebooks
-- **Server Aggregation**: Counts computed in database
+- **Database**: New Supabase project `vtaloqvkvakylrgpqcml` with code-managed schema
+- **Sharing**: Folder and notebook sharing working with email invitations
+- **Auth**: Working with proper owner_id throughout
 
-## Sharing System
+## Architecture Rules
 
-see [SHARING_ARCHITECTURE.MD](./SHARING_ARCHITECTURE.md)
+- **ViewStore Pattern**: Each page loads only its data (no global loading)
+- **Server Aggregation**: Counts computed in database, not client
+- **Ownership Model**: `owner_id` = resource owner, `created_by` = creator
 
-## Design
+## Coding Rules
 
-See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) - use existing UI components only.
+1. Be succinct - keep responses short
+2. Ask before making significant changes
+3. Run `npm run format` after code changes
+4. Check in with user frequently
+5. Work in small chunks
+6. Can run dev server for testing (ask first)
 
-## Rules for Claude
+## Design System
 
-- Be succinct
-- Ask before coding. discuss first
-- Ask before committing
-- Run `npm run format` after changes
-- Be careful, check in with user frequently
-- Don't trust markdown files - verify in code that what they say is up to date
-- keep a neutral tone
-- Don't assume success
-- work in smaller chunks. suggest we write a plan if you think that's wise.
+Use existing UI components only - see `/components/ui/`
 
-## Current Issues
+## Known Issues
 
-- Notebook visibility in shared folders partially working
-- Need to add share indicators to cards
-- Need notebook-level sharing -- code and UI
+- Real-time sync needs fixing
+- User emails display as IDs (need auth.users access function)
+- Share buttons needed on notebook cards
 
-## Supabase Setup
+## Testing Accounts
 
-- Project ref: ywfogxzhofecvuhrngnv
-- CLI linked and configured -- let the user run the commands though
-- See [SUPABASE_CLI_SETUP.md](./SUPABASE_CLI_SETUP.md) for details
+When testing sharing, use different browser sessions or incognito mode.
 
-## Critical: Data Pattern
-
-**DO NOT** use old patterns:
+## Important Patterns
 
 ```typescript
-const notes = useNotes() // ❌ Loads everything
+// ✅ GOOD - ViewStore pattern
+const foldersView = useFoldersView()
+
+// ❌ BAD - Global loading
+const notes = useNotes()
 ```
 
-**DO** use ViewStore pattern:
+## Don't Trust Old Docs
 
-```typescript
-const foldersView = useFoldersView() // ✅ Only current view
-```
+Always verify in code - many markdown files are outdated.

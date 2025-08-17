@@ -18,46 +18,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing invitation ID' }, { status: 400 })
     }
 
-    console.log('[Accept Invitation] User:', user.id, 'accepting invitation:', invitationId)
+    console.log(
+      '[Accept Invitation] User:',
+      user.id,
+      'User email:',
+      user.email,
+      'accepting token:',
+      invitationId
+    )
 
     // Use the database function to accept the invitation
-    const { error: acceptError } = await supabase.rpc('accept_invitation', {
-      p_invitation_id: invitationId,
-      p_user_id: user.id,
+    const { data: acceptData, error: acceptError } = await supabase.rpc('accept_invitation', {
+      p_token: invitationId,
     })
 
+    console.log('[Accept Invitation] RPC result:', { acceptData, error: acceptError })
+
     if (acceptError) {
-      console.error('[Accept Invitation] Error:', acceptError)
-
-      // Parse specific error messages from the function
-      if (acceptError.message.includes('not found or not for this user')) {
-        return NextResponse.json({ error: 'Invitation not found or not for you' }, { status: 403 })
-      }
-      if (acceptError.message.includes('already accepted')) {
-        return NextResponse.json({ error: 'Invitation already accepted' }, { status: 409 })
-      }
-      if (acceptError.message.includes('expired')) {
-        return NextResponse.json({ error: 'Invitation has expired' }, { status: 410 })
-      }
-
+      console.error(
+        '[Accept Invitation] RPC Error details:',
+        acceptError.message,
+        acceptError.details,
+        acceptError.hint
+      )
       return NextResponse.json({ error: 'Failed to accept invitation' }, { status: 500 })
     }
 
-    // Get the resource details for the response
-    const { data: details } = await supabase
-      .from('invitation_details')
-      .select(
-        'resource_id, resource_type: public_store.invitation_previews(resource_type, resource_name)'
+    // Check if the invitation was actually accepted (function returns boolean)
+    if (acceptData === false) {
+      console.error(
+        '[Accept Invitation] Function returned false - invitation not found, expired, or already accepted'
       )
-      .eq('id', invitationId)
+      return NextResponse.json(
+        { error: 'Invitation not found, expired, or already accepted' },
+        { status: 400 }
+      )
+    }
+
+    // Get the invitation details to find the resource
+    const { data: invitation } = await supabase
+      .from('invitations')
+      .select('resource_id, resource_type, permission_level')
+      .eq('token', invitationId)
       .single()
+
+    console.log('[Accept Invitation] Found invitation details:', invitation)
 
     // Get the actual permission that was created
     const { data: permission } = await supabase
       .from('permissions')
       .select('*')
       .eq('user_id', user.id)
-      .eq('resource_id', details?.resource_id)
+      .eq('resource_id', invitation?.resource_id)
       .single()
 
     console.log('[Accept Invitation] Success - permission created:', permission?.id)

@@ -1,154 +1,115 @@
 # Notemaxxing
 
-A modern note-taking application built with Next.js, TypeScript, and Tailwind CSS. Organize your thoughts with folders, notebooks, and notes while improving your typing skills.
+A collaborative note-taking application with folders, notebooks, and real-time sharing.
 
-🌐 **Live at**: [notemaxxing.net](https://notemaxxing.net) ✅
+## Tech Stack
 
-## Features
+- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Realtime)
+- **Editor**: TipTap (rich text editing)
+- **Deployment**: Vercel
 
-### 📁 Folders
+## Database Setup
 
-- Create folders (in your backpack) with names and colors
-- Rename folders
-- Delete folders (need to test if this works)
-- Share folders with other users via email invitations (working as of 8/16)
+### Current Status
 
-### 📓 Notebooks
+- **Project**: `vtaloqvkvakylrgpqcml` (new, code-managed schema)
+- **Schema**: Single migration file at `/supabase/migrations/20250101000000_complete_schema.sql`
+- **Architecture**: Infrastructure-as-code (no console modifications)
 
-- Create notebooks within folders
-- Archive notebooks (need to review if this exists and works at some point)
-- Permanent delete option for archived items (need to review if this exists and works at some point)
+### Local Development
 
-### 📝 Note Taking
-
-- Create and edit notes within notebooks
-- **Rich Text Editor**: Bold, italic, lists, headings with TipTap
-- **AI Enhancement**: Improve grammar and clarity with Claude AI, for all or part of a Note
-- **Text Selection Enhancement**: Enhance specific portions of text
-- **Preview Before Apply**: See AI changes side-by-side before accepting
-- **Undo Support**: Revert AI enhancements with dedicated undo
-- Auto-save functionality with smart title generation
-- Card-based grid view with sorting options
-- Contextual navigation between notebooks
-
-### ⌨️ Typemaxxing
-
-- **AI-Powered Practice**: Generate typing tests from your own notes
-- **Note Selection**: Choose specific notes to practice with
-- **Customizable Length**: 50, 100, or 200 word practice sessions
-- **Real-time Feedback**: Character-by-character validation
-- **Performance Metrics**: Track WPM and accuracy
-- **Cost Transparency**: See estimated API usage before generating
-
-### 🎯 Quizzing
-
-- Create custom quizzes by subject
-- Add questions and answers
-- Practice mode with self-grading
-- Track your progress
-
-### 🔄 Real-Time Sync (Beta)
-
-- unclear what's here. need to revisit
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 20+
-- npm or yarn
-- Supabase account (for cloud features)
-
-### Setup
-
-1. Clone and install:
+1. Clone the repository
+2. Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
 
 ```bash
-git clone https://github.com/nicolovejoy/notemaxxing.git
-cd notemaxxing
+NEXT_PUBLIC_SUPABASE_URL=https://vtaloqvkvakylrgpqcml.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-key
+```
+
+3. Install dependencies:
+
+```bash
 npm install
 ```
 
-2. Set up Supabase:
-
-- Create project at [supabase.com](https://supabase.com)
-- Run schema from `/scripts/complete-database-setup.sql`
-- Copy `.env.local.example` to `.env.local` and add your keys
-
-3. Run:
+4. Run development server:
 
 ```bash
 npm run dev
 ```
 
-### Building for Production
+## Features
 
-```bash
-npm run build
-npm start
+### Core Functionality
+
+- ✅ Folders, notebooks, and notes hierarchy
+- ✅ Rich text editing with AI enhancement
+- ✅ Folder and notebook sharing with permissions (read/write)
+- ✅ User authentication with Supabase Auth
+
+### Sharing System
+
+- **Folder sharing**: Grants access to all notebooks and notes within
+- **Notebook sharing**: Independent notebook-level permissions
+- **Permission levels**: `read` (view only) or `write` (can edit)
+- **Invitation flow**: Email-based invitations with 7-day expiry
+
+### Data Model
+
+- **Ownership**: Resources have `owner_id` (who owns) and `created_by` (who created)
+- **Permissions**: Stored in `permissions` table with user, resource, and level
+- **Invitations**: Token-based system with public preview for unauthenticated users
+
+## Architecture Patterns
+
+### ViewStore Pattern
+
+Each page loads only its required data - no global state loading:
+
+```typescript
+const foldersView = useFoldersView() // ✅ Only current view
+// NOT: const notes = useNotes() // ❌ Loads everything
 ```
 
-## Data Storage
+### Database Queries
 
-Data is stored in Supabase PostgreSQL with:
+- Server-side aggregation for counts
+- Pagination built into view APIs
+- RLS policies enforce access control
 
-- User authentication
-- Real-time sync
-- Row-level security
-- Offline support (coming soon)
+## Known Issues
 
-## Development
+- Real-time sync needs reconnection to new database
+- User emails show as IDs in sharing UI (need database function for auth.users access)
+- Minor UI glitches in note viewing/editing
 
-### Design System
-
-We have a comprehensive design system with reusable components. **Always use these components instead of creating new ones.**
-
-See [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for:
-
-- Complete component documentation
-- Usage examples
-- Design tokens (colors, spacing, typography)
-- Best practices
-
-### Key Commands
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript compiler
-- `npm run format` - Format code with Prettier
-- `npm run format:check` - Check code formatting
-
-### Testing in Production (Vercel)
-
-To test changes in production without committing to main:
+## Scripts
 
 ```bash
-# Create a preview branch and deploy
-git checkout -b preview/your-feature
-git add -A
-git commit -m "Test: your feature"
-git push origin preview/your-feature
+npm run dev          # Development server
+npm run build        # Production build
+npm run format       # Format code with Prettier
+npm run lint         # Run ESLint
+npm run type-check   # TypeScript checking
 ```
 
-Vercel automatically creates a preview URL for every branch. Check your Vercel dashboard or the GitHub PR for the preview link.
+## Deployment
 
-After testing, clean up:
+### Vercel
 
-```bash
-git checkout main
-git branch -D preview/your-feature
-git push origin --delete preview/your-feature
-```
+1. Update environment variables in Vercel dashboard
+2. Deploy from main branch
+3. Automatic deployments on push
 
-### Contributing
+## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. Follow existing code patterns (check neighboring files)
+2. Use ViewStore pattern for data loading
+3. Run `npm run format` before committing
+4. Keep components in existing design system
 
 ## License
 
-This project is open source and available under the MIT License.
+Private project

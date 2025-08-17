@@ -68,16 +68,12 @@ export default function SharePage() {
           resourceName: previewData.resourceName,
           permission: 'read', // Don't expose permission level in preview
           invitedBy: previewData.invitedBy,
-          invitedEmail: previewData.requiresEmail,
+          invitedEmail: '', // Email not exposed in public preview for security
           expiresAt: previewData.expiresAt,
         })
 
-        // Check if user is authenticated and email matches
-        if (user?.email && previewData.requiresEmail) {
-          if (previewData.requiresEmail.toLowerCase() !== user.email.toLowerCase()) {
-            setEmailMismatch(true)
-          }
-        }
+        // Note: We can't check email mismatch from preview alone (security feature)
+        // The actual email check will happen when accepting the invitation
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load invitation')
       } finally {
@@ -91,7 +87,7 @@ export default function SharePage() {
   const handleAcceptInvitation = async () => {
     if (!isAuthenticated) {
       // Redirect to login with return URL
-      router.push(`/auth/login?redirect=/share/${invitationId}`)
+      router.push(`/auth/login?redirectTo=/share/${invitationId}`)
       return
     }
 
@@ -189,7 +185,7 @@ export default function SharePage() {
           <div className="space-y-3">
             <Button
               onClick={() => {
-                router.push(`/auth/login?redirect=/share/${invitationId}`)
+                router.push(`/auth/login?redirectTo=/share/${invitationId}`)
               }}
               className="w-full"
             >
@@ -241,24 +237,21 @@ export default function SharePage() {
             <div className="p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-gray-700 mb-2">To accept this invitation, you need to:</p>
               <ol className="list-decimal list-inside text-sm text-gray-700 space-y-1">
-                <li>
-                  Create an account with email:{' '}
-                  <span className="font-medium">{invitationDetails?.invitedEmail}</span>
-                </li>
-                <li>Verify your email address</li>
+                <li>Create an account or sign in</li>
+                <li>Verify your email address if needed</li>
                 <li>Return to this link to accept the invitation</li>
               </ol>
             </div>
 
             <Button
-              onClick={() => router.push(`/auth/signup?redirect=/share/${invitationId}`)}
+              onClick={() => router.push(`/auth/signup?redirectTo=/share/${invitationId}`)}
               className="w-full"
             >
               Create Account
             </Button>
 
             <Button
-              onClick={() => router.push(`/auth/login?redirect=/share/${invitationId}`)}
+              onClick={() => router.push(`/auth/login?redirectTo=/share/${invitationId}`)}
               variant="secondary"
               className="w-full"
             >

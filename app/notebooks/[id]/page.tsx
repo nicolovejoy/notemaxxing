@@ -11,9 +11,12 @@ import { SearchInput } from '@/components/ui/SearchInput'
 import { Dropdown } from '@/components/ui/Dropdown'
 import { NoteCard, AddNoteCard } from '@/components/cards/NoteCard'
 import { StatusMessage } from '@/components/ui/StatusMessage'
+import { ShareButton } from '@/components/ShareButton'
+import { SharedIndicator } from '@/components/SharedIndicator'
 import { useNoteView, useViewLoading, useViewActions, useViewError } from '@/lib/store/view-store'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { toPlainText, toHTML } from '@/lib/utils/content'
+import { useAuth } from '@/lib/hooks/useAuth'
 
 type SortOption = 'recent' | 'alphabetical' | 'created'
 
@@ -39,6 +42,7 @@ function generateTitleFromContent(content: string): string {
 export default function NotebookPage() {
   const params = useParams()
   const notebookId = params.id as string
+  const { user } = useAuth()
 
   // Get preview data from sessionStorage for immediate display
   const [previewData, setPreviewData] = useState<{
@@ -357,6 +361,25 @@ export default function NotebookPage() {
                 )}
               </div>
             </div>
+            {/* Share button for notebook owners, or shared indicator for shared notebooks */}
+            {notebook && (
+              <div className="flex items-center gap-2">
+                {user && notebook.owner_id === user.id ? (
+                  <ShareButton
+                    resourceType="notebook"
+                    resourceId={notebookId}
+                    resourceName={notebook.name}
+                    className="bg-white border border-gray-300 shadow-sm hover:shadow-md"
+                  />
+                ) : notebook.shared ? (
+                  <SharedIndicator 
+                    shared={true}
+                    sharedByMe={false}
+                    permission={notebook.permission}
+                  />
+                ) : null}
+              </div>
+            )}
           </div>
 
           {/* Notes Grid */}

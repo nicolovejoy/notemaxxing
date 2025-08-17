@@ -39,7 +39,8 @@ export async function GET(
         name,
         color,
         folder_id,
-        user_id
+        owner_id,
+        created_by
       `
       )
       .eq('id', notebookId)
@@ -56,8 +57,8 @@ export async function GET(
     }
 
     // Check permissions
-    // First check if user is the owner (simple check via user_id field)
-    const isOwner = notebook.user_id === userId
+    // First check if user is the owner (simple check via owner_id field)
+    const isOwner = notebook.owner_id === userId
 
     if (!isOwner) {
       // Not owner, check if user has explicit permission
