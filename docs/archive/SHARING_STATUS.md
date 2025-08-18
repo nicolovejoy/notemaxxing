@@ -107,12 +107,13 @@ Should individual notebook sharing within a shared folder:
 
 ## Next Session Priorities
 
-1. **Implement move notebook feature**
-2. **Remove individual notebook sharing UI**
-3. **Fix "Shared by me" detection bug**
-4. **Create About/Help page**
+1. VIEW NOTES not working correctly at all. discuss bug with user.
+2. **Fix "Shared by me" detection bug** (what is this? Nico)
+3. rationalize sharing ui across the pages. think about the naming of the routes and whether we should improve it and if so when.
+4. test the basic use cases, including sharing.
+5. **Create About/Help page**
    - Explain the folder-based sharing model
    - "How Sharing Works" section with examples
    - Visual guide showing folder → notebook → notes hierarchy
    - FAQ for common scenarios
-5. **Test the new model thoroughly**
+6. **Test the new model thoroughly**

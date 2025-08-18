@@ -47,3 +47,10 @@ lib/build-info.json
 supabase/.temp/
 supabase/.branches/
 supabase/.env
+
+# terraform
+terraform/terraform.tfvars
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl

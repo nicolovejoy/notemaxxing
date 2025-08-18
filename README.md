@@ -1,146 +1,173 @@
 # Notemaxxing
 
-A collaborative note-taking application with folders, notebooks, and real-time sharing.
+A modern, collaborative note-taking application with rich text editing, folder organization, and real-time sharing.
 
-## Tech Stack
+## Features
 
-- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
-- **Backend**: Supabase (PostgreSQL, Auth, Realtime)
-- **Editor**: TipTap (rich text editing)
-- **Deployment**: Vercel
+- 📁 **Folder Organization** - Organize notebooks into color-coded folders
+- 📝 **Rich Text Editor** - Full markdown support with live preview
+- 👥 **Real-time Collaboration** - Share folders and notebooks with permissions
+- 🔍 **Smart Search** - Search across all notes with instant results
+- 🎨 **Beautiful UI** - Clean, modern interface with dark mode support
+- 🔐 **Secure** - Row-level security with Supabase Auth
 
-## Database Setup
+## Getting Started
 
-### Current Status
+### Prerequisites
 
-- **Project**: `vtaloqvkvakylrgpqcml` (new, code-managed schema)
-- **Schema**: Single migration file at `/supabase/migrations/20250101000000_complete_schema.sql`
-- **Architecture**: Infrastructure-as-code (no console modifications)
+- Node.js 18+
+- npm or yarn
+- Supabase account
 
-### ⚠️ IMPORTANT: Database Management Rules
+### Installation
 
-**The code defines the database, not the other way around.**
-
-1. **NEVER modify tables/columns in Supabase console** - all changes must be in migration files
-2. **To make database changes**:
-
-   ```bash
-   # Create a new migration file
-   supabase migration new your_change_description
-
-   # Edit the generated file in supabase/migrations/
-   # Write your SQL changes there
-
-   # Test locally first
-   supabase db reset  # Rebuilds from migrations
-
-   # Deploy to production
-   supabase db push --db-url [production-url]
-
-   # Generate new TypeScript types
-   npm run generate-types
-   ```
-
-3. **Why this matters**:
-   - Database schema is version-controlled in git
-   - Changes are reviewable in PRs
-   - Can recreate exact database anywhere
-   - Rollback is possible
-   - Code and database stay in sync
-
-### Local Development
-
-1. Clone the repository
-2. Copy `.env.example` to `.env.local` and fill in your Supabase credentials:
+1. Clone the repository:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=https://vtaloqvkvakylrgpqcml.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-key
+git clone https://github.com/nicolovejoy/notemaxxing.git
+cd notemaxxing
 ```
 
-3. Install dependencies:
+2. Install dependencies:
 
 ```bash
 npm install
 ```
 
-4. Run development server:
+3. Set up environment variables:
+
+```bash
+cp .env.example .env.local
+# Add your Supabase credentials
+```
+
+4. Run database migrations:
+
+```bash
+npx supabase db push
+```
+
+5. Start the development server:
 
 ```bash
 npm run dev
 ```
 
-## Features
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-### Core Functionality
+## Usage
 
-- ✅ Folders, notebooks, and notes hierarchy
-- ✅ Rich text editing with AI enhancement
-- ✅ Folder and notebook sharing with permissions (read/write)
-- ✅ User authentication with Supabase Auth
+### Creating Content
 
-### Sharing System
+1. **Folders** - Click "New Folder" to organize your notebooks
+2. **Notebooks** - Create notebooks within folders
+3. **Notes** - Add notes to notebooks with rich text editing
 
-- **Folder sharing**: Grants access to all notebooks and notes within
-- **Notebook sharing**: Independent notebook-level permissions
-- **Permission levels**: `read` (view only) or `write` (can edit)
-- **Invitation flow**: Email-based invitations with 7-day expiry
+### Sharing
 
-### Data Model
+1. Click the share icon on any folder
+2. Enter email addresses to invite collaborators
+3. Set permissions (read-only or read-write)
+4. Recipients get an email invitation to join
 
-- **Ownership**: Resources have `owner_id` (who owns) and `created_by` (who created)
-- **Permissions**: Stored in `permissions` table with user, resource, and level
-- **Invitations**: Token-based system with public preview for unauthenticated users
+### Permissions Model
 
-## Architecture Patterns
+- **Folder Sharing** - Share entire folders; notebooks inherit permissions
+- **Owner Control** - Only owners can delete or move resources
+- **Permission Levels** - Read, Write, or Admin access
 
-### ViewStore Pattern
+## Development
 
-Each page loads only its required data - no global state loading:
-
-```typescript
-const foldersView = useFoldersView() // ✅ Only current view
-// NOT: const notes = useNotes() // ❌ Loads everything
-```
-
-### Database Queries
-
-- Server-side aggregation for counts
-- Pagination built into view APIs
-- RLS policies enforce access control
-
-## Known Issues
-
-- Real-time sync needs reconnection to new database
-- User emails show as IDs in sharing UI (need database function for auth.users access)
-- Minor UI glitches in note viewing/editing
-
-## Scripts
+### Commands
 
 ```bash
-npm run dev          # Development server
-npm run build        # Production build
-npm run format       # Format code with Prettier
-npm run lint         # Run ESLint
-npm run type-check   # TypeScript checking
+npm run dev        # Start development server
+npm run build      # Build for production
+npm run type-check # Run TypeScript checks
+npm run format     # Format code with Prettier
+npm run lint       # Run ESLint
 ```
+
+### Project Structure
+
+```
+/app          # Next.js pages and API routes
+/components   # React components
+/lib          # Core libraries and utilities
+/supabase     # Database migrations and types
+```
+
+### Key Technologies
+
+- **Next.js 15** - React framework with App Router
+- **Supabase** - PostgreSQL database and auth
+- **React Query** - Server state management
+- **Zustand** - Client state for complex UIs
+- **Tailwind CSS** - Utility-first styling
+
+## API Documentation
+
+The app uses a REST API architecture. All data operations go through API routes:
+
+- `/api/folders` - Folder CRUD operations
+- `/api/notebooks` - Notebook management
+- `/api/notes` - Note operations
+- `/api/shares` - Sharing and permissions
+- `/api/views/*` - Aggregated data endpoints
+
+See [PROJECT.md](./PROJECT.md) for detailed architecture documentation.
 
 ## Deployment
 
-### Vercel
+### Vercel (Recommended)
 
-1. Update environment variables in Vercel dashboard
-2. Deploy from main branch
-3. Automatic deployments on push
+1. Connect your GitHub repository to Vercel
+2. Add environment variables in Vercel dashboard
+3. Deploy with `git push`
+
+### Self-Hosting
+
+1. Build the application:
+
+```bash
+npm run build
+```
+
+2. Start the production server:
+
+```bash
+npm start
+```
 
 ## Contributing
 
-1. Follow existing code patterns (check neighboring files)
-2. Use ViewStore pattern for data loading
-3. Run `npm run format` before committing
-4. Keep components in existing design system
+We welcome contributions! Please see [PROJECT.md](./PROJECT.md) for development guidelines.
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
 
 ## License
 
-Private project
+MIT License - see LICENSE file for details
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/nicolovejoy/notemaxxing/issues)
+- **Documentation**: [PROJECT.md](./PROJECT.md) for technical details
+- **Design System**: [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) for UI components
+
+## Roadmap
+
+- [ ] Mobile app (React Native)
+- [ ] Offline support with sync
+- [ ] AI-powered note suggestions
+- [ ] Public note sharing
+- [ ] Export to PDF/Markdown
+- [ ] Template library
+
+---
+
+Built with ❤️ using Next.js and Supabase

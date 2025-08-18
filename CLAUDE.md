@@ -1,164 +1,80 @@
-# Project Guidelines for Claude
+# Claude AI Assistant Guidelines
 
-## Current State (August 17, 2024)
+## Quick Reference
 
-### 🚨 BUILD STATUS: FAILING
+**Build Status**: ✅ PASSING  
+**Project**: Supabase `vtaloqvkvakylrgpqcml`  
+**Branch**: `infra/database-as-code`
 
-- **Issue**: Duplicate `notebook` variable in `/app/notebooks/[id]/page.tsx` line ~247
-- **Fix**: Remove the duplicate declaration
+## Core Rules
 
-### Database Configuration
+### 1. Architecture Requirements
 
-- **Project**: Supabase `vtaloqvkvakylrgpqcml`
-- **Schema**: Code-as-infrastructure in `/supabase/migrations/`
-- **All migrations applied** (have `.applied` extension)
-- **IMPORTANT**: No database triggers - all fields must be set explicitly
+- **NO direct Supabase calls in components** - Use API routes only
+- **NO database triggers** - Set owner_id/created_by explicitly
+- **Use React Query** for data fetching, not direct store access
+- **Use ViewStore** only for complex UI state (editor)
 
-### Recent Migration (TODAY)
+### 2. Coding Standards
 
-- Removed automatic triggers for `owner_id` and `created_by`
-- These fields must now be explicitly set in all create operations
-- Migration files renamed to `.sql.applied` after running `npx supabase db push`
+- Be succinct - keep responses short
+- Run `npm run format` after changes
+- Follow existing patterns in codebase
+- Ask before major changes
 
-## Architecture Rules
-
-### Ownership Model
-
-- **owner_id**: Resource owner (required on folders, notebooks, notes)
-- **created_by**: User who created the resource
-- **Inheritance**: Notebooks inherit folder's owner_id, notes inherit notebook's owner_id
-- **No triggers**: Must explicitly set these fields in code
-
-### Data Fetching Pattern
-
-- Use React Query for all data fetching (consistency & caching)
-- Use ViewStore/Zustand only for complex editing state (notebook editor)
-- No direct Supabase calls in components - use API routes
-- Server aggregation for counts, not client-side
-
-### Sharing Model
-
-- **Folder-first**: Share folders, notebooks inherit permissions
-- **Move-to-Control**: Move notebooks between folders to control access
-- **Only owners can move**: Prevents unauthorized access changes
-
-## Coding Rules
-
-1. **Be succinct** - Keep responses short and focused
-2. **Ask before major changes** - Get confirmation for significant modifications
-3. **Format code** - Run `npm run format` after changes
-4. **Small chunks** - Work incrementally, test frequently
-5. **Check existing patterns** - Follow established code patterns
-
-## Common Operations
-
-### Creating Resources
+### 3. Resource Creation Pattern
 
 ```typescript
-// Folders - owner_id is current user
-await supabase.from('folders').insert({
-  name,
-  color,
-  owner_id: userId,
-})
-
-// Notebooks - inherit folder's owner_id
-const folder = await getFolder(folder_id)
-await supabase.from('notebooks').insert({
-  name,
-  color,
-  folder_id,
-  owner_id: folder.owner_id,
-  created_by: userId,
-})
-
-// Notes - inherit notebook's owner_id
-const notebook = await getNotebook(notebook_id)
-await supabase.from('notes').insert({
-  title,
-  content,
-  notebook_id,
-  owner_id: notebook.owner_id,
-  created_by: userId,
-})
+// Folders: owner_id = current user
+// Notebooks: owner_id = folder.owner_id
+// Notes: owner_id = notebook.owner_id
 ```
 
-## Design System
+## Common Tasks
 
-Use only existing UI components from `/components/ui/`:
+### Running Locally
+
+```bash
+npm run dev          # Start dev server
+npm run type-check   # Check types
+npm run build        # Build for prod
+```
+
+### Testing Checklist
+
+1. Create folder → sets owner_id to user
+2. Create notebook → inherits folder's owner_id
+3. Create note → inherits notebook's owner_id
+4. Share folder → permissions cascade correctly
+
+## UI Components
+
+Use only existing components from `/components/ui/`:
 
 - Button, Card, Modal, Dropdown
 - FormField, SearchInput, SelectField
 - PageHeader, Breadcrumb, Skeleton
 - LoadingButton, StatusMessage
 
-## Testing Workflow
-
-1. **Local Development**
-
-   ```bash
-   npm run dev
-   # If cache issues: rm -rf .next
-   ```
-
-2. **Type Checking**
-
-   ```bash
-   npm run type-check
-   ```
-
-3. **Build & Deploy**
-   ```bash
-   npm run build  # Must pass
-   git push       # Triggers Vercel
-   ```
-
 ## Known Issues
 
-1. **TypeScript errors** in admin console and some components
-2. **Build failing** due to duplicate variable (see top)
-3. **Performance** - Some queries could be optimized
-
-## Important Patterns
-
-### ViewStore Usage (Complex UI State)
-
-```typescript
-// ✅ GOOD - For complex editing
-const foldersView = useFoldersView()
-const { loadFolderView } = useViewActions()
-```
-
-### React Query Usage (Server State)
-
-```typescript
-// ✅ GOOD - For data fetching
-const { data, isLoading } = useQuery({
-  queryKey: ['folders'],
-  queryFn: fetchFolders,
-})
-```
-
-### Direct Supabase (Avoid)
-
-```typescript
-// ❌ BAD - Don't use in components
-const { data } = await supabase.from('folders').select()
-```
+1. **ShareDialog.tsx:318** - Direct Supabase call (needs API route)
+2. **Admin Console** - Disabled, needs API routes rewrite
+3. **Performance** - Large notebooks need pagination
 
 ## File Structure
 
-- `/app/` - Next.js app router pages and API routes
-- `/components/` - React components
-- `/lib/store/` - State management
-- `/lib/query/` - React Query hooks
-- `/lib/supabase/` - Database client and types
-- `/supabase/migrations/` - Database schema
+```
+/app/api/        → API routes (all data ops)
+/app/(pages)/    → Page components
+/components/     → React components
+/lib/store/      → State management
+/lib/query/      → React Query hooks
+/supabase/       → Database migrations
+```
 
-## Don't Trust Old Docs
+## Documentation
 
-Many markdown files in the repo are outdated. Always verify against:
-
-1. Current code implementation
-2. Database schema in migrations
-3. TypeScript types in `database.types.ts`
+- **Technical**: See PROJECT.md
+- **UI Guide**: See DESIGN_SYSTEM.md
+- **User Guide**: See README.md

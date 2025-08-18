@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FolderOpen, BookOpen, SortAsc } from 'lucide-react'
+import { ArrowLeft, FolderOpen, BookOpen, SortAsc, Edit } from 'lucide-react'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -76,6 +76,7 @@ export default function NotebookPage() {
     content?: string
   } | null>(null)
   const [isEditingNote, setIsEditingNote] = useState(false)
+  const [isViewingNote, setIsViewingNote] = useState(false)
   const [editingNoteContent, setEditingNoteContent] = useState('')
   const [editingNoteTitle, setEditingNoteTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -405,34 +406,30 @@ export default function NotebookPage() {
                   updatedAt={note.updated_at}
                   isSelected={selectedNote?.id === note.id}
                   onClick={async () => {
-                    // For read-only users, just show the note without edit mode
-                    const canEdit = !notebook.shared || notebook.permission === 'write'
-
-                    await loadNoteView(notebookId, { noteId: note.id })
-                    const fullNote = noteView?.currentNote
-                    if (fullNote) {
-                      setSelectedNote(fullNote)
-                      if (canEdit) {
-                        setIsEditingNote(true)
-                        setEditingNoteTitle(fullNote.title)
-                        setEditingNoteContent(fullNote.content || '')
-                      }
-                      // For read-only, we could show a read-only view
-                      // but for now just don't open the editor
+                    // Load the note and show in read-only view
+                    const result = await loadNoteView(notebookId, { noteId: note.id })
+                    // Use the returned data directly instead of stale noteView
+                    if (result && result.currentNote) {
+                      setSelectedNote(result.currentNote)
+                      setIsViewingNote(true)
+                      setIsEditingNote(false)
+                      // Pre-populate edit fields in case user clicks edit
+                      setEditingNoteTitle(result.currentNote.title)
+                      setEditingNoteContent(result.currentNote.content || '')
                     }
                   }}
                   onEdit={
                     // Only allow edit if user owns notebook or has write permission
                     !notebook.shared || notebook.permission === 'write'
                       ? async () => {
-                          // Same as onClick - open editor directly
-                          await loadNoteView(notebookId, { noteId: note.id })
-                          const fullNote = noteView?.currentNote
-                          if (fullNote) {
-                            setSelectedNote(fullNote)
+                          // Load note and open directly in edit mode
+                          const result = await loadNoteView(notebookId, { noteId: note.id })
+                          if (result && result.currentNote) {
+                            setSelectedNote(result.currentNote)
                             setIsEditingNote(true)
-                            setEditingNoteTitle(fullNote.title)
-                            setEditingNoteContent(fullNote.content || '')
+                            setIsViewingNote(false)
+                            setEditingNoteTitle(result.currentNote.title)
+                            setEditingNoteContent(result.currentNote.content || '')
                           }
                         }
                       : undefined
@@ -444,6 +441,46 @@ export default function NotebookPage() {
           )}
         </main>
       </div>
+
+      {/* Note Viewer Modal (Read-only) */}
+      {isViewingNote && selectedNote && !isEditingNote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h2 className="text-xl font-semibold">{selectedNote.title}</h2>
+              <div className="flex items-center gap-2">
+                {(!notebook.shared || notebook.permission === 'write') && (
+                  <button
+                    onClick={() => {
+                      setIsEditingNote(true)
+                      setIsViewingNote(false)
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <Edit className="h-4 w-4" />
+                    Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setIsViewingNote(false)
+                    setSelectedNote(null)
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-6">
+              <div 
+                className="prose prose-lg max-w-none"
+                dangerouslySetInnerHTML={{ __html: selectedNote.content || '<p>No content</p>' }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Note Editor Modal */}
       {isEditingNote && selectedNote && (
@@ -459,7 +496,10 @@ export default function NotebookPage() {
               />
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setIsEditingNote(false)}
+                  onClick={() => {
+                    setIsEditingNote(false)
+                    setIsViewingNote(true)
+                  }}
                   className="px-4 py-2 text-gray-600 hover:text-gray-900"
                 >
                   Cancel
