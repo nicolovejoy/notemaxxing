@@ -70,8 +70,26 @@ Use only existing components from `/components/ui/`:
 /components/     → React components
 /lib/store/      → State management
 /lib/query/      → React Query hooks
-/supabase/       → Database migrations
+/infrastructure/  → Database as code (Atlas + Terraform)
 ```
+
+## Database Management
+
+### Infrastructure as Code
+- **Atlas + Terraform** for schema management (tables, indexes)
+- **Views** in `infrastructure/atlas/views.sql` (separate from Atlas)
+- **CRITICAL**: Atlas excludes Supabase system schemas (auth, storage, etc)
+
+### Schema Changes
+1. Edit `infrastructure/atlas/schema.hcl` for tables
+2. Edit `infrastructure/atlas/views.sql` for views
+3. Run `terraform plan` in `infrastructure/terraform/`
+4. Apply with `terraform apply`
+
+### Important Notes
+- **NEVER** let Atlas manage Supabase system schemas
+- Views require Atlas Pro ($9/month), so we manage them separately
+- Always test schema changes locally first
 
 ## Documentation
 

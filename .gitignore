@@ -48,9 +48,9 @@ supabase/.temp/
 supabase/.branches/
 supabase/.env
 
-# terraform
-terraform/terraform.tfvars
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.backup
-terraform/.terraform.lock.hcl
+# terraform / atlas
+infrastructure/atlas/terraform.tfvars
+infrastructure/atlas/.terraform/
+infrastructure/atlas/*.tfstate
+infrastructure/atlas/*.tfstate.backup
+infrastructure/atlas/.terraform.lock.hcl

@@ -6,8 +6,26 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
     const userId = await getCurrentUserId()
+    
+    // Debug logging
+    console.log('=== FOLDER CREATE DEBUG ===')
+    console.log('1. userId from getCurrentUserId():', userId)
+    
+    // Check auth session directly
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    console.log('2. Session exists:', !!session)
+    console.log('3. Session user ID:', session?.user?.id)
+    console.log('4. Session error:', sessionError)
+    
+    // Check what auth.uid() would return in RLS
+    const { data: authCheck, error: authError } = await supabase
+      .rpc('auth.uid')
+      .single()
+    console.log('5. auth.uid() result:', authCheck)
+    console.log('6. auth.uid() error:', authError)
 
     if (!userId) {
+      console.log('7. Returning 401 - no userId')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -18,6 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name and color are required' }, { status: 400 })
     }
 
+    console.log('8. Attempting insert with owner_id:', userId)
     const { data, error } = await supabase
       .from('folders')
       .insert({
@@ -29,7 +48,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error('Error creating folder:', error)
+      console.error('9. Error creating folder:', error)
+      console.error('10. Full error details:', JSON.stringify(error, null, 2))
       return NextResponse.json({ error: 'Failed to create folder' }, { status: 500 })
     }
 
