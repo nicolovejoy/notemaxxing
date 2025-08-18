@@ -1,0 +1,9 @@
+# Terraform files
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Never commit actual credentials
+terraform.tfvars
+*.auto.tfvars
