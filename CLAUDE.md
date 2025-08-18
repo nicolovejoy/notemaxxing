@@ -1,23 +1,15 @@
 # Project Guidelines for Claude
 
-## Current State (August 17, 2024)
+## Current State (August 18, 2024)
 
-### 🚨 BUILD STATUS: FAILING
-
-- **Issue**: Duplicate `notebook` variable in `/app/notebooks/[id]/page.tsx` line ~247
-- **Fix**: Remove the duplicate declaration
+### ✅ BUILD STATUS: PASSING
 
 ### Database Configuration
 
-- **Project**: Supabase `vtaloqvkvakylrgpqcml`
-- **Schema**: Code-as-infrastructure in `/supabase/migrations/`
-- **All migrations applied** (have `.applied` extension)
+- **Database**: DB3-Atlas (`dvuvhfjbjoemtoyfjjsg`)
+- **Infrastructure**: Terraform-managed (`/infrastructure/`)
+- **RLS**: Disabled (security at API layer)
 - **IMPORTANT**: No database triggers - all fields must be set explicitly
-
-### Recent Migration (TODAY)
-
-- Removed automatic triggers for `owner_id` and `created_by`
-- These fields must now be explicitly set in all create operations
 - Migration files renamed to `.sql.applied` after running `npx supabase db push`
 
 ## Architecture Rules
