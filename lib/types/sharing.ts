@@ -22,10 +22,8 @@ export interface ResourcePermission {
   resource_id: string
   user_id: string
   permission_level: Permission
-  granted_by: string
-  created_at: string | null
-  updated_at: string | null
-  expires_at: string | null
+  granted_by: string | null
+  granted_at: string | null
 }
 
 export interface SharedResource {

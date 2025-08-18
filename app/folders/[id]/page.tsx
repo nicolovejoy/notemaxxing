@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Plus, Share2, FolderOpen } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -13,117 +13,78 @@ import { FormField } from '@/components/ui/FormField'
 import { ColorPicker } from '@/components/forms/ColorPicker'
 import { ShareDialog } from '@/components/ShareDialog'
 import { NotebookCard } from '@/components/cards/NotebookCard'
+import { SharedIndicator } from '@/components/SharedIndicator'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
-
-interface Notebook {
-  id: string
-  name: string
-  color: string
-  note_count: number
-  created_at: string | null
-  archived: boolean | null
-}
-
-interface Folder {
-  id: string
-  name: string
-  color: string
-  created_at: string | null
-  updated_at: string | null
-  user_id: string
-}
+import { useFolderDetailView } from '@/lib/query/hooks'
+import type { Notebook } from '@/lib/types/entities'
+import { LoadingGrid } from '@/components/common/LoadingGrid'
+import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
 
 export default function FolderDetailPage() {
   const params = useParams()
   const router = useRouter()
   const folderId = params.id as string
   const { user, loading: authLoading } = useAuth()
-  const supabase = createClient()
 
-  const [folder, setFolder] = useState<Folder | null>(null)
-  const [notebooks, setNotebooks] = useState<Notebook[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use React Query for data fetching
+  const { data: folderView, isLoading, error, refetch } = useFolderDetailView(folderId)
+
+  // Local state for UI
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
+  const [shareNotebook, setShareNotebook] = useState<Pick<Notebook, 'id' | 'name'> | null>(null)
   const [newNotebookName, setNewNotebookName] = useState('')
   const [newNotebookColor, setNewNotebookColor] = useState<string>(DEFAULT_NOTEBOOK_COLOR)
   const [creating, setCreating] = useState(false)
 
-  useEffect(() => {
-    // Don't redirect while auth is still loading
-    if (authLoading) {
-      return
-    }
-
-    if (!user) {
-      router.push('/auth/login')
-      return
-    }
-
-    loadFolderData()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [folderId, user, authLoading])
-
-  const loadFolderData = async () => {
-    if (!supabase) return
-
-    try {
-      setLoading(true)
-
-      // Load folder details
-      const { data: folderData, error: folderError } = await supabase!
-        .from('folders')
-        .select('*')
-        .eq('id', folderId)
-        .single()
-
-      if (folderError) throw folderError
-      setFolder(folderData)
-
-      // Load notebooks in this folder
-      const { data: notebooksData, error: notebooksError } = await supabase!
-        .from('notebooks')
-        .select('*')
-        .eq('folder_id', folderId)
-        .order('created_at', { ascending: false })
-
-      if (notebooksError) throw notebooksError
-
-      // Get note counts for each notebook
-      const notebooksWithCounts = await Promise.all(
-        (notebooksData || []).map(async (notebook) => {
-          const { count } = await supabase!
-            .from('notes')
-            .select('*', { count: 'exact', head: true })
-            .eq('notebook_id', notebook.id)
-
-          return { ...notebook, note_count: count || 0 }
-        })
-      )
-
-      setNotebooks(notebooksWithCounts)
-    } catch (error) {
-      console.error('Error loading folder data:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // Extract data from view
+  const folder = folderView?.folder
+  const notebooks: Array<{ 
+    id: string; 
+    name: string; 
+    color: string; 
+    note_count?: number;
+    archived?: boolean;
+    shared_by_owner?: boolean;
+  }> = folderView?.notebooks || []
+  const userPermission = folderView?.userPermission
+  const isOwner = userPermission === 'owner'
+  const canWrite = userPermission === 'write' || isOwner
 
   const handleCreateNotebook = async () => {
     if (!newNotebookName.trim()) return
 
     setCreating(true)
     try {
-      const { data, error } = await supabase!
+      const supabase = createClient()
+      if (!supabase) throw new Error('Supabase client not available')
+
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+
+      // Get folder owner_id
+      const { data: folderData, error: folderError } = await supabase
+        .from('folders')
+        .select('owner_id')
+        .eq('id', folderId)
+        .single()
+
+      if (folderError || !folderData) throw new Error('Folder not found')
+
+      const { data, error } = await supabase
         .from('notebooks')
         .insert({
           name: newNotebookName.trim(),
           color: newNotebookColor,
           folder_id: folderId,
-          user_id: user?.id,
+          owner_id: folderData.owner_id, // Inherit from folder
+          created_by: user.id, // Current user who created it
         })
         .select()
         .single()
@@ -142,19 +103,8 @@ export default function FolderDetailPage() {
     }
   }
 
-  const handleNotebookClick = (notebook: Notebook) => {
-    // Store notebook data for optimistic loading
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem(
-        `notebook-preview-${notebook.id}`,
-        JSON.stringify({
-          id: notebook.id,
-          name: notebook.name,
-          color: notebook.color,
-          note_count: notebook.note_count,
-        })
-      )
-    }
+  const handleNotebookClick = (notebook: NotebookPreview) => {
+    storeNotebookPreview(notebook)
     router.push(`/notebooks/${notebook.id}?from=folder`)
   }
 
@@ -162,20 +112,38 @@ export default function FolderDetailPage() {
     ? notebooks.filter((n) => n.name.toLowerCase().includes(search.toLowerCase()))
     : notebooks
 
-  if (loading || authLoading) {
+  // Show loading state
+  if (isLoading || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <PageHeader backUrl="/backpack" />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-6" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
+          <LoadingGrid count={3} />
         </div>
       </div>
     )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader backUrl="/backpack" />
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <EmptyState
+            title="Error loading folder"
+            description={error.message || 'Something went wrong'}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  // Redirect if not authenticated
+  if (!user) {
+    router.push('/auth/login')
+    return null
   }
 
   return (
@@ -193,17 +161,23 @@ export default function FolderDetailPage() {
               placeholder="Search notebooks..."
               className="w-64"
             />
-            <LoadingButton
-              onClick={() => setShowShareDialog(true)}
-              icon={Share2}
-              variant="secondary"
-              title="Share this folder"
-            >
-              Share
-            </LoadingButton>
-            <LoadingButton onClick={() => setShowCreateModal(true)} icon={Plus} variant="primary">
-              New Notebook
-            </LoadingButton>
+            {/* Only show share button for folder owners */}
+            {isOwner && (
+              <LoadingButton
+                onClick={() => setShowShareDialog(true)}
+                icon={Share2}
+                variant="secondary"
+                title="Share this folder"
+              >
+                Share
+              </LoadingButton>
+            )}
+            {/* Only show create button if user can write */}
+            {canWrite && (
+              <LoadingButton onClick={() => setShowCreateModal(true)} icon={Plus} variant="primary">
+                New Notebook
+              </LoadingButton>
+            )}
           </div>
         }
       />
@@ -214,6 +188,14 @@ export default function FolderDetailPage() {
           <div className="flex items-center gap-3 mb-2">
             <FolderOpen className="h-8 w-8 text-gray-600" />
             <h1 className="text-3xl font-bold">{folder?.name || 'Folder'}</h1>
+            {(folder?.shared || folder?.sharedByOwner) && (
+              <SharedIndicator
+                shared={folder?.shared}
+                sharedByMe={folder?.sharedByOwner}
+                permission={!isOwner ? userPermission : undefined}
+                onClick={folder?.sharedByOwner ? () => setShowShareDialog(true) : undefined}
+              />
+            )}
           </div>
           <p className="text-gray-600">
             {notebooks.length} notebook{notebooks.length !== 1 ? 's' : ''}
@@ -236,10 +218,19 @@ export default function FolderDetailPage() {
                 id={notebook.id}
                 name={notebook.name}
                 color={notebook.color}
-                noteCount={notebook.note_count}
+                noteCount={notebook.note_count || 0}
                 archived={notebook.archived || false}
-                onClick={() => handleNotebookClick(notebook)}
-                onUpdate={loadFolderData}
+                shared={!isOwner}
+                sharedByMe={notebook.shared_by_owner}
+                permission={!isOwner ? userPermission : undefined}
+                onClick={() => handleNotebookClick({
+                  id: notebook.id,
+                  name: notebook.name,
+                  color: notebook.color,
+                  note_count: notebook.note_count || 0
+                })}
+                onShare={notebook.shared_by_owner ? () => setShareNotebook(notebook) : undefined}
+                onUpdate={() => refetch()}
               />
             ))}
           </div>
@@ -282,13 +273,29 @@ export default function FolderDetailPage() {
         </div>
       </Modal>
 
-      {/* Share Dialog */}
+      {/* Share Dialog for Folder */}
       {showShareDialog && folder && (
         <ShareDialog
           resourceId={folderId}
           resourceType="folder"
           resourceName={folder.name}
-          onClose={() => setShowShareDialog(false)}
+          onClose={() => {
+            setShowShareDialog(false)
+            refetch() // Refresh data after sharing changes
+          }}
+        />
+      )}
+
+      {/* Share Dialog for Notebook */}
+      {shareNotebook && (
+        <ShareDialog
+          resourceId={shareNotebook.id}
+          resourceType="notebook"
+          resourceName={shareNotebook.name}
+          onClose={() => {
+            setShareNotebook(null)
+            refetch() // Refresh data after sharing changes
+          }}
         />
       )}
     </div>

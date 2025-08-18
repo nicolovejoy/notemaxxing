@@ -138,10 +138,18 @@ class DataManager {
 
   // Folder operations
   async createFolder(name: string, color: string): Promise<Folder> {
+    // Get current user
+    const supabase = createClient()
+    if (!supabase) throw new Error('Failed to create Supabase client')
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
     const tempId = `temp-${Date.now()}`
     const tempFolder: Folder = {
       id: tempId,
-      user_id: 'temp',
+      owner_id: user.id,
       name,
       color,
       created_at: new Date().toISOString(),
@@ -158,7 +166,7 @@ class DataManager {
     })
 
     try {
-      const newFolder = await foldersApi.create({ name, color })
+      const newFolder = await foldersApi.create({ name, color, owner_id: user.id })
 
       // Replace temp with real
       dataStore.getState().removeFolder(tempId)
@@ -227,10 +235,23 @@ class DataManager {
 
   // Notebook operations
   async createNotebook(name: string, folderId: string, color: string): Promise<Notebook> {
+    // Get current user and folder owner
+    const supabase = createClient()
+    if (!supabase) throw new Error('Failed to create Supabase client')
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    // Get folder to inherit owner_id
+    const folder = dataStore.getState().entities.folders.find((f) => f.id === folderId)
+    if (!folder) throw new Error('Folder not found')
+
     const tempId = `temp-${Date.now()}`
     const tempNotebook: Notebook = {
       id: tempId,
-      user_id: 'temp',
+      owner_id: folder.owner_id,
+      created_by: user.id,
       folder_id: folderId,
       name,
       color,
@@ -244,7 +265,13 @@ class DataManager {
     dataStore.getState().addNotebook(tempNotebook)
 
     try {
-      const newNotebook = await notebooksApi.create({ name, folder_id: folderId, color })
+      const newNotebook = await notebooksApi.create({
+        name,
+        folder_id: folderId,
+        color,
+        owner_id: folder.owner_id,
+        created_by: user.id,
+      })
 
       // Replace temp with real
       dataStore.getState().removeNotebook(tempId)
@@ -295,10 +322,23 @@ class DataManager {
 
   // Note operations
   async createNote(title: string, content: string, notebookId: string): Promise<Note> {
+    // Get current user and notebook owner
+    const supabase = createClient()
+    if (!supabase) throw new Error('Failed to create Supabase client')
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) throw new Error('Not authenticated')
+
+    // Get notebook to inherit owner_id
+    const notebook = dataStore.getState().entities.notebooks.find((n) => n.id === notebookId)
+    if (!notebook) throw new Error('Notebook not found')
+
     const tempId = `temp-${Date.now()}`
     const tempNote: Note = {
       id: tempId,
-      user_id: 'temp',
+      owner_id: notebook.owner_id,
+      created_by: user.id,
       notebook_id: notebookId,
       title,
       content,
@@ -310,7 +350,13 @@ class DataManager {
     dataStore.getState().addNote(tempNote)
 
     try {
-      const newNote = await notesApi.create({ title, content, notebook_id: notebookId })
+      const newNote = await notesApi.create({
+        title,
+        content,
+        notebook_id: notebookId,
+        owner_id: notebook.owner_id,
+        created_by: user.id,
+      })
 
       // Replace temp with real
       dataStore.getState().removeNote(tempId)

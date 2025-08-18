@@ -1,0 +1,10 @@
+# Copy this file to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to git!
+
+# Format: postgresql://[user]:[password]@[host]:[port]/[database]?sslmode=require
+# 
+# For new Supabase project, get this from:
+# Settings -> Database -> Connection String -> URI
+#
+# Example (replace YOUR_PASSWORD with actual password):
+database_url = "postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require"

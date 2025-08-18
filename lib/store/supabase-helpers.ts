@@ -129,7 +129,7 @@ export const foldersApi = {
     }
   },
 
-  async create(folder: Omit<Folder, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
+  async create(folder: Omit<Folder, 'id' | 'created_at' | 'updated_at'>) {
     try {
       logApiCall('folders', 'POST', folder)
       const supabase = await getSupabaseClient()
@@ -323,10 +323,7 @@ export const notebooksApi = {
   },
 
   async create(
-    notebook: Omit<
-      Notebook,
-      'id' | 'user_id' | 'created_at' | 'updated_at' | 'archived' | 'archived_at'
-    >
+    notebook: Omit<Notebook, 'id' | 'created_at' | 'updated_at' | 'archived' | 'archived_at'>
   ) {
     const supabase = await getSupabaseClient()
     const { data, error } = await supabase
@@ -342,7 +339,7 @@ export const notebooksApi = {
 
   async update(
     id: string,
-    updates: Partial<Omit<Notebook, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+    updates: Partial<Omit<Notebook, 'id' | 'owner_id' | 'created_at' | 'updated_at'>>
   ) {
     const supabase = await getSupabaseClient()
     const { data, error } = await supabase
@@ -406,7 +403,7 @@ export const notesApi = {
     }
   },
 
-  async create(note: Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>) {
+  async create(note: Omit<Note, 'id' | 'created_at' | 'updated_at'>) {
     const supabase = await getSupabaseClient()
     const { data, error } = await supabase.from('notes').insert(note).select().single()
 
@@ -416,7 +413,7 @@ export const notesApi = {
 
   async update(
     id: string,
-    updates: Partial<Omit<Note, 'id' | 'user_id' | 'created_at' | 'updated_at'>>
+    updates: Partial<Omit<Note, 'id' | 'owner_id' | 'created_by' | 'created_at' | 'updated_at'>>
   ) {
     const supabase = await getSupabaseClient()
     const { data, error } = await supabase

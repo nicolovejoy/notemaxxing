@@ -47,13 +47,25 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get the folder to inherit its owner_id
+    const { data: folder, error: folderError } = await supabase
+      .from('folders')
+      .select('owner_id')
+      .eq('id', folder_id)
+      .single()
+
+    if (folderError || !folder) {
+      return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
+    }
+
     const { data, error } = await supabase
       .from('notebooks')
       .insert({
         name,
         color,
         folder_id,
-        user_id: userId,
+        owner_id: folder.owner_id, // Inherit from folder
+        created_by: userId, // Current user who created it
       })
       .select()
       .single()

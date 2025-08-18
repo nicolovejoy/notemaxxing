@@ -57,18 +57,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       resourceName = notebook?.name || 'Unnamed notebook'
     }
 
-    // Get inviter's profile if we have invited_by
+    // Get inviter's email using database function
     let inviterEmail = 'Unknown user'
     if (invitation.invited_by) {
-      const { data: inviterProfile } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('id', invitation.invited_by)
-        .single()
-
-      if (inviterProfile) {
-        inviterEmail = inviterProfile.email
-      }
+      const { data: email } = await supabase.rpc('get_user_email', {
+        user_id: invitation.invited_by,
+      })
+      inviterEmail = email || `User ...${invitation.invited_by.slice(-8)}` // Fallback
     }
 
     return NextResponse.json({

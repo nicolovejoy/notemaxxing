@@ -81,21 +81,26 @@ export async function GET() {
       if (item.invited_by) userIds.add(item.invited_by)
     })
 
-    // Fetch all user profiles at once
+    // Get user emails using the database function
     const userProfiles: Record<string, { email: string; full_name: string | null }> = {}
     if (userIds.size > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email, full_name')
-        .in('id', Array.from(userIds))
+      // Fetch emails for all user IDs
+      const userIdArray = Array.from(userIds)
+      const { data: emails, error: emailError } = await supabase.rpc('get_user_email', {
+        user_id: userIdArray[0],
+      })
 
-      if (profiles) {
-        profiles.forEach((profile: { id: string; email: string; full_name: string | null }) => {
-          userProfiles[profile.id] = {
-            email: profile.email,
-            full_name: profile.full_name,
-          }
+      // For multiple users, we'll fetch them individually
+      // This is not ideal but works until we create a batch function
+      for (const userId of userIdArray) {
+        const { data: email } = await supabase.rpc('get_user_email', {
+          user_id: userId,
         })
+
+        userProfiles[userId] = {
+          email: email || `User ...${userId.slice(-8)}`, // Fallback if function fails
+          full_name: null,
+        }
       }
     }
 
@@ -164,7 +169,7 @@ export async function GET() {
         resourceId: item.resource_id,
         resourceName: resource?.name || 'Unknown',
         resourceColor: resource?.color || '',
-        permission: item.permission_level,
+        permission_level: item.permission_level,
         user:
           type === 'shared_by'
             ? {
@@ -194,7 +199,7 @@ export async function GET() {
         resourceId: invitation.resource_id,
         resourceName: resource?.name || 'Unknown',
         resourceColor: resource?.color || '',
-        permission: invitation.permission_level,
+        permission_level: invitation.permission_level,
         invitedBy: {
           email: userProfiles[invitation.invited_by || '']?.email || '',
           name: userProfiles[invitation.invited_by || '']?.full_name || '',

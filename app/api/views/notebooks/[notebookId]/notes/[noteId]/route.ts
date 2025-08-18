@@ -16,7 +16,7 @@ export async function GET(
 
     const { notebookId, noteId } = await params
 
-    // Get notebook and folder info
+    // First check if user has direct access to the notebook (owner or permission)
     const { data: notebook, error: notebookError } = await supabase
       .from('notebooks')
       .select(
@@ -25,15 +25,33 @@ export async function GET(
         name,
         color,
         folder_id,
-        folders!inner(id, name, user_id)
+        owner_id,
+        folders!inner(id, name, owner_id)
       `
       )
       .eq('id', notebookId)
-      .eq('folders.user_id', userId)
       .single()
 
     if (notebookError || !notebook) {
       return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
+    }
+
+    // Check if user has access (owner or has permission)
+    const isOwner = notebook.owner_id === userId
+
+    if (!isOwner) {
+      // Check for permissions
+      const { data: permission } = await supabase
+        .from('permissions')
+        .select('permission_level')
+        .eq('user_id', userId)
+        .eq('resource_id', notebookId)
+        .eq('resource_type', 'notebook')
+        .single()
+
+      if (!permission) {
+        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+      }
     }
 
     // Get the specific note with full content

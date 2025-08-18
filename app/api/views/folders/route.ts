@@ -16,7 +16,7 @@ export async function GET() {
     const { data: ownedFolders, error: ownedError } = await supabase
       .from('folders_with_stats')
       .select('*')
-      .eq('user_id', userId)
+      .eq('owner_id', userId)
 
     if (ownedError) throw ownedError
 
@@ -39,7 +39,7 @@ export async function GET() {
       archived_count: number
       created_at: string
       updated_at: string
-      user_id: string
+      owner_id: string
     }
 
     let sharedFolders: FolderFromView[] = []
@@ -54,10 +54,46 @@ export async function GET() {
       sharedFolders = sharedFolderData || []
     }
 
-    // Combine owned and shared folders
-    const folders = [...(ownedFolders || []), ...sharedFolders].sort((a, b) =>
-      a.name.localeCompare(b.name)
-    )
+    // Get list of folders that the user has shared with others
+    let sharedByMeFolderIds: Set<string> = new Set()
+    if (ownedFolders && ownedFolders.length > 0) {
+      const ownedFolderIds = ownedFolders.map((f: { id: string }) => f.id)
+      const { data: sharedByMe } = await supabase
+        .from('permissions')
+        .select('resource_id')
+        .in('resource_id', ownedFolderIds)
+        .eq('resource_type', 'folder')
+        .eq('granted_by', userId)
+
+      if (sharedByMe) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        sharedByMeFolderIds = new Set(sharedByMe.map((p: any) => p.resource_id))
+      }
+    }
+
+    // Create permission map for shared folders
+    const permissionMap: Record<string, string> = {}
+    if (sharedPerms) {
+      sharedPerms.forEach((p: { resource_id: string; permission_level: string }) => {
+        permissionMap[p.resource_id] = p.permission_level
+      })
+    }
+
+    // Combine owned and shared folders with proper flags
+    const folders = [
+      ...(ownedFolders || []).map((f: FolderFromView) => ({
+        ...f,
+        sharedByMe: sharedByMeFolderIds.has(f.id),
+        sharedWithMe: false,
+        permission: 'owner' as const,
+      })),
+      ...sharedFolders.map((f: FolderFromView) => ({
+        ...f,
+        sharedByMe: false,
+        sharedWithMe: true,
+        permission: permissionMap[f.id] || 'read',
+      })),
+    ].sort((a, b) => a.name.localeCompare(b.name))
 
     // Get all notebooks for these folders to show in the UI
     const folderIds = folders?.map((f: { id: string }) => f.id) || []
@@ -150,9 +186,9 @@ export async function GET() {
       {}
     )
 
-    // Add notebooks and most recent notebook ID to each folder
+    // Add notebooks and most recent notebook ID to each folder (keep all flags)
     const foldersWithNotebooks =
-      folders?.map((folder: FolderFromView) => ({
+      folders?.map((folder) => ({
         ...folder,
         notebooks: notebooksByFolder[folder.id] || [],
         most_recent_notebook_id: mostRecentNotebookByFolder[folder.id] || null,
@@ -212,7 +248,7 @@ export async function GET() {
       .from('user_stats')
       .select('*')
       .eq('user_id', userId)
-      .single()
+      .maybeSingle() // Use maybeSingle() since user might have no folders yet
 
     if (statsError) {
       console.error('Error fetching user stats:', statsError)

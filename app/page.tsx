@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { FolderOpen, Keyboard, Brain, ArrowRight, LogIn, Users } from 'lucide-react'
+import { FolderOpen, Keyboard, Brain, ArrowRight, LogIn } from 'lucide-react'
 import { UserMenu } from '@/components/user-menu'
 import { BuildTimestamp } from '@/components/build-timestamp'
 import { Logo } from '@/components/logo'
@@ -9,12 +9,13 @@ import { Card, CardBody } from '@/components/ui'
 import { LoadingButton } from '@/components/ui/LoadingButton'
 import { useFoldersView } from '@/lib/query/hooks'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { StatsBar } from '@/components/common/StatsBar'
 
 export default function Home() {
   const { user } = useAuth()
 
   // Only fetch folders if user is authenticated
-  const { data: foldersView, isLoading } = useFoldersView({
+  const { data: foldersView } = useFoldersView({
     enabled: !!user,
   })
 
@@ -25,13 +26,6 @@ export default function Home() {
       description: 'Organize your notes with custom folders and colors',
       href: '/backpack',
       color: 'text-blue-500',
-    },
-    {
-      icon: Users,
-      title: 'Shared with Me',
-      description: 'Access notebooks and folders shared by others',
-      href: '/shared-with-me',
-      color: 'text-purple-500',
     },
     {
       icon: Keyboard,
@@ -88,44 +82,12 @@ export default function Home() {
       </section>
 
       {/* Stats Section - Only show for authenticated users */}
-      {user && (
-        <section className="py-8 bg-white border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-3 gap-4">
-              {isLoading ? (
-                <>
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="text-center animate-pulse">
-                      <div className="h-9 w-16 bg-gray-200 rounded mx-auto mb-2"></div>
-                      <div className="h-4 w-20 bg-gray-100 rounded mx-auto"></div>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <>
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-gray-900">
-                      {foldersView?.stats?.total_folders || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">Folders</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-gray-900">
-                      {foldersView?.stats?.total_notebooks || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">Notebooks</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-gray-900">
-                      {foldersView?.stats?.total_notes || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">Notes</p>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </section>
+      {user && foldersView && (
+        <StatsBar
+          folders={foldersView.stats?.total_folders || 0}
+          notebooks={foldersView.stats?.total_notebooks || 0}
+          notes={foldersView.stats?.total_notes || 0}
+        />
       )}
 
       {/* Features Grid */}
@@ -134,7 +96,7 @@ export default function Home() {
           <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
             Everything You Need to Stay Organized
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature) => {
               const Icon = feature.icon
               return (

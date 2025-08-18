@@ -46,7 +46,7 @@ export function PageHeader({
           </div>
         </div>
         {breadcrumbs && (
-          <div className="border-t border-gray-100 py-2">
+          <div className="border-t border-gray-100 py-3">
             <Breadcrumb items={breadcrumbs} />
           </div>
         )}

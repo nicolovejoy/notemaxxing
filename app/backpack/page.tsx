@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, FolderOpen, Archive, BookOpen } from 'lucide-react'
+import { Plus, FolderOpen, BookOpen, Share2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 import { ColorPicker } from '@/components/forms/ColorPicker'
@@ -14,9 +14,16 @@ import { LoadingButton } from '@/components/ui/LoadingButton'
 import { StatusMessage } from '@/components/ui/StatusMessage'
 import { Card, CardBody } from '@/components/ui/Card'
 import { SharedIndicator } from '@/components/SharedIndicator'
+import { ShareDialog } from '@/components/ShareDialog'
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR } from '@/lib/constants'
 import { useFoldersView, useCreateFolder } from '@/lib/query/hooks'
 import { useAuth } from '@/lib/hooks/useAuth'
+import type { Folder } from '@/lib/types/entities'
+import { StatsBar } from '@/components/common/StatsBar'
+import { LoadingGrid } from '@/components/common/LoadingGrid'
+import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
+
+const NOTEBOOKS_PREVIEW_COUNT = 3
 
 export default function BackpackPage() {
   const router = useRouter()
@@ -30,6 +37,7 @@ export default function BackpackPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
+  const [shareFolder, setShareFolder] = useState<Pick<Folder, 'id' | 'name'> | null>(null)
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -43,11 +51,7 @@ export default function BackpackPage() {
     return (
       <div className="p-8">
         <Skeleton className="h-8 w-48 mb-4" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32" />
-          ))}
-        </div>
+        <LoadingGrid />
       </div>
     )
   }
@@ -90,6 +94,11 @@ export default function BackpackPage() {
     router.push(`/folders/${folderId}`)
   }
 
+  const handleNotebookNavigation = (notebook: NotebookPreview) => {
+    storeNotebookPreview(notebook)
+    router.push(`/notebooks/${notebook.id}?from=backpack`)
+  }
+
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -120,50 +129,16 @@ export default function BackpackPage() {
         }
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Bar */}
-        {foldersView && (
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3">
-                  <FolderOpen className="h-8 w-8 text-blue-500" />
-                  <div>
-                    <p className="text-2xl font-semibold">
-                      {foldersView.stats?.total_folders || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">Folders</p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3">
-                  <Archive className="h-8 w-8 text-green-500" />
-                  <div>
-                    <p className="text-2xl font-semibold">
-                      {foldersView.stats?.total_notebooks || 0}
-                    </p>
-                    <p className="text-sm text-gray-600">Notebooks</p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-            <Card>
-              <CardBody>
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 text-purple-500">📝</div>
-                  <div>
-                    <p className="text-2xl font-semibold">{foldersView.stats?.total_notes || 0}</p>
-                    <p className="text-sm text-gray-600">Notes</p>
-                  </div>
-                </div>
-              </CardBody>
-            </Card>
-          </div>
-        )}
+      {/* Stats Bar - Horizontal strip below header */}
+      {foldersView && (
+        <StatsBar
+          folders={foldersView.stats?.total_folders || 0}
+          notebooks={foldersView.stats?.total_notebooks || 0}
+          notes={foldersView.stats?.total_notes || 0}
+        />
+      )}
 
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Folders Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -183,141 +158,83 @@ export default function BackpackPage() {
             {filteredFolders.map((folder) => (
               <Card key={folder.id} className="overflow-hidden">
                 <CardBody className="p-0">
-                  {/* Folder Header - Clickable */}
-                  <button
-                    className="w-full p-4 text-left hover:bg-gray-50 transition-colors"
+                  {/* Folder Header with gradient */}
+                  <div
+                    className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white cursor-pointer hover:from-blue-100 transition-all"
                     onClick={() => handleFolderClick(folder.id)}
                   >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className={`p-3 rounded-lg ${folder.color}`}>
-                        <FolderOpen className="h-6 w-6 text-white" />
+                    <div className="flex items-center justify-between mb-2">
+                      <div className={`p-2 rounded ${folder.color}`}>
+                        <FolderOpen className="h-4 w-4 text-white" />
                       </div>
-                      <SharedIndicator
-                        sharedByMe={folder.sharedByMe}
-                        shared={folder.sharedWithMe}
-                        permission={folder.permission === 'owner' ? undefined : folder.permission}
-                      />
+                      {folder.sharedByMe && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setShareFolder(folder)
+                          }}
+                          className="flex items-center gap-1 text-xs bg-green-50 text-green-600 px-2 py-1 rounded hover:bg-green-100 transition-colors"
+                        >
+                          <Share2 className="h-3 w-3" />
+                          Manage Sharing
+                        </button>
+                      )}
+                      {folder.sharedWithMe && (
+                        <SharedIndicator
+                          shared={true}
+                          permission={folder.permission === 'owner' ? undefined : folder.permission}
+                        />
+                      )}
                     </div>
-                    <h3 className="font-semibold text-lg mb-1">{folder.name}</h3>
-                    <div className="flex gap-4 text-sm text-gray-600">
-                      <span>{folder.notebook_count} notebooks</span>
-                      <span>{folder.note_count} notes</span>
-                      {folder.archived_count > 0 && <span>{folder.archived_count} archived</span>}
-                    </div>
-                  </button>
+                    <h3 className="font-semibold text-gray-900">{folder.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {folder.notebook_count} notebooks · {folder.note_count} notes
+                      {folder.archived_count > 0 && ` · ${folder.archived_count} archived`}
+                    </p>
+                  </div>
 
-                  {/* Notebooks Grid */}
-                  {folder.notebooks && folder.notebooks.length > 0 && (
-                    <div className="border-t border-gray-100 bg-gray-50">
-                      <div className="p-3 grid grid-cols-2 gap-2">
-                        {folder.notebooks.slice(0, 4).map((notebook) => (
-                          <div
+                  {/* Notebook List (not cards) */}
+                  {folder.notebooks && folder.notebooks.length > 0 ? (
+                    <div className="p-3">
+                      <div className="space-y-2">
+                        {folder.notebooks.slice(0, NOTEBOOKS_PREVIEW_COUNT).map((notebook) => (
+                          <button
                             key={notebook.id}
-                            className="bg-white rounded-lg p-3 hover:shadow-sm cursor-pointer transition-all border border-gray-100 hover:border-gray-200"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              // Pass notebook data for optimistic loading
-                              router.push(`/notebooks/${notebook.id}?from=backpack`, {
-                                scroll: false,
+                            onClick={() =>
+                              handleNotebookNavigation({
+                                ...notebook,
+                                note_count: notebook.note_count || 0,
                               })
-                              // Store notebook data in sessionStorage for immediate display
-                              if (typeof window !== 'undefined') {
-                                sessionStorage.setItem(
-                                  `notebook-preview-${notebook.id}`,
-                                  JSON.stringify({
-                                    id: notebook.id,
-                                    name: notebook.name,
-                                    color: notebook.color,
-                                    note_count: notebook.note_count,
-                                  })
-                                )
-                              }
-                            }}
+                            }
+                            className="w-full px-3 py-2 rounded hover:bg-gray-50 transition-colors text-left"
                           >
-                            <div className="flex items-start gap-2">
-                              <div
-                                className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 ${notebook.color} bg-opacity-20`}
-                              >
-                                <BookOpen className="h-4 w-4 text-gray-700" />
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <BookOpen className="h-3 w-3 text-gray-400" />
+                                <span className="text-sm text-gray-700">{notebook.name}</span>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-1">
-                                  <p className="text-sm font-medium text-gray-900 truncate">
-                                    {notebook.name}
-                                  </p>
-                                  {(notebook.sharedByMe || notebook.sharedWithMe) && (
-                                    <SharedIndicator
-                                      sharedByMe={notebook.sharedByMe}
-                                      shared={notebook.sharedWithMe}
-                                      permission={
-                                        notebook.permission === 'owner'
-                                          ? undefined
-                                          : notebook.permission
-                                      }
-                                      className="scale-75 -ml-1"
-                                    />
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500 mt-0.5">
-                                  {notebook.note_count}{' '}
-                                  {notebook.note_count === 1 ? 'note' : 'notes'}
-                                </p>
-                              </div>
+                              <span className="text-xs text-gray-400">
+                                {notebook.note_count} notes
+                              </span>
                             </div>
-                          </div>
+                          </button>
                         ))}
-                        {folder.notebooks.length > 4 && (
-                          <div
-                            className="bg-gray-100 rounded-lg p-3 flex items-center justify-center cursor-pointer hover:bg-gray-200 transition-colors"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleFolderClick(folder.id)
-                            }}
+                        {folder.notebooks.length > NOTEBOOKS_PREVIEW_COUNT && (
+                          <button
+                            onClick={() => handleFolderClick(folder.id)}
+                            className="w-full px-3 py-2 rounded hover:bg-gray-50 transition-colors text-left"
                           >
                             <span className="text-xs text-gray-600 font-medium">
-                              +{folder.notebooks.length - 4} more
+                              +{folder.notebooks.length - NOTEBOOKS_PREVIEW_COUNT} more notebooks
                             </span>
-                          </div>
+                          </button>
                         )}
                       </div>
                     </div>
-                  )}
+                  ) : null}
                 </CardBody>
               </Card>
             ))}
-          </div>
-        )}
-
-        {/* Orphaned Shared Notebooks */}
-        {foldersView?.orphanedNotebooks && foldersView.orphanedNotebooks.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold mb-4">Shared Notebooks</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {foldersView.orphanedNotebooks.map((notebook) => (
-                <Card
-                  key={notebook.id}
-                  hover
-                  onClick={() => router.push(`/notebooks/${notebook.id}`)}
-                  className="cursor-pointer"
-                >
-                  <CardBody>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="p-3 rounded-lg" style={{ backgroundColor: notebook.color }}>
-                        📓
-                      </div>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                        {notebook.permission}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold">{notebook.name}</h3>
-                    {notebook.shared_by && (
-                      <p className="text-sm text-gray-600 mt-1">Shared by {notebook.shared_by}</p>
-                    )}
-                    <p className="text-sm text-gray-600">{notebook.note_count || 0} notes</p>
-                  </CardBody>
-                </Card>
-              ))}
-            </div>
           </div>
         )}
       </main>
@@ -359,6 +276,16 @@ export default function BackpackPage() {
           </LoadingButton>
         </div>
       </Modal>
+
+      {/* Share Dialog for Folder */}
+      {shareFolder && (
+        <ShareDialog
+          resourceId={shareFolder.id}
+          resourceType="folder"
+          resourceName={shareFolder.name}
+          onClose={() => setShareFolder(null)}
+        />
+      )}
     </div>
   )
 }

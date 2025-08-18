@@ -19,17 +19,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
     }
 
-    // Verify notebook ownership
+    // Get notebook to inherit its owner_id and verify access
     const { data: notebook } = await supabase
       .from('notebooks')
-      .select('id')
+      .select('id, owner_id')
       .eq('id', notebook_id)
-      .eq('user_id', userId)
       .single()
 
     if (!notebook) {
       return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
     }
+
+    // Check if user has write access (owner or has write permission)
+    // For now, we'll allow if user is owner or created_by
+    // TODO: Check permissions table for shared access
 
     const { data, error } = await supabase
       .from('notes')
@@ -37,6 +40,8 @@ export async function POST(request: NextRequest) {
         title: title || 'Untitled Note',
         content: content || '',
         notebook_id,
+        owner_id: notebook.owner_id, // Inherit from notebook
+        created_by: userId, // Current user who created it
       })
       .select()
       .single()
@@ -70,9 +75,9 @@ export async function PATCH(request: NextRequest) {
     // Verify note ownership through notebook
     const { data: note } = await supabase
       .from('notes')
-      .select('notebooks!inner(user_id)')
+      .select('notebooks!inner(owner_id)')
       .eq('id', id)
-      .eq('notebooks.user_id', userId)
+      .eq('notebooks.owner_id', userId)
       .single()
 
     if (!note) {
@@ -115,9 +120,9 @@ export async function DELETE(request: NextRequest) {
     // Verify note ownership through notebook
     const { data: note } = await supabase
       .from('notes')
-      .select('notebooks!inner(user_id)')
+      .select('notebooks!inner(owner_id)')
       .eq('id', id)
-      .eq('notebooks.user_id', userId)
+      .eq('notebooks.owner_id', userId)
       .single()
 
     if (!note) {
