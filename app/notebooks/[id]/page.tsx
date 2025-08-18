@@ -244,6 +244,8 @@ export default function NotebookPage() {
     )
   }
 
+  const notebook = noteView?.notebook
+  
   if (!notebook) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">

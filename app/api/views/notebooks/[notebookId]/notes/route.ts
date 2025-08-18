@@ -231,6 +231,7 @@ export async function GET(
         color: notebook.color,
         folder_id: notebook.folder_id,
         folder_name: folderInfo?.name || '',
+        owner_id: notebook.owner_id,
         shared: !isOwner,
         permission: userPermission,
       },
