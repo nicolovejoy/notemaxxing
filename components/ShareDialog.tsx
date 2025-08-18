@@ -314,7 +314,11 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
                           resourceType: share.resourceType,
                         })
 
+                        // TODO: This should use an API route instead of direct Supabase call
                         const supabase = createClient()
+                        if (!supabase) {
+                          throw new Error('Failed to create Supabase client')
+                        }
                         const { data, error } = await supabase
                           .from('permissions')
                           .update({ permission_level: newLevel })

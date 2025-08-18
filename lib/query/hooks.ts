@@ -15,7 +15,6 @@ interface FolderWithStats extends Folder {
   notebooks?: NotebookWithStats[]
   most_recent_notebook_id?: string | null
   permission?: 'owner' | 'write' | 'read'
-  owner_id?: string
   owner_email?: string
   shared_by?: string
   shared_at?: string

@@ -8,7 +8,7 @@ interface SharedIndicatorProps {
   sharedByMe?: boolean
   permission?: Permission
   className?: string
-  onClick?: () => void
+  onClick?: (e?: React.MouseEvent) => void
 }
 
 export function SharedIndicator({

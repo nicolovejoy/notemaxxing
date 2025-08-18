@@ -243,8 +243,6 @@ export default function NotebookPage() {
       </div>
     )
   }
-
-  const notebook = noteView?.notebook
   
   if (!notebook) {
     return (

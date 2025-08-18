@@ -1,68 +1,164 @@
 # Project Guidelines for Claude
 
-## Current State (August 2024)
+## Current State (August 17, 2024)
 
-- **Database**: New Supabase project `vtaloqvkvakylrgpqcml` with code-as-infrastructure
-  - Schema defined in `/supabase/migrations/` - check here for table structure
-  - All tables use `owner_id` (not `user_id`) for ownership
-  - **Migration Process**: Nico runs `npx supabase db push` manually
-  - **Important**: After migrations are applied, rename them to `.sql.applied`
-- **Sharing**: Move-to-Control model - folders define access boundaries
-  - Share folders, not individual notebooks
-  - Move notebooks between folders to control access
-  - Only owners can move notebooks (prevents theft)
-- **Auth**: Working with proper owner_id throughout
-- **Permissions**: Working with UPDATE policy, proper field names
+### 🚨 BUILD STATUS: FAILING
+
+- **Issue**: Duplicate `notebook` variable in `/app/notebooks/[id]/page.tsx` line ~247
+- **Fix**: Remove the duplicate declaration
+
+### Database Configuration
+
+- **Project**: Supabase `vtaloqvkvakylrgpqcml`
+- **Schema**: Code-as-infrastructure in `/supabase/migrations/`
+- **All migrations applied** (have `.applied` extension)
+- **IMPORTANT**: No database triggers - all fields must be set explicitly
+
+### Recent Migration (TODAY)
+
+- Removed automatic triggers for `owner_id` and `created_by`
+- These fields must now be explicitly set in all create operations
+- Migration files renamed to `.sql.applied` after running `npx supabase db push`
 
 ## Architecture Rules
 
-- **Data Fetching Pattern**:
-  - Use React Query for all data fetching (consistency & caching)
-  - Use ViewStore/Zustand only for complex editing state (notebook editor)
-  - No direct Supabase calls in components - use API routes
-- **Server Aggregation**: Counts computed in database, not client
-- **Ownership Model**: `owner_id` = resource owner, `created_by` = creator
-- **Sharing Model**: Folder-first - notebooks can only be shared within already-shared folders
+### Ownership Model
+
+- **owner_id**: Resource owner (required on folders, notebooks, notes)
+- **created_by**: User who created the resource
+- **Inheritance**: Notebooks inherit folder's owner_id, notes inherit notebook's owner_id
+- **No triggers**: Must explicitly set these fields in code
+
+### Data Fetching Pattern
+
+- Use React Query for all data fetching (consistency & caching)
+- Use ViewStore/Zustand only for complex editing state (notebook editor)
+- No direct Supabase calls in components - use API routes
+- Server aggregation for counts, not client-side
+
+### Sharing Model
+
+- **Folder-first**: Share folders, notebooks inherit permissions
+- **Move-to-Control**: Move notebooks between folders to control access
+- **Only owners can move**: Prevents unauthorized access changes
 
 ## Coding Rules
 
-1. Be succinct - keep responses short
-2. Ask before making significant changes
-3. Run `npm run format` after code changes
-4. Check in with user frequently
-5. Work in small chunks
-6. Can run dev server for testing (ask first)
+1. **Be succinct** - Keep responses short and focused
+2. **Ask before major changes** - Get confirmation for significant modifications
+3. **Format code** - Run `npm run format` after changes
+4. **Small chunks** - Work incrementally, test frequently
+5. **Check existing patterns** - Follow established code patterns
+
+## Common Operations
+
+### Creating Resources
+
+```typescript
+// Folders - owner_id is current user
+await supabase.from('folders').insert({
+  name,
+  color,
+  owner_id: userId,
+})
+
+// Notebooks - inherit folder's owner_id
+const folder = await getFolder(folder_id)
+await supabase.from('notebooks').insert({
+  name,
+  color,
+  folder_id,
+  owner_id: folder.owner_id,
+  created_by: userId,
+})
+
+// Notes - inherit notebook's owner_id
+const notebook = await getNotebook(notebook_id)
+await supabase.from('notes').insert({
+  title,
+  content,
+  notebook_id,
+  owner_id: notebook.owner_id,
+  created_by: userId,
+})
+```
 
 ## Design System
 
-Use existing UI components only - see `/components/ui/`
+Use only existing UI components from `/components/ui/`:
+
+- Button, Card, Modal, Dropdown
+- FormField, SearchInput, SelectField
+- PageHeader, Breadcrumb, Skeleton
+- LoadingButton, StatusMessage
+
+## Testing Workflow
+
+1. **Local Development**
+
+   ```bash
+   npm run dev
+   # If cache issues: rm -rf .next
+   ```
+
+2. **Type Checking**
+
+   ```bash
+   npm run type-check
+   ```
+
+3. **Build & Deploy**
+   ```bash
+   npm run build  # Must pass
+   git push       # Triggers Vercel
+   ```
 
 ## Known Issues
 
-- Real-time sync needs fixing
-- Need to prevent notebook-only sharing in unshared folders
-- Need to show creator info when created_by != owner_id
-
-## Testing Accounts
-
-When testing sharing, use different browser sessions or incognito mode.
+1. **TypeScript errors** in admin console and some components
+2. **Build failing** due to duplicate variable (see top)
+3. **Performance** - Some queries could be optimized
 
 ## Important Patterns
 
-```typescript
-// ✅ GOOD - ViewStore pattern
-const foldersView = useFoldersView()
+### ViewStore Usage (Complex UI State)
 
-// ❌ BAD - Global loading
-const notes = useNotes()
+```typescript
+// ✅ GOOD - For complex editing
+const foldersView = useFoldersView()
+const { loadFolderView } = useViewActions()
 ```
 
-## Future Sharing Features (Not Yet Implemented)
+### React Query Usage (Server State)
 
-- **Notebook Transfer**: Dual-consent transfer when `created_by != owner_id`
-- **Creator Rights**: Allow creators to reclaim notebooks they created
-- **Granular Permissions**: Separate "create" from "write" permissions
+```typescript
+// ✅ GOOD - For data fetching
+const { data, isLoading } = useQuery({
+  queryKey: ['folders'],
+  queryFn: fetchFolders,
+})
+```
+
+### Direct Supabase (Avoid)
+
+```typescript
+// ❌ BAD - Don't use in components
+const { data } = await supabase.from('folders').select()
+```
+
+## File Structure
+
+- `/app/` - Next.js app router pages and API routes
+- `/components/` - React components
+- `/lib/store/` - State management
+- `/lib/query/` - React Query hooks
+- `/lib/supabase/` - Database client and types
+- `/supabase/migrations/` - Database schema
 
 ## Don't Trust Old Docs
 
-Always verify in code - many markdown files are outdated.
+Many markdown files in the repo are outdated. Always verify against:
+
+1. Current code implementation
+2. Database schema in migrations
+3. TypeScript types in `database.types.ts`

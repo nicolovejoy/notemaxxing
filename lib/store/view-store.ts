@@ -75,6 +75,9 @@ export interface NoteViewData {
     color: string
     folder_id: string
     folder_name: string
+    owner_id: string
+    shared?: boolean
+    permission?: 'read' | 'write' | 'admin'
   }
   folder: {
     id: string

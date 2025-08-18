@@ -403,7 +403,7 @@ export const notesApi = {
     }
   },
 
-  async create(note: Omit<Note, 'id' | 'owner_id' | 'created_by' | 'created_at' | 'updated_at'>) {
+  async create(note: Omit<Note, 'id' | 'created_at' | 'updated_at'>) {
     const supabase = await getSupabaseClient()
     const { data, error } = await supabase.from('notes').insert(note).select().single()
 

@@ -103,7 +103,7 @@ export function NotebookCard({
                 onClick={
                   sharedByMe && onShare
                     ? (e) => {
-                        e.stopPropagation()
+                        e?.stopPropagation()
                         onShare()
                       }
                     : undefined
