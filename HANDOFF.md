@@ -4,7 +4,7 @@
 
 Date: 2025-08-19
 Branch: `fix/sharing-ux-improvements`
-Status: Pushed to remote, ready for Vercel deployment
+Status: BUILD ERROR - Needs fix before deployment
 
 ## Completed Work
 
@@ -30,6 +30,28 @@ Status: Pushed to remote, ready for Vercel deployment
    - Subscribes to permission changes via Supabase realtime
    - Should invalidate React Query cache on permission changes
    - May work better on Vercel deployment
+
+## URGENT: Build Error
+
+### Vercel Build Failure
+
+```
+./components/cards/NotebookCard.tsx:102:33
+Type error: Cannot find name 'onShare'.
+
+  100 |                 className="ml-2"
+  101 |                 onClick={
+> 102 |                   sharedByMe && onShare
+      |                                 ^
+  103 |                     ? (e) => {
+  104 |                         e?.stopPropagation()
+  105 |                         onShare()
+```
+
+**Fix needed**: In `/components/cards/NotebookCard.tsx` line 102-105
+
+- We removed `onShare` from the component props but missed removing it from SharedIndicator onClick handler
+- Need to remove the entire onClick handler or the sharedByMe condition
 
 ## Current Issues
 
