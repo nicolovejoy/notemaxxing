@@ -17,24 +17,17 @@ export async function PATCH(
 
     const { permission_level } = await request.json()
 
-    if (!permission_level || !['view', 'write'].includes(permission_level)) {
+    if (!permission_level || !['read', 'write'].includes(permission_level)) {
       return NextResponse.json(
-        { error: 'Invalid permission level. Must be "view" or "write"' },
+        { error: 'Invalid permission level. Must be "read" or "write"' },
         { status: 400 }
       )
     }
 
-    // First check if the user has permission to update this permission
-    // They must be the owner of the resource
+    // First check if the permission exists
     const { data: permission, error: fetchError } = await supabase
       .from('permissions')
-      .select(`
-        id,
-        resource_id,
-        resource_type,
-        folders!inner(owner_id),
-        notebooks!inner(owner_id)
-      `)
+      .select('id, resource_id, resource_type')
       .eq('id', id)
       .single()
 
@@ -42,10 +35,26 @@ export async function PATCH(
       return NextResponse.json({ error: 'Permission not found' }, { status: 404 })
     }
 
-    // Check if user is the owner of the resource
-    const isOwner = 
-      (permission.resource_type === 'folder' && permission.folders?.owner_id === userId) ||
-      (permission.resource_type === 'notebook' && permission.notebooks?.owner_id === userId)
+    // Now check if user is the owner of the resource
+    let isOwner = false
+    
+    if (permission.resource_type === 'folder') {
+      const { data: folder } = await supabase
+        .from('folders')
+        .select('owner_id')
+        .eq('id', permission.resource_id)
+        .single()
+      
+      isOwner = folder?.owner_id === userId
+    } else if (permission.resource_type === 'notebook') {
+      const { data: notebook } = await supabase
+        .from('notebooks')
+        .select('owner_id')
+        .eq('id', permission.resource_id)
+        .single()
+      
+      isOwner = notebook?.owner_id === userId
+    }
 
     if (!isOwner) {
       return NextResponse.json(
@@ -87,17 +96,10 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // First check if the user has permission to delete this permission
-    // They must be the owner of the resource
+    // First check if the permission exists
     const { data: permission, error: fetchError } = await supabase
       .from('permissions')
-      .select(`
-        id,
-        resource_id,
-        resource_type,
-        folders!inner(owner_id),
-        notebooks!inner(owner_id)
-      `)
+      .select('id, resource_id, resource_type')
       .eq('id', id)
       .single()
 
@@ -105,10 +107,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'Permission not found' }, { status: 404 })
     }
 
-    // Check if user is the owner of the resource
-    const isOwner = 
-      (permission.resource_type === 'folder' && permission.folders?.owner_id === userId) ||
-      (permission.resource_type === 'notebook' && permission.notebooks?.owner_id === userId)
+    // Now check if user is the owner of the resource
+    let isOwner = false
+    
+    if (permission.resource_type === 'folder') {
+      const { data: folder } = await supabase
+        .from('folders')
+        .select('owner_id')
+        .eq('id', permission.resource_id)
+        .single()
+      
+      isOwner = folder?.owner_id === userId
+    } else if (permission.resource_type === 'notebook') {
+      const { data: notebook } = await supabase
+        .from('notebooks')
+        .select('owner_id')
+        .eq('id', permission.resource_id)
+        .single()
+      
+      isOwner = notebook?.owner_id === userId
+    }
 
     if (!isOwner) {
       return NextResponse.json(
