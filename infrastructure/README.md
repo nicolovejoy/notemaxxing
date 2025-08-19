@@ -1,87 +1,97 @@
 # Database Infrastructure
 
-This directory contains database schema management for Notemaxxing.
+Clean, simple database management using Supabase migrations.
 
-## Structure
+## Architecture Principles
 
-- `atlas/schema.hcl` - Declarative database schema (tables, indexes, foreign keys)
-- `atlas/views.sql` - Database views (managed separately due to Atlas pricing)
-- `terraform/` - Terraform configuration for applying schema
-- `apply-schema.sh` - One-command deployment script
+- **RLS Disabled**: Security at API layer, not database
+- **No Triggers/Functions**: All logic in API routes
+- **No Database Functions**: Direct table operations only
+- **Explicit Fields**: All fields set manually in code
 
-## Prerequisites
+## Current Setup
 
-```bash
-# Install required tools
-brew install terraform
-brew install ariga/tap/atlas
-brew install postgresql  # for psql client
 ```
+/supabase/migrations/         # Production schema (source of truth)
+  *.sql.applied              # Applied migrations
 
-## Setup New Database
-
-### 1. Create New Supabase Project
-
-1. Go to [Supabase Dashboard](https://app.supabase.com)
-2. Create new project
-3. Copy the database URL from Settings → Database
-4. Format: `postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres`
-
-### 2. Apply Schema
-
-```bash
-# Set database URL and run
-export DATABASE_URL="postgresql://postgres:password@db.project.supabase.co:5432/postgres"
-./infrastructure/apply-schema.sh
-```
-
-This will:
-
-1. Create all tables with Atlas (free tier)
-2. Apply views with raw SQL
-3. Set up all indexes and foreign keys
-
-### 3. Update Application
-
-```bash
-# Update .env.local with new credentials
-NEXT_PUBLIC_SUPABASE_URL=https://[PROJECT-REF].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[YOUR-ANON-KEY]
+/infrastructure/             # Utilities
+  setup-database.sql        # Complete schema for new DBs
+  apply-database.sh         # Simple psql apply script
+  disable-rls.sql          # RLS disable utility
 ```
 
 ## Making Schema Changes
 
-### Tables/Indexes/Foreign Keys
+### 1. Create Migration
 
-1. Edit `atlas/schema.hcl`
-2. Run `./apply-schema.sh` to apply changes
+```bash
+npx supabase migration new your_change_name
+# Creates: supabase/migrations/[timestamp]_your_change_name.sql
+```
 
-### Views
+### 2. Write Your Changes
 
-1. Edit `atlas/views.sql`
-2. Run `./apply-schema.sh` to apply changes
+```sql
+-- Add table, column, index, etc
+CREATE TABLE public_invitation_previews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  token UUID UNIQUE NOT NULL,
+  resource_name TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  inviter_name TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL
+);
+```
 
-## Why This Approach?
+### 3. Apply to Database
 
-- **Atlas Free Tier**: Manages tables, indexes, and foreign keys declaratively
-- **Raw SQL for Views**: Avoids $9/month Atlas Pro requirement
-- **Version Controlled**: All changes tracked in Git
-- **Rollback Capable**: Terraform state allows reverting changes
-- **CI/CD Ready**: Can be automated with GitHub Actions
+```bash
+npx supabase db push --db-url $DATABASE_URL
+```
 
-## Troubleshooting
+### 4. Mark as Applied
 
-### Connection Issues
+```bash
+mv supabase/migrations/[timestamp]_your_change_name.sql \
+   supabase/migrations/[timestamp]_your_change_name.sql.applied
+```
 
-- Check your DATABASE_URL format
-- Ensure your IP is whitelisted in Supabase (Settings → Database → Connection Pooling)
+## Database URLs
 
-### Migration Conflicts
+- **Production**: `dvuvhfjbjoemtoyfjjsg` (DB3-Atlas on Supabase)
+- **Dev**: Create your own Supabase project
 
-- Atlas tracks state, so it knows what's already applied
-- To force reset: `terraform destroy` then `terraform apply`
+## Setting Up New Database
 
-### View Errors
+```bash
+# Option 1: Use Supabase migrations (recommended)
+npx supabase db push --db-url $NEW_DATABASE_URL
 
-- Views depend on tables existing first
-- The script ensures tables are created before views
+# Option 2: Use complete schema file
+DATABASE_URL=$NEW_DATABASE_URL ./infrastructure/apply-database.sh
+```
+
+## Current Issue to Fix
+
+Missing `public_invitation_previews` table. Run this SQL:
+
+```sql
+CREATE TABLE IF NOT EXISTS public_invitation_previews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  token UUID UNIQUE NOT NULL,
+  resource_name TEXT NOT NULL,
+  resource_type TEXT NOT NULL,
+  inviter_name TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_public_invitation_previews_token ON public_invitation_previews(token);
+```
+
+## Future Improvements
+
+1. Automate the `.applied` renaming in CI/CD
+2. Add migration rollback strategy
+3. Generate TypeScript types automatically after migrations

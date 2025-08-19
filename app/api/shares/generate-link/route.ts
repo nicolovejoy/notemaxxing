@@ -135,65 +135,94 @@ export async function POST(request: NextRequest) {
 
     console.log('[Generate Link] Creating invitation for:', resourceName)
 
-    // Use the database function to create the invitation
-    const { data: invitationId, error: inviteError } = await supabase.rpc('create_invitation', {
-      p_resource_id: resourceId,
-      p_resource_type: resourceType,
-      p_permission_level: permission,
-      p_invitee_email: email.toLowerCase(),
-      p_expires_in_days: 7,
-    })
+    // Check for existing invitation first
+    const { data: existingInvitation } = await supabase
+      .from('invitations')
+      .select('*')
+      .eq('resource_id', resourceId)
+      .eq('invitee_email', email.toLowerCase())
+      .is('accepted_at', null) // Not yet accepted
+      .single()
+
+    if (existingInvitation) {
+      console.log('[Generate Link] Found existing invitation, updating expiry')
+      
+      // Update expiry date to extend invitation
+      const newExpiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+      
+      const { error: updateError } = await supabase
+        .from('invitations')
+        .update({ expires_at: newExpiryDate })
+        .eq('id', existingInvitation.id)
+      
+      if (updateError) {
+        console.error('[Generate Link] Error updating invitation:', updateError)
+        return NextResponse.json({ error: 'Failed to update invitation' }, { status: 500 })
+      }
+
+      // Also update the public preview
+      await supabase
+        .from('public_invitation_previews')
+        .upsert({
+          token: existingInvitation.token,
+          resource_name: resourceName,
+          resource_type: resourceType,
+          inviter_name: user.email || 'A user',
+          expires_at: newExpiryDate,
+        }, { onConflict: 'token' })
+
+      return NextResponse.json({
+        success: true,
+        invitationId: existingInvitation.token, // Return token as ID for URL
+        expiresAt: newExpiryDate,
+        existing: true,
+      })
+    }
+
+    // Create new invitation with explicit field values
+    const token = crypto.randomUUID()
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    
+    const { data: invitation, error: inviteError } = await supabase
+      .from('invitations')
+      .insert({
+        token,
+        resource_id: resourceId,
+        resource_type: resourceType,
+        permission_level: permission, // Note: permission_level, not permission
+        invitee_email: email.toLowerCase(),
+        invited_by: user.id,
+        expires_at: expiresAt,
+        created_at: new Date().toISOString()
+      })
+      .select()
+      .single()
 
     if (inviteError) {
       console.error('[Generate Link] Error creating invitation:', inviteError)
-
-      // Check if it's a duplicate invitation error
-      if (inviteError.code === '23505') {
-        // Check if there's an existing active invitation
-        const { data: existingInvitation } = await supabase
-          .from('invitation_details')
-          .select('id')
-          .eq('resource_id', resourceId)
-          .eq('invitee_email', email.toLowerCase())
-          .single()
-
-        if (existingInvitation) {
-          // Get the expiry from the public table
-          const { data: preview } = await supabase
-            .from('public_invitation_previews')
-            .select('expires_at')
-            .eq('id', existingInvitation.id)
-            .single()
-
-          return NextResponse.json({
-            success: true,
-            invitationId: existingInvitation.id,
-            expiresAt: preview?.expires_at,
-            existing: true,
-          })
-        }
-
-        return NextResponse.json(
-          { error: 'An invitation already exists for this email and resource' },
-          { status: 409 }
-        )
-      }
-
       return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 })
     }
 
-    // Get the expiry date from the public preview
-    const { data: preview } = await supabase
+    // Create public preview for non-authenticated users
+    const { error: previewError } = await supabase
       .from('public_invitation_previews')
-      .select('expires_at')
-      .eq('id', invitationId)
-      .single()
+      .insert({
+        token: invitation.token,
+        resource_name: resourceName,
+        resource_type: resourceType,
+        inviter_name: user.email || 'A user',
+        expires_at: expiresAt
+      })
+
+    if (previewError) {
+      console.error('[Generate Link] Error creating public preview:', previewError)
+      // Non-fatal: invitation still works without preview
+    }
 
     return NextResponse.json({
       success: true,
-      invitationId: invitationId,
-      expiresAt:
-        preview?.expires_at || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      invitationId: invitation.token, // Return token as ID for URL
+      expiresAt: invitation.expires_at,
     })
   } catch (error) {
     console.error('Unexpected error in generate share link:', error)

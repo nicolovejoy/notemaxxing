@@ -28,7 +28,7 @@ export default function SharePage() {
   } | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
-  const [emailMismatch, setEmailMismatch] = useState(false)
+  const [emailMismatch, _setEmailMismatch] = useState(false)
 
   useEffect(() => {
     const checkAuthAndLoadInvitation = async () => {

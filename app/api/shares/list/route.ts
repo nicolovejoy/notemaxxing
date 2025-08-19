@@ -86,7 +86,7 @@ export async function GET() {
     if (userIds.size > 0) {
       // Fetch emails for all user IDs
       const userIdArray = Array.from(userIds)
-      const { data: emails, error: emailError } = await supabase.rpc('get_user_email', {
+      const { data: _emails, error: _emailError } = await supabase.rpc('get_user_email', {
         user_id: userIdArray[0],
       })
 

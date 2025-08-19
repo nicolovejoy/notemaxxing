@@ -314,23 +314,26 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
                           resourceType: share.resourceType,
                         })
 
-                        // TODO: This should use an API route instead of direct Supabase call
-                        const supabase = createClient()
-                        if (!supabase) {
-                          throw new Error('Failed to create Supabase client')
-                        }
-                        const { data, error } = await supabase
-                          .from('permissions')
-                          .update({ permission_level: newLevel })
-                          .eq('id', share.id)
-                          .select()
+                        // Use API route instead of direct Supabase call
+                        try {
+                          const response = await fetch(`/api/permissions/${share.id}`, {
+                            method: 'PATCH',
+                            headers: {
+                              'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ permission_level: newLevel }),
+                          })
 
-                        console.log('Permission update result:', { data, error })
+                          const result = await response.json()
+                          console.log('Permission update result:', result)
 
-                        if (!error) {
-                          // Refresh the list
-                          loadShares()
-                        } else {
+                          if (response.ok) {
+                            // Refresh the list
+                            loadShares()
+                          } else {
+                            console.error('Failed to update permission:', result.error)
+                          }
+                        } catch (error) {
                           console.error('Failed to update permission:', error)
                         }
                       }}

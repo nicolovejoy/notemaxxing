@@ -109,6 +109,20 @@ CREATE TABLE IF NOT EXISTS public.invitations (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_invitations_token ON public.invitations (token);
 CREATE INDEX IF NOT EXISTS idx_invitations_email ON public.invitations (invitee_email);
 
+-- Public invitation previews table (for anonymous access)
+CREATE TABLE IF NOT EXISTS public.public_invitation_previews (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  token uuid UNIQUE NOT NULL,
+  resource_name text NOT NULL,
+  resource_type text NOT NULL,
+  inviter_name text NOT NULL,
+  expires_at timestamptz NOT NULL,
+  created_at timestamptz DEFAULT NOW(),
+  PRIMARY KEY (id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_public_invitation_previews_token ON public.public_invitation_previews(token);
+
 -- Create views
 DROP VIEW IF EXISTS public.folders_with_stats CASCADE;
 CREATE VIEW public.folders_with_stats AS

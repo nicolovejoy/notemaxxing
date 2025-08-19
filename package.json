@@ -7,9 +7,11 @@
     "build": "node scripts/generate-build-info.js && next build",
     "start": "next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "precommit": "npm run lint && npm run type-check",
     "prepare": "husky"
   },
   "dependencies": {

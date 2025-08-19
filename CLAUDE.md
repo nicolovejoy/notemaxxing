@@ -1,164 +1,71 @@
-# Project Guidelines for Claude
+# Claude Guidelines - Notemaxxing
 
-## Current State (August 17, 2024)
+## Project Status
 
-### 🚨 BUILD STATUS: FAILING
-
-- **Issue**: Duplicate `notebook` variable in `/app/notebooks/[id]/page.tsx` line ~247
-- **Fix**: Remove the duplicate declaration
-
-### Database Configuration
-
-- **Project**: Supabase `vtaloqvkvakylrgpqcml`
-- **Schema**: Code-as-infrastructure in `/supabase/migrations/`
-- **All migrations applied** (have `.applied` extension)
-- **IMPORTANT**: No database triggers - all fields must be set explicitly
-
-### Recent Migration (TODAY)
-
-- Removed automatic triggers for `owner_id` and `created_by`
-- These fields must now be explicitly set in all create operations
-- Migration files renamed to `.sql.applied` after running `npx supabase db push`
+- **Build**: ✅ PASSING (with warnings)
+- **Database**: `dvuvhfjbjoemtoyfjjsg`
+- **Sharing**: ✅ WORKING
 
 ## Architecture Rules
 
-### Ownership Model
+### 1. Database
 
-- **owner_id**: Resource owner (required on folders, notebooks, notes)
-- **created_by**: User who created the resource
-- **Inheritance**: Notebooks inherit folder's owner_id, notes inherit notebook's owner_id
-- **No triggers**: Must explicitly set these fields in code
+- **NO RLS** - Security at API layer only
+- **NO triggers/functions** - Set all fields explicitly in code
+- **Terraform managed** - Use `/infrastructure/terraform/` for schema changes
 
-### Data Fetching Pattern
+### 2. Data Access Pattern
 
-- Use React Query for all data fetching (consistency & caching)
-- Use ViewStore/Zustand only for complex editing state (notebook editor)
-- No direct Supabase calls in components - use API routes
-- Server aggregation for counts, not client-side
+```
+Component → API Route → Supabase → Database
+```
 
-### Sharing Model
+- **NEVER** use Supabase directly in components
+- **ALWAYS** use API routes for database operations
+- React Query for fetching, Zustand for complex UI state
 
-- **Folder-first**: Share folders, notebooks inherit permissions
-- **Move-to-Control**: Move notebooks between folders to control access
-- **Only owners can move**: Prevents unauthorized access changes
+### 3. Ownership Model
 
-## Coding Rules
-
-1. **Be succinct** - Keep responses short and focused
-2. **Ask before major changes** - Get confirmation for significant modifications
-3. **Format code** - Run `npm run format` after changes
-4. **Small chunks** - Work incrementally, test frequently
-5. **Check existing patterns** - Follow established code patterns
+- `owner_id` - Required on all resources
+- `created_by` - User who created it
+- Notebooks inherit folder's `owner_id`
+- Notes inherit notebook's `owner_id`
 
 ## Common Operations
 
 ### Creating Resources
 
 ```typescript
-// Folders - owner_id is current user
-await supabase.from('folders').insert({
-  name,
-  color,
-  owner_id: userId,
-})
-
-// Notebooks - inherit folder's owner_id
-const folder = await getFolder(folder_id)
-await supabase.from('notebooks').insert({
-  name,
-  color,
-  folder_id,
-  owner_id: folder.owner_id,
-  created_by: userId,
-})
-
-// Notes - inherit notebook's owner_id
-const notebook = await getNotebook(notebook_id)
-await supabase.from('notes').insert({
-  title,
-  content,
-  notebook_id,
-  owner_id: notebook.owner_id,
-  created_by: userId,
-})
+// Always set owner_id explicitly
+// Folders: owner = current user
+// Notebooks: owner = folder.owner_id
+// Notes: owner = notebook.owner_id
 ```
 
-## Design System
+### Making Schema Changes
 
-Use only existing UI components from `/components/ui/`:
+1. Update `/infrastructure/setup-database.sql`
+2. Run `terraform apply` in `/infrastructure/terraform/`
 
-- Button, Card, Modal, Dropdown
-- FormField, SearchInput, SelectField
-- PageHeader, Breadcrumb, Skeleton
-- LoadingButton, StatusMessage
+## Coding Standards
 
-## Testing Workflow
+1. **Be concise** - Short responses, minimal explanation
+2. **TypeScript** - Use proper types, avoid `any`
+3. **Format** - Run `npm run format` after changes
+4. **Build** - Must pass `npm run build` before pushing
 
-1. **Local Development**
+## Current Issues
 
-   ```bash
-   npm run dev
-   # If cache issues: rm -rf .next
-   ```
+### Non-Critical
 
-2. **Type Checking**
+- Real-time sync disconnected (needs Supabase config)
+- 7 TypeScript warnings (unused vars)
+- Can't move notebooks between folders
 
-   ```bash
-   npm run type-check
-   ```
+### Working Features
 
-3. **Build & Deploy**
-   ```bash
-   npm run build  # Must pass
-   git push       # Triggers Vercel
-   ```
-
-## Known Issues
-
-1. **TypeScript errors** in admin console and some components
-2. **Build failing** due to duplicate variable (see top)
-3. **Performance** - Some queries could be optimized
-
-## Important Patterns
-
-### ViewStore Usage (Complex UI State)
-
-```typescript
-// ✅ GOOD - For complex editing
-const foldersView = useFoldersView()
-const { loadFolderView } = useViewActions()
-```
-
-### React Query Usage (Server State)
-
-```typescript
-// ✅ GOOD - For data fetching
-const { data, isLoading } = useQuery({
-  queryKey: ['folders'],
-  queryFn: fetchFolders,
-})
-```
-
-### Direct Supabase (Avoid)
-
-```typescript
-// ❌ BAD - Don't use in components
-const { data } = await supabase.from('folders').select()
-```
-
-## File Structure
-
-- `/app/` - Next.js app router pages and API routes
-- `/components/` - React components
-- `/lib/store/` - State management
-- `/lib/query/` - React Query hooks
-- `/lib/supabase/` - Database client and types
-- `/supabase/migrations/` - Database schema
-
-## Don't Trust Old Docs
-
-Many markdown files in the repo are outdated. Always verify against:
-
-1. Current code implementation
-2. Database schema in migrations
-3. TypeScript types in `database.types.ts`
+- ✅ Folders, notebooks, notes
+- ✅ AI enhancement
+- ✅ Sharing (invite → accept → access)
+- ✅ Admin console
+- ✅ Permissions management

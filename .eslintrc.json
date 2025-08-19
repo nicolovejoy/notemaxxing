@@ -20,11 +20,14 @@
       }
     ],
     "@typescript-eslint/no-unused-vars": [
-      "warn",
+      "error",
       {
         "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_"
+        "varsIgnorePattern": "^_",
+        "args": "all",
+        "ignoreRestSiblings": true
       }
-    ]
+    ],
+    "@typescript-eslint/no-explicit-any": "error"
   }
 }

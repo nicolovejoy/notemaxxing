@@ -49,6 +49,8 @@ export class RealtimeManager {
     const supabase = createClient()
     if (!supabase) {
       console.error('[RealtimeManager] Supabase client not available')
+      this.isInitializing = false
+      dataStore.getState().setRealtimeStatus('error')
       return
     }
 
@@ -77,7 +79,7 @@ export class RealtimeManager {
           event: '*',
           schema: 'public',
           table: 'folders',
-          filter: `user_id=eq.${userId}`,
+          filter: `owner_id=eq.${userId}`,
         },
         (payload) => this.handleChange('folders', payload as ChangePayload)
       )
@@ -87,7 +89,7 @@ export class RealtimeManager {
           event: '*',
           schema: 'public',
           table: 'notebooks',
-          filter: `user_id=eq.${userId}`,
+          filter: `owner_id=eq.${userId}`,
         },
         (payload) => this.handleChange('notebooks', payload as ChangePayload)
       )
@@ -97,7 +99,7 @@ export class RealtimeManager {
           event: '*',
           schema: 'public',
           table: 'notes',
-          filter: `user_id=eq.${userId}`,
+          filter: `owner_id=eq.${userId}`,
         },
         (payload) => this.handleChange('notes', payload as ChangePayload)
       )
@@ -128,8 +130,8 @@ export class RealtimeManager {
     })
 
     // Now subscribe to the channel
-    this.channel.subscribe((status) => {
-      console.log('[RealtimeManager] Channel status:', status)
+    this.channel.subscribe((status, error) => {
+      console.log('[RealtimeManager] Channel status:', status, 'Error:', error)
 
       if (status === 'SUBSCRIBED') {
         this.isConnected = true
@@ -138,16 +140,19 @@ export class RealtimeManager {
         dataStore.getState().setRealtimeStatus('connected')
         console.log('[RealtimeManager] Successfully connected to realtime')
       } else if (status === 'CHANNEL_ERROR') {
+        console.error('[RealtimeManager] Channel error:', error)
         this.isConnected = false
         this.isInitializing = false
         dataStore.getState().setRealtimeStatus('error')
         this.handleReconnect()
       } else if (status === 'TIMED_OUT') {
+        console.error('[RealtimeManager] Channel timed out')
         this.isConnected = false
         this.isInitializing = false
         dataStore.getState().setRealtimeStatus('disconnected')
         this.handleReconnect()
       } else if (status === 'CLOSED') {
+        console.log('[RealtimeManager] Channel closed')
         this.isConnected = false
         this.isInitializing = false
         dataStore.getState().setRealtimeStatus('disconnected')
