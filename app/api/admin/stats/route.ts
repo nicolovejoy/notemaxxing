@@ -5,7 +5,7 @@ import { createClient as createServiceClient } from '@supabase/supabase-js'
 // Admin emails allowed to use this endpoint
 const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // 1. Verify user is authenticated
     const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()

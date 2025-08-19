@@ -51,6 +51,13 @@ interface InvitationData {
   expires_at: string
 }
 
+interface PermissionStats {
+  total_permissions: number
+  total_folders_shared: number
+  total_notebooks_shared: number
+  pending_invitations: number
+}
+
 interface SystemStats {
   top_creators: Array<{ email: string; count: number }>
   top_sharers: Array<{ email: string; count: number }>
@@ -62,7 +69,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
   const [users, setUsers] = useState<UserData[]>([])
   const [permissions, setPermissions] = useState<PermissionData[]>([])
   const [invitations, setInvitations] = useState<InvitationData[]>([])
-  const [permissionStats, setPermissionStats] = useState<Record<string, unknown> | null>(null)
+  const [permissionStats, setPermissionStats] = useState<PermissionStats | null>(null)
   const [systemStats, setSystemStats] = useState<SystemStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

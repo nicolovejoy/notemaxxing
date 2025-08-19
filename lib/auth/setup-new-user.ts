@@ -1,5 +1,3 @@
-import { createClient } from '@/lib/supabase/client'
-
 export async function setupNewUser(userId: string, email: string) {
   // TODO: Add profiles and user_roles tables to the database schema
   // For now, we don't need to set up anything since auth.users handles the basics
