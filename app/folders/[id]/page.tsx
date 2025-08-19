@@ -15,7 +15,6 @@ import { ShareDialog } from '@/components/ShareDialog'
 import { NotebookCard } from '@/components/cards/NotebookCard'
 import { SharedIndicator } from '@/components/SharedIndicator'
 import { useAuth } from '@/lib/hooks/useAuth'
-import { createClient } from '@/lib/supabase/client'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
 import { useFolderDetailView } from '@/lib/query/hooks'
 import type { Notebook } from '@/lib/types/entities'
@@ -59,37 +58,25 @@ export default function FolderDetailPage() {
 
     setCreating(true)
     try {
-      const supabase = createClient()
-      if (!supabase) throw new Error('Supabase client not available')
-
-      // Get current user
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      // Get folder owner_id
-      const { data: folderData, error: folderError } = await supabase
-        .from('folders')
-        .select('owner_id')
-        .eq('id', folderId)
-        .single()
-
-      if (folderError || !folderData) throw new Error('Folder not found')
-
-      const { data, error } = await supabase
-        .from('notebooks')
-        .insert({
+      // Use API route instead of direct Supabase call
+      const response = await fetch('/api/notebooks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: newNotebookName.trim(),
           color: newNotebookColor,
           folder_id: folderId,
-          owner_id: folderData.owner_id, // Inherit from folder
-          created_by: user.id, // Current user who created it
-        })
-        .select()
-        .single()
+        }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create notebook')
+      }
+
+      const data = await response.json()
 
       // Navigate to the new notebook
       router.push(`/notebooks/${data.id}`)
