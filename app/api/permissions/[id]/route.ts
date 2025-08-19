@@ -4,11 +4,12 @@ import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
     const userId = await getCurrentUserId()
+    const { id } = await params
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -34,7 +35,7 @@ export async function PATCH(
         folders!inner(owner_id),
         notebooks!inner(owner_id)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (fetchError || !permission) {
@@ -57,7 +58,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('permissions')
       .update({ permission_level })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single()
 
@@ -75,11 +76,12 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = await createClient()
     const userId = await getCurrentUserId()
+    const { id } = await params
 
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -96,7 +98,7 @@ export async function DELETE(
         folders!inner(owner_id),
         notebooks!inner(owner_id)
       `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single()
 
     if (fetchError || !permission) {
@@ -119,7 +121,7 @@ export async function DELETE(
     const { error } = await supabase
       .from('permissions')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
 
     if (error) {
       console.error('Error deleting permission:', error)
