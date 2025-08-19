@@ -36,10 +36,12 @@ Visit http://localhost:3000
 
 ### Sharing System
 
-- **Folder-based sharing**: Share folders to grant access to all notebooks and notes within
+- **FOLDER-ONLY SHARING**: You can ONLY share folders (NOT individual notebooks or notes)
+- **Inherited permissions**: When you share a folder, ALL notebooks and notes inside automatically inherit those permissions
 - **Permission levels**: `read` (view only) or `write` (can edit)
 - **Invitation flow**: Email-based with 7-day expiry and preview
 - **Ownership model**: Notebooks inherit folder's owner, notes inherit notebook's owner
+- **Important**: Notebook/note sharing was intentionally removed to simplify the permission model
 
 ## Development
 

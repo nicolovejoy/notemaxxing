@@ -25,6 +25,29 @@ Ownership model: Resources inherit `owner_id` from parent
 
 ## Data Flow Patterns
 
+### Standard Pattern: API-Layer Only
+
+```
+Component → API Route → Supabase → Database
+```
+
+**STRICT RULE**: Components should NEVER access Supabase directly for data operations.
+
+### Exception: Realtime Subscriptions
+
+The `usePermissionSync` hook is an **approved exception** that subscribes directly to Supabase Realtime:
+
+```
+Component → Supabase Realtime (WebSocket) → Listen Only
+```
+
+**Why this exception is allowed:**
+
+- **Read-only**: Only listens for changes, never reads/writes data
+- **Cache invalidation only**: Triggers proper API-based refetches
+- **Impractical to proxy**: WebSocket subscriptions through API routes add unnecessary complexity
+- **Security maintained**: Actual data fetching still goes through API routes
+
 ### ViewStore Pattern
 
 Each page loads only required data:
@@ -70,6 +93,16 @@ const allNotes = useNotes()
    - Folders: owner = creating user
    - Notebooks: owner = folder.owner_id
    - Notes: owner = notebook.owner_id
+
+### Sharing Model
+
+**CRITICAL: FOLDER-ONLY SHARING**
+
+- Users can ONLY share folders - NOT individual notebooks or notes
+- All notebooks and notes inside a shared folder inherit the folder's permissions
+- Permission cascade: Folder → Notebooks → Notes
+- Two permission levels: `read` (view-only) or `write` (can edit)
+- Notebook/note sharing UI was removed to prevent confusion
 
 ## State Management
 

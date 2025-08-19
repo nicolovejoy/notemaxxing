@@ -26,6 +26,14 @@ Component → API Route → Supabase → Database
 - Notebooks inherit folder's `owner_id`
 - Notes inherit notebook's `owner_id`
 
+### Sharing Model
+
+- **FOLDER-ONLY SHARING** - You can ONLY share folders, NOT notebooks or notes
+- When a folder is shared, ALL notebooks and notes inside inherit permissions
+- Permission levels: `read` (view-only) or `write` (can edit)
+- Sharing is email-based with 7-day invitation expiry
+- **DO NOT** implement notebook or note sharing - it was removed intentionally
+
 ## Common Operations
 
 ### Creating Resources

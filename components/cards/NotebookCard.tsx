@@ -98,14 +98,6 @@ export function NotebookCard({
                 sharedByMe={sharedByMe}
                 permission={permission}
                 className="ml-2"
-                onClick={
-                  sharedByMe && onShare
-                    ? (e) => {
-                        e?.stopPropagation()
-                        onShare()
-                      }
-                    : undefined
-                }
               />
             )}
           </div>
