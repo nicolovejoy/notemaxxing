@@ -59,9 +59,18 @@ interface PermissionStats {
 }
 
 interface SystemStats {
+  overview: {
+    total_users: number
+    active_users_30d: number
+    new_users_7d: number
+    total_folders: number
+    total_notebooks: number
+    total_notes: number
+    total_permissions: number
+    pending_invitations: number
+  }
   top_creators: Array<{ email: string; count: number }>
   top_sharers: Array<{ email: string; count: number }>
-  [key: string]: unknown
 }
 
 export function AdminConsole({ onClose }: AdminConsoleProps) {
