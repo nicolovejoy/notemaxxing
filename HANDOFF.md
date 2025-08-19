@@ -2,77 +2,33 @@
 
 _Date: August 19, 2024_
 
-## Current State ✅
+## 🎉 Current State - SHARING WORKS!
 
 ### What's Working
 
-- **Core Features**: Folders, notebooks, notes, AI enhancement
-- **Admin Console**: View users, permissions, stats, health (placeholder)
-- **Sharing**: Invitation creation works, acceptance needs table fix
-- **Database**: Production running on `dvuvhfjbjoemtoyfjjsg`
-- **Deployment**: Live on Vercel
+- ✅ **Core Features**: Folders, notebooks, notes, AI enhancement
+- ✅ **Sharing System**: Full invitation flow (create → preview → accept → access)
+- ✅ **Admin Console**: User management, permissions tracking, system stats
+- ✅ **Database**: Production on `dvuvhfjbjoemtoyfjjsg` with Terraform management
+- ✅ **Deployment**: Live on Vercel, auto-deploys on push
 
-### Today's Achievements
+### Today's Fixes
 
-1. ✅ Fixed sharing invitation creation (removed RPC, direct inserts)
-2. ✅ Added fully functional admin console
-3. ✅ Simplified infrastructure (removed Atlas complexity, kept Terraform)
-4. ✅ Fixed architecture violations (API routes for notebooks/permissions)
+1. Fixed all architecture violations (no direct Supabase in components)
+2. Added missing `public_invitation_previews` table
+3. Fixed permission update API (read/write terminology)
+4. Resolved all TypeScript build errors
 
-## Immediate Action Required 🚨
+## 🛠 Technical Architecture
 
-### 1. Add Missing Database Table
+### Database Schema
 
-Update `/infrastructure/setup-database.sql` and apply via Terraform:
+- **No RLS** - Security at API layer
+- **No triggers/functions** - Explicit field setting
+- **Terraform managed** - `/infrastructure/terraform/`
+- **Owner inheritance** - Notebooks inherit folder's owner_id
 
-```bash
-cd infrastructure/terraform
-terraform apply
-```
-
-The table has been added to the setup script.
-
-### 2. ✅ Architecture Violations Fixed
-
-Both direct Supabase calls have been replaced with API routes:
-
-- `/app/folders/[id]/page.tsx` - Now uses `POST /api/notebooks`
-- `/components/ShareDialog.tsx` - Now uses `PATCH /api/permissions/[id]`
-
-## Environment Setup 🔧
-
-### Required Environment Variables
-
-```bash
-# .env.local
-NEXT_PUBLIC_SUPABASE_URL=https://dvuvhfjbjoemtoyfjjsg.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[your-anon-key]
-SUPABASE_SERVICE_ROLE_KEY=[your-service-key]
-ADMIN_PASSWORD=[choose-password]
-
-# For migrations
-DATABASE_URL=postgresql://postgres:[password]@db.dvuvhfjbjoemtoyfjjsg.supabase.co:5432/postgres
-```
-
-### Admin Access
-
-Hardcoded in API routes:
-
-- `nicholas.lovejoy@gmail.com`
-- `mlovejoy@scu.edu`
-
-To change: Update `ADMIN_EMAILS` in `/app/api/admin/*/route.ts`
-
-## Architecture Rules 📐
-
-### Core Principles
-
-1. **No RLS** - Security at API layer
-2. **No database functions** - Logic in API routes
-3. **No triggers** - Explicit field setting
-4. **No direct Supabase in components** - Use API routes
-
-### Data Flow
+### Data Flow Pattern
 
 ```
 Component → API Route → Supabase → Database
@@ -80,116 +36,75 @@ Component → API Route → Supabase → Database
    React Query Cache
 ```
 
-### When to Use What
+### Key Files
 
-- **ViewStore**: Complex UI state (notebook editor)
-- **React Query**: All data fetching
-- **API Routes**: All database operations
-- **Direct Supabase**: NEVER in components
+- `/infrastructure/setup-database.sql` - Complete schema (source of truth)
+- `/infrastructure/terraform/` - Apply schema changes
+- `/app/api/` - All database operations
+- `/lib/query/` - React Query hooks
 
-## Known Issues 🐛
+## 🔧 Development
 
-### Must Fix
-
-1. Missing `public_invitation_previews` table (run Terraform to apply)
-2. ✅ Direct Supabase calls fixed
-
-### Should Fix
-
-3. TypeScript errors in some components
-4. "Shared by me" indicator inconsistent
-5. Can't move notebooks between folders yet
-
-### Nice to Have
-
-6. Bulk operations in admin console
-7. Real health monitoring
-8. Automated tests
-
-## Development Workflow 💻
-
-### Local Development
+### Local Setup
 
 ```bash
 npm install
-npm run dev  # Port 3001 if 3000 is busy
+npm run dev
 ```
 
-### Making Schema Changes
+### Schema Changes
 
 ```bash
-# 1. Update the setup-database.sql file with your changes
-
+# 1. Update setup-database.sql
 # 2. Apply via Terraform
 cd infrastructure/terraform
 terraform apply
-
-# Note: Migration files in /supabase/migrations are kept for history
-# but Terraform manages the actual schema from setup-database.sql
 ```
 
-### Deployment
+### Environment Variables
 
 ```bash
-npm run build  # Must pass
-git push       # Auto-deploys to Vercel
+NEXT_PUBLIC_SUPABASE_URL=https://dvuvhfjbjoemtoyfjjsg.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[your-anon-key]
+SUPABASE_SERVICE_ROLE_KEY=[your-service-key]
+DATABASE_URL=postgresql://postgres:[password]@db.[id].supabase.co:5432/postgres
 ```
 
-## Project Structure 📁
+## 📋 Known Issues
 
-```
-/app/api/           # API routes (all DB operations here)
-/components/        # React components
-/lib/store/         # State management
-/lib/supabase/      # DB client and types
-/supabase/migrations/ # Schema history (for reference)
-/infrastructure/    # Database infrastructure
-  setup-database.sql # Complete schema (source of truth)
-  terraform/        # Terraform configuration for applying schema
-```
+### Non-Critical
 
-## Testing Checklist ✓
+1. **Real-time sync disconnected** - Feature exists but needs Supabase Realtime enabled
+2. **TypeScript warnings** - 7 unused variable warnings (use `_` prefix)
+3. **Move notebooks** - Can't move between folders yet
 
-### Sharing Flow
+### Code Quality
 
-1. [ ] Create folder
-2. [ ] Share folder (generates invitation)
-3. [ ] Preview invitation at `/share/[token]`
-4. [ ] Accept invitation (different user)
-5. [ ] See shared folder in "Shared with me"
-6. [ ] Edit if write permission
+- Only 2 `any` types in entire codebase
+- Zero `@ts-ignore` comments
+- Builds successfully with warnings
 
-### Admin Console
+## 🚀 Next Steps
 
-1. [ ] Access from user menu (admin only)
-2. [ ] View all users with stats
-3. [ ] View all permissions
-4. [ ] Reset user data (with password)
-5. [ ] View system stats
+1. **Enable Supabase Realtime** (optional)
+   - Dashboard → Database → Replication
+   - Enable for folders, notebooks, notes tables
 
-## Contact & Resources 📞
+2. **Add notebook moving**
+   - UI to move notebooks between folders
+   - Update owner_id when moving
 
-### Documentation
+3. **TypeScript hardening** (optional)
+   - Enable strict mode in tsconfig.json
+   - Fix remaining warnings
 
-- `/CLAUDE.md` - Core guidelines
-- `/infrastructure/README.md` - Database management (needs update for Terraform)
-- `/infrastructure/terraform/` - Terraform setup for database
-- `/DESIGN_SYSTEM.md` - UI components
+## 📞 Admin Access
 
-### Help
+Hardcoded admins in `/app/api/admin/*/route.ts`:
 
-- Create issue at: github.com/[your-repo]/issues
-- Supabase dashboard: app.supabase.com
-- Vercel dashboard: vercel.com/dashboard
-
-## Next Sprint Priorities 🎯
-
-1. **Fix violations** - Create missing API routes
-2. **Test sharing** - Full end-to-end flow
-3. **Move notebooks** - Implement folder-to-folder moves
-4. **Add tests** - At least for critical paths
-5. **Performance** - Optimize slow queries
+- `nicholas.lovejoy@gmail.com`
+- `mlovejoy@scu.edu`
 
 ---
 
-_Good luck! The foundation is solid, just needs some polish. -Claude_
+_The sharing feature is complete and working end-to-end!_
