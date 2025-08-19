@@ -27,15 +27,29 @@ export function NoteCard({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    
+    // Reset time parts for accurate day comparison
+    const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+    const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    
+    const diffTime = nowDay.getTime() - dateDay.getTime()
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
 
     if (diffDays === 0) {
-      return 'Today'
+      // Show time for today
+      const hours = date.getHours()
+      const minutes = date.getMinutes()
+      const ampm = hours >= 12 ? 'PM' : 'AM'
+      const displayHours = hours % 12 || 12
+      const displayMinutes = minutes.toString().padStart(2, '0')
+      return `Today at ${displayHours}:${displayMinutes} ${ampm}`
     } else if (diffDays === 1) {
       return 'Yesterday'
-    } else if (diffDays < 7) {
+    } else if (diffDays > 1 && diffDays < 7) {
       return `${diffDays} days ago`
+    } else if (diffDays < 0) {
+      // Future date (shouldn't happen but handle it)
+      return 'Just now'
     } else {
       return date.toLocaleDateString('en-US', {
         month: 'short',

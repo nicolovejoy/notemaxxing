@@ -12,9 +12,10 @@ interface RichTextEditorProps {
   onChange: (content: string) => void
   onBlur?: () => void
   placeholder?: string
+  autoFocus?: boolean
 }
 
-export function RichTextEditor({ content, onChange, onBlur }: RichTextEditorProps) {
+export function RichTextEditor({ content, onChange, onBlur, autoFocus = false }: RichTextEditorProps) {
   const { enhance, isEnhancing } = useAI()
   const [contentHistory, setContentHistory] = useState<string[]>([])
   const [showUndo, setShowUndo] = useState(false)
@@ -44,6 +45,7 @@ export function RichTextEditor({ content, onChange, onBlur }: RichTextEditorProp
       }),
     ],
     content,
+    autofocus: autoFocus ? 'end' : false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },

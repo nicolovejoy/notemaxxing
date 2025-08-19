@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, Share2, FolderOpen } from 'lucide-react'
+import { Plus, Share2, FolderOpen, Edit2 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { LoadingButton } from '@/components/ui/LoadingButton'
 import { Modal } from '@/components/ui/Modal'
 import { FormField } from '@/components/ui/FormField'
+import { InlineEdit } from '@/components/ui/InlineEdit'
 import { ColorPicker } from '@/components/forms/ColorPicker'
 import { ShareDialog } from '@/components/ShareDialog'
 import { NotebookCard } from '@/components/cards/NotebookCard'
@@ -17,7 +18,6 @@ import { SharedIndicator } from '@/components/SharedIndicator'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
 import { useFolderDetailView } from '@/lib/query/hooks'
-import type { Notebook } from '@/lib/types/entities'
 import { LoadingGrid } from '@/components/common/LoadingGrid'
 import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
 
@@ -34,10 +34,10 @@ export default function FolderDetailPage() {
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showShareDialog, setShowShareDialog] = useState(false)
-  const [shareNotebook, setShareNotebook] = useState<Pick<Notebook, 'id' | 'name'> | null>(null)
   const [newNotebookName, setNewNotebookName] = useState('')
   const [newNotebookColor, setNewNotebookColor] = useState<string>(DEFAULT_NOTEBOOK_COLOR)
   const [creating, setCreating] = useState(false)
+  const [isEditingFolder, setIsEditingFolder] = useState(false)
 
   // Extract data from view
   const folder = folderView?.folder
@@ -174,7 +174,49 @@ export default function FolderDetailPage() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             <FolderOpen className="h-8 w-8 text-gray-600" />
-            <h1 className="text-3xl font-bold">{folder?.name || 'Folder'}</h1>
+            {isEditingFolder ? (
+              <InlineEdit
+                value={folder?.name || ''}
+                onSave={async (newName) => {
+                  if (newName !== folder?.name) {
+                    try {
+                      const response = await fetch('/api/folders', {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          id: folderId,
+                          name: newName.trim(),
+                        }),
+                      })
+                      if (response.ok) {
+                        // Optimistically update the UI
+                        if (folderView && folderView.folder) {
+                          folderView.folder.name = newName.trim()
+                        }
+                        refetch()
+                      }
+                    } catch (error) {
+                      console.error('Error updating folder:', error)
+                    }
+                  }
+                  setIsEditingFolder(false)
+                }}
+                onCancel={() => setIsEditingFolder(false)}
+                inputClassName="text-3xl font-bold"
+                className="flex-1"
+              />
+            ) : (
+              <h1 className="text-3xl font-bold">{folder?.name || 'Folder'}</h1>
+            )}
+            {isOwner && folder && !isEditingFolder && (
+              <button
+                onClick={() => setIsEditingFolder(true)}
+                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                title="Edit folder name"
+              >
+                <Edit2 className="h-4 w-4" />
+              </button>
+            )}
             {(folder?.shared || folder?.sharedByOwner) && (
               <SharedIndicator
                 shared={folder?.shared}
@@ -216,7 +258,6 @@ export default function FolderDetailPage() {
                   color: notebook.color,
                   note_count: notebook.note_count || 0
                 })}
-                onShare={notebook.shared_by_owner ? () => setShareNotebook(notebook) : undefined}
                 onUpdate={() => refetch()}
               />
             ))}
@@ -273,18 +314,6 @@ export default function FolderDetailPage() {
         />
       )}
 
-      {/* Share Dialog for Notebook */}
-      {shareNotebook && (
-        <ShareDialog
-          resourceId={shareNotebook.id}
-          resourceType="notebook"
-          resourceName={shareNotebook.name}
-          onClose={() => {
-            setShareNotebook(null)
-            refetch() // Refresh data after sharing changes
-          }}
-        />
-      )}
     </div>
   )
 }

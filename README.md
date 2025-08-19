@@ -30,16 +30,16 @@ Visit http://localhost:3000
 
 - ✅ Folders, notebooks, and notes hierarchy
 - ✅ Rich text editing with AI enhancement
-- ✅ Folder and notebook sharing with permissions
+- ✅ Folder sharing with inherited permissions
 - ✅ User authentication
 - ✅ Admin console for user management
 
 ### Sharing System
 
-- **Folder sharing**: Grants access to all notebooks and notes within
-- **Notebook sharing**: Independent notebook-level permissions
+- **Folder-based sharing**: Share folders to grant access to all notebooks and notes within
 - **Permission levels**: `read` (view only) or `write` (can edit)
 - **Invitation flow**: Email-based with 7-day expiry and preview
+- **Ownership model**: Notebooks inherit folder's owner, notes inherit notebook's owner
 
 ## Development
 
