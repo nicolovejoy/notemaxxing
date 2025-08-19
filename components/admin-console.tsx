@@ -69,6 +69,11 @@ interface SystemStats {
     total_permissions: number
     pending_invitations: number
   }
+  averages: {
+    folders_per_user: number
+    notebooks_per_user: number
+    notes_per_user: number
+  }
   top_creators: Array<{ email: string; count: number }>
   top_sharers: Array<{ email: string; count: number }>
 }
