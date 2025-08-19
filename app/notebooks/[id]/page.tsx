@@ -480,7 +480,7 @@ export default function NotebookPage() {
                   isSelected={selectedNote?.id === note.id}
                   onClick={async () => {
                     // For read-only users, just show the note without edit mode
-                    const canEdit = !notebook.shared || notebook.permission === 'write'
+                    const canEdit = !notebook?.shared || notebook?.permission === 'write'
 
                     const data = await loadNoteView(notebookId, { noteId: note.id })
                     const fullNote = data?.currentNote
@@ -497,7 +497,7 @@ export default function NotebookPage() {
                   }}
                   onEdit={
                     // Only allow edit if user owns notebook or has write permission
-                    !notebook.shared || notebook.permission === 'write'
+                    !notebook?.shared || notebook?.permission === 'write'
                       ? async () => {
                           // Same as onClick - open editor directly
                           const data = await loadNoteView(notebookId, { noteId: note.id })
@@ -513,7 +513,7 @@ export default function NotebookPage() {
                   }
                   onDelete={
                     // Only show delete button if user owns notebook or has write permission
-                    !notebook.shared || notebook.permission === 'write'
+                    !notebook?.shared || notebook?.permission === 'write'
                       ? () => handleDeleteNote(note.id)
                       : undefined
                   }
