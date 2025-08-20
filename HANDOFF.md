@@ -1,110 +1,116 @@
-# Notemaxxing Handoff Document
+# Handoff Summary - Bug Fixes & UX Improvements
 
-_Date: August 19, 2024_
+## Session Overview
 
-## 🎉 Current State - SHARING WORKS!
+Date: 2025-08-19
+Branch: `fix/sharing-ux-improvements`
+Status: ✅ DEPLOYED AND WORKING
 
-### What's Working
+## Completed Work
 
-- ✅ **Core Features**: Folders, notebooks, notes, AI enhancement
-- ✅ **Sharing System**: Full invitation flow (create → preview → accept → access)
-- ✅ **Admin Console**: User management, permissions tracking, system stats
-- ✅ **Database**: Production on `dvuvhfjbjoemtoyfjjsg` with Terraform management
-- ✅ **Deployment**: Live on Vercel, auto-deploys on push
+### ✅ Bug Fixes
 
-### Today's Fixes
+1. **Note click behavior** - Fixed first click not working (was state timing issue)
+2. **Date/timezone display** - Fixed "Yesterday" showing incorrectly for recent items
+3. **Folder/notebook name editing** - Implemented inline editing with Edit2 icon
+4. **Note editor focus** - Auto-focuses content area when opening notes
+5. **Cmd+Enter shortcut** - Save and close note modal
+6. **Build errors** - Fixed TypeScript errors in NotebookCard.tsx and usePermissionSync.ts
+7. **Documentation** - Clarified FOLDER-ONLY sharing model across all docs
 
-1. Fixed all architecture violations (no direct Supabase in components)
-2. Added missing `public_invitation_previews` table
-3. Fixed permission update API (read/write terminology)
-4. Resolved all TypeScript build errors
+### ✅ UX Improvements
 
-## 🛠 Technical Architecture
+1. **Loading skeletons** - Better perceived performance on notebook page
+2. **Read-only view** - Proper viewer for notes when user has view-only permission
+3. **InlineEdit component** - Reusable component following DESIGN_SYSTEM.md
+4. **Removed notebook sharing** - Simplified to folder-only sharing model
 
-### Database Schema
+### ✅ Real-time Permission Sync - NOW WORKING!
 
-- **No RLS** - Security at API layer
-- **No triggers/functions** - Explicit field setting
-- **Terraform managed** - `/infrastructure/terraform/`
-- **Owner inheritance** - Notebooks inherit folder's owner_id
+1. **Permission changes sync in real-time** between users
+2. **Solution**: Enabled realtime on `permissions` table in Supabase
+3. **SQL command used**: `ALTER PUBLICATION supabase_realtime ADD TABLE permissions;`
+4. **Result**: User A changes permissions → User B sees changes instantly
 
-### Data Flow Pattern
+### ⚠️ Known Limitations (Acceptable for MVP)
 
-```
-Component → API Route → Supabase → Database
-     ↑          ↓
-   React Query Cache
-```
+1. **Content changes don't sync in real-time**:
+   - Folder/notebook title edits
+   - New notes/notebooks
+   - Note content changes
+   - **Workaround**: Users can manually refresh to see latest content
 
-### Key Files
+## Architecture Notes
 
-- `/infrastructure/setup-database.sql` - Complete schema (source of truth)
-- `/infrastructure/terraform/` - Apply schema changes
-- `/app/api/` - All database operations
-- `/lib/query/` - React Query hooks
+### Sharing Model
 
-## 🔧 Development
+- **FOLDER-ONLY SHARING**: Can only share folders (NOT notebooks or notes)
+- **Inherited permissions**: All notebooks/notes inside shared folder inherit permissions
+- **Permission levels**: `read` (view-only) or `write` (can edit)
+- **Documentation updated**: CLAUDE.md, README.md, ARCHITECTURE.md all clarified
 
-### Local Setup
+### Realtime Architecture Exception
+
+- **usePermissionSync.ts** subscribes directly to Supabase Realtime
+- This violates the standard "Component → API → Supabase" pattern
+- **Exception approved** because:
+  - Read-only (listens for changes only)
+  - Cache invalidation only (triggers API-based refetches)
+  - WebSocket subscriptions impractical to proxy through API routes
+
+### State Management
+
+- Using React Query for data fetching
+- Old DataManager/RealtimeManager code disabled
+- Query keys: `folders-view`, `folder-detail`, `notebook-view`
+
+## Files Modified (Latest Session)
+
+- `/components/cards/NotebookCard.tsx` - Removed onShare reference
+- `/lib/hooks/usePermissionSync.ts` - Added TypeScript fixes and architecture exception docs
+- `/CLAUDE.md` - Added FOLDER-ONLY sharing section
+- `/README.md` - Clarified sharing model
+- `/ARCHITECTURE.md` - Documented realtime exception
+
+## Deployment
 
 ```bash
-npm install
-npm run dev
+# Successfully deployed to Vercel
+git push origin fix/sharing-ux-improvements
+
+# To enable realtime for content (future enhancement):
+ALTER PUBLICATION supabase_realtime ADD TABLE folders;
+ALTER PUBLICATION supabase_realtime ADD TABLE notebooks;
+ALTER PUBLICATION supabase_realtime ADD TABLE notes;
+# Note: Would also need additional listeners in code
 ```
 
-### Schema Changes
+## Testing Confirmed Working
 
-```bash
-# 1. Update setup-database.sql
-# 2. Apply via Terraform
-cd infrastructure/terraform
-terraform apply
-```
+### ✅ Real-time Permission Sync
 
-### Environment Variables
+1. User A shares folder with User B
+2. User B accepts invitation
+3. User A changes permission from "read" to "write"
+4. User B sees changes instantly without refresh
 
-```bash
-NEXT_PUBLIC_SUPABASE_URL=https://dvuvhfjbjoemtoyfjjsg.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[your-anon-key]
-SUPABASE_SERVICE_ROLE_KEY=[your-service-key]
-DATABASE_URL=postgresql://postgres:[password]@db.[id].supabase.co:5432/postgres
-```
+### ✅ Inline Edit
 
-## 📋 Known Issues
+1. Click edit icon next to folder/notebook name
+2. Type new name
+3. Press Enter or click away to save
+4. Press Escape to cancel
 
-### Non-Critical
+## Next Steps (Future Enhancements)
 
-1. **Real-time sync disconnected** - Feature exists but needs Supabase Realtime enabled
-2. **TypeScript warnings** - 7 unused variable warnings (use `_` prefix)
-3. **Move notebooks** - Can't move between folders yet
+1. Add real-time sync for content changes (folders, notebooks, notes)
+2. Auto-accept invitations from previously accepted users
+3. Note title editing (similar to folder/notebook)
+4. Consider adding a "refresh" button for content updates
 
-### Code Quality
+## Current Production Status
 
-- Only 2 `any` types in entire codebase
-- Zero `@ts-ignore` comments
-- Builds successfully with warnings
-
-## 🚀 Next Steps
-
-1. **Enable Supabase Realtime** (optional)
-   - Dashboard → Database → Replication
-   - Enable for folders, notebooks, notes tables
-
-2. **Add notebook moving**
-   - UI to move notebooks between folders
-   - Update owner_id when moving
-
-3. **TypeScript hardening** (optional)
-   - Enable strict mode in tsconfig.json
-   - Fix remaining warnings
-
-## 📞 Admin Access
-
-Hardcoded admins in `/app/api/admin/*/route.ts`:
-
-- `nicholas.lovejoy@gmail.com`
-- `mlovejoy@scu.edu`
-
----
-
-_The sharing feature is complete and working end-to-end!_
+- **Build**: ✅ Passing
+- **Deployment**: ✅ Live on Vercel
+- **Sharing**: ✅ Working with real-time permission sync
+- **Documentation**: ✅ Updated and clear

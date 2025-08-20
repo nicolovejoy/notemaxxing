@@ -96,11 +96,25 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
     }
 
+    // Check if user owns the notebook
+    const { data: notebook, error: fetchError } = await supabase
+      .from('notebooks')
+      .select('owner_id')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !notebook) {
+      return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
+    }
+
+    if (notebook.owner_id !== userId) {
+      return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
+    }
+
     const { data, error } = await supabase
       .from('notebooks')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', userId)
       .select()
       .single()
 

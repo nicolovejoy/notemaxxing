@@ -3,7 +3,8 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { StoreProvider } from '@/lib/store'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { RealtimeStatus } from '@/components/RealtimeStatus'
+// import { RealtimeStatus } from '@/components/RealtimeStatus' // Disabled - using React Query
+import { PermissionSyncProvider } from '@/components/PermissionSyncProvider'
 import { Providers } from './providers'
 
 const geistSans = Geist({
@@ -37,8 +38,10 @@ export default function RootLayout({
         <ErrorBoundary>
           <Providers>
             <StoreProvider>
-              {children}
-              <RealtimeStatus />
+              <PermissionSyncProvider>
+                {children}
+                {/* <RealtimeStatus /> */}
+              </PermissionSyncProvider>
             </StoreProvider>
           </Providers>
         </ErrorBoundary>

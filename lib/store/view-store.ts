@@ -135,7 +135,7 @@ interface ViewState {
       search?: string
       sort?: 'recent' | 'alphabetical' | 'created'
     }
-  ) => Promise<void>
+  ) => Promise<NoteViewData | undefined>
 
   // Updates
   updateFolder: (id: string, updates: Partial<FoldersViewData['folders'][0]>) => void
@@ -287,6 +287,9 @@ export const useViewStore = create<ViewState>()(
 
         // Clear the request controller
         currentNoteViewRequest = null
+        
+        // Return the data for immediate use
+        return data
       } catch (error) {
         // Ignore abort errors
         if (error && typeof error === 'object' && 'name' in error && error.name === 'AbortError') {

@@ -1,20 +1,16 @@
 # Claude Guidelines - Notemaxxing
 
-## Project Status
+Quick reference for AI assistants working on this codebase.
 
-- **Build**: ✅ PASSING (with warnings)
-- **Database**: `dvuvhfjbjoemtoyfjjsg`
-- **Sharing**: ✅ WORKING
+## Critical Rules
 
-## Architecture Rules
-
-### 1. Database
+### Database
 
 - **NO RLS** - Security at API layer only
-- **NO triggers/functions** - Set all fields explicitly in code
+- **NO triggers/functions** - Set all fields explicitly
 - **Terraform managed** - Use `/infrastructure/terraform/` for schema changes
 
-### 2. Data Access Pattern
+### Data Access Pattern
 
 ```
 Component → API Route → Supabase → Database
@@ -22,14 +18,21 @@ Component → API Route → Supabase → Database
 
 - **NEVER** use Supabase directly in components
 - **ALWAYS** use API routes for database operations
-- React Query for fetching, Zustand for complex UI state
 
-### 3. Ownership Model
+### Ownership Model
 
 - `owner_id` - Required on all resources
 - `created_by` - User who created it
 - Notebooks inherit folder's `owner_id`
 - Notes inherit notebook's `owner_id`
+
+### Sharing Model
+
+- **FOLDER-ONLY SHARING** - You can ONLY share folders, NOT notebooks or notes
+- When a folder is shared, ALL notebooks and notes inside inherit permissions
+- Permission levels: `read` (view-only) or `write` (can edit)
+- Sharing is email-based with 7-day invitation expiry
+- **DO NOT** implement notebook or note sharing - it was removed intentionally
 
 ## Common Operations
 
@@ -49,23 +52,19 @@ Component → API Route → Supabase → Database
 
 ## Coding Standards
 
-1. **Be concise** - Short responses, minimal explanation
-2. **TypeScript** - Use proper types, avoid `any`
-3. **Format** - Run `npm run format` after changes
-4. **Build** - Must pass `npm run build` before pushing
+1. **Be concise** - Short responses, crisp explanation
+2. **Plan, discuss, code** - make a suggestion on your approach to the user before you go nuts coding
+3. **TypeScript** - Use proper types, avoid `any`
+4. **Format** - Run `npm run format` after changes
+5. **Build** - Must pass `npm run build` before pushing
 
-## Current Issues
+## Current State
 
-### Non-Critical
+- **Database**: `dvuvhfjbjoemtoyfjjsg`
+- **Build**: ✅ PASSING (with warnings)
+- **Sharing**: ✅ WORKING (UX tweaks needed)
 
-- Real-time sync disconnected (needs Supabase config)
-- 7 TypeScript warnings (unused vars)
-- Can't move notebooks between folders
+## See Also
 
-### Working Features
-
-- ✅ Folders, notebooks, notes
-- ✅ AI enhancement
-- ✅ Sharing (invite → accept → access)
-- ✅ Admin console
-- ✅ Permissions management
+- `README.md` - Developer documentation
+- `ARCHITECTURE.md` - Technical details

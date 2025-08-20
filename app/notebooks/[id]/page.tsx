@@ -3,15 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FolderOpen, BookOpen, SortAsc } from 'lucide-react'
+import { ArrowLeft, FolderOpen, BookOpen, SortAsc, Edit2 } from 'lucide-react'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Dropdown } from '@/components/ui/Dropdown'
+import { InlineEdit } from '@/components/ui/InlineEdit'
 import { NoteCard, AddNoteCard } from '@/components/cards/NoteCard'
 import { StatusMessage } from '@/components/ui/StatusMessage'
-import { ShareButton } from '@/components/ShareButton'
 import { SharedIndicator } from '@/components/SharedIndicator'
 import { useNoteView, useViewLoading, useViewActions, useViewError } from '@/lib/store/view-store'
 import { useDebounce } from '@/lib/hooks/useDebounce'
@@ -79,6 +79,7 @@ export default function NotebookPage() {
   const [editingNoteContent, setEditingNoteContent] = useState('')
   const [editingNoteTitle, setEditingNoteTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [isEditingNotebook, setIsEditingNotebook] = useState(false)
 
   // Debounce search input to avoid too many API calls
   const debouncedSearch = useDebounce(search, 300)
@@ -228,23 +229,52 @@ export default function NotebookPage() {
     )
   }
 
-  if (loading) {
+  if (loading && !previewData) {
     return (
       <div className="min-h-screen bg-gray-50">
         <PageHeader />
-        <main className="max-w-7xl mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-64 mb-4" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[...Array(6)].map((_, i) => (
-              <Skeleton key={i} className="h-32" />
-            ))}
-          </div>
-        </main>
+        <div className="flex h-[calc(100vh-64px)]">
+          {/* Sidebar skeleton */}
+          <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
+            <div className="p-4">
+              <Skeleton className="h-4 w-20 mb-4" />
+              <div className="flex items-center gap-3 mb-6">
+                <Skeleton className="h-9 w-9 rounded-lg" />
+                <div>
+                  <Skeleton className="h-5 w-32 mb-1" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                {[...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-8 w-full rounded-lg" />
+                ))}
+              </div>
+            </div>
+          </aside>
+          
+          {/* Main content skeleton */}
+          <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <Skeleton className="h-8 w-48" />
+              </div>
+              <Skeleton className="h-10 w-24" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Skeleton className="h-48 rounded-lg" />
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-48 rounded-lg" />
+              ))}
+            </div>
+          </main>
+        </div>
       </div>
     )
   }
   
-  if (!notebook) {
+  if (!loading && !notebook) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -345,15 +375,63 @@ export default function NotebookPage() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div
-                className={`p-3 rounded-lg ${previewData?.color || notebook.color || 'bg-gray-200'}`}
+                className={`p-3 rounded-lg`}
+                style={{ backgroundColor: previewData?.color || notebook?.color || '#e5e7eb' }}
               >
                 <BookOpen className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  {previewData?.name || notebook.name || <Skeleton className="h-8 w-48" />}
-                </h1>
-                {notebook.folder_name && !noteView?.folder && (
+                <div className="flex items-center gap-2">
+                  {isEditingNotebook ? (
+                    <InlineEdit
+                      value={notebook?.name || ''}
+                      onSave={async (newName) => {
+                        if (newName !== notebook?.name) {
+                          try {
+                            const response = await fetch('/api/notebooks', {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                id: notebookId,
+                                name: newName.trim(),
+                              }),
+                            })
+                            if (response.ok) {
+                              // Optimistically update the UI
+                              if (noteView && noteView.notebook) {
+                                noteView.notebook.name = newName.trim()
+                              }
+                              await loadNoteView(notebookId, {
+                                search: debouncedSearch,
+                                sort: sortOption,
+                              })
+                            }
+                          } catch (error) {
+                            console.error('Error updating notebook:', error)
+                          }
+                        }
+                        setIsEditingNotebook(false)
+                      }}
+                      onCancel={() => setIsEditingNotebook(false)}
+                      inputClassName="text-2xl font-semibold"
+                      className="flex-1"
+                    />
+                  ) : (
+                    <h1 className="text-2xl font-semibold text-gray-900">
+                      {previewData?.name || notebook?.name || 'Loading...'}
+                    </h1>
+                  )}
+                  {user && notebook && notebook.owner_id === user.id && !isEditingNotebook && (
+                    <button
+                      onClick={() => setIsEditingNotebook(true)}
+                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Edit notebook name"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                {notebook?.folder_name && !noteView?.folder && (
                   <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
                     <FolderOpen className="h-4 w-4" />
                     <span>{notebook.folder_name}</span>
@@ -361,39 +439,35 @@ export default function NotebookPage() {
                 )}
               </div>
             </div>
-            {/* Share button for notebook owners, or shared indicator for shared notebooks */}
-            {notebook && (
-              <div className="flex items-center gap-2">
-                {user && notebook.owner_id === user.id ? (
-                  <ShareButton
-                    resourceType="notebook"
-                    resourceId={notebookId}
-                    resourceName={notebook.name}
-                    className="bg-white border border-gray-300 shadow-sm hover:shadow-md"
-                  />
-                ) : notebook.shared ? (
-                  <SharedIndicator
-                    shared={true}
-                    sharedByMe={false}
-                    permission={notebook.permission}
-                  />
-                ) : null}
-              </div>
+            {/* Shared indicator for notebooks in shared folders */}
+            {notebook && notebook.shared && (
+              <SharedIndicator
+                shared={true}
+                sharedByMe={false}
+                permission={notebook.permission}
+              />
             )}
           </div>
 
           {/* Notes Grid */}
-          {notes.length === 0 && !search ? (
+          {loading && previewData ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <Skeleton className="h-48 rounded-lg" />
+              {[...Array(previewData.note_count || 3)].map((_, i) => (
+                <Skeleton key={i} className="h-48 rounded-lg" />
+              ))}
+            </div>
+          ) : notes.length === 0 && !search ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Only show Add Note if user owns notebook or has write permission */}
-              {(!notebook.shared || notebook.permission === 'write') && (
+              {(!notebook?.shared || notebook?.permission === 'write') && (
                 <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
               )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Only show Add Note if user owns notebook or has write permission */}
-              {(!notebook.shared || notebook.permission === 'write') && (
+              {(!notebook?.shared || notebook?.permission === 'write') && (
                 <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
               )}
               {notes.map((note) => (
@@ -406,10 +480,10 @@ export default function NotebookPage() {
                   isSelected={selectedNote?.id === note.id}
                   onClick={async () => {
                     // For read-only users, just show the note without edit mode
-                    const canEdit = !notebook.shared || notebook.permission === 'write'
+                    const canEdit = !notebook?.shared || notebook?.permission === 'write'
 
-                    await loadNoteView(notebookId, { noteId: note.id })
-                    const fullNote = noteView?.currentNote
+                    const data = await loadNoteView(notebookId, { noteId: note.id })
+                    const fullNote = data?.currentNote
                     if (fullNote) {
                       setSelectedNote(fullNote)
                       if (canEdit) {
@@ -423,11 +497,11 @@ export default function NotebookPage() {
                   }}
                   onEdit={
                     // Only allow edit if user owns notebook or has write permission
-                    !notebook.shared || notebook.permission === 'write'
+                    !notebook?.shared || notebook?.permission === 'write'
                       ? async () => {
                           // Same as onClick - open editor directly
-                          await loadNoteView(notebookId, { noteId: note.id })
-                          const fullNote = noteView?.currentNote
+                          const data = await loadNoteView(notebookId, { noteId: note.id })
+                          const fullNote = data?.currentNote
                           if (fullNote) {
                             setSelectedNote(fullNote)
                             setIsEditingNote(true)
@@ -437,7 +511,12 @@ export default function NotebookPage() {
                         }
                       : undefined
                   }
-                  onDelete={() => handleDeleteNote(note.id)}
+                  onDelete={
+                    // Only show delete button if user owns notebook or has write permission
+                    !notebook?.shared || notebook?.permission === 'write'
+                      ? () => handleDeleteNote(note.id)
+                      : undefined
+                  }
                 />
               ))}
             </div>
@@ -445,9 +524,46 @@ export default function NotebookPage() {
         </main>
       </div>
 
+      {/* Read-only Note Viewer Modal */}
+      {selectedNote && !isEditingNote && notebook?.shared && notebook?.permission === 'read' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xl font-semibold">{selectedNote.title}</h2>
+                <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">
+                  Read only
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedNote(null)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-900"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto p-6">
+              <div 
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: toHTML(selectedNote.content || '') }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Note Editor Modal */}
       {isEditingNote && selectedNote && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          onKeyDown={(e) => {
+            // Cmd+Enter or Ctrl+Enter to save
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+              e.preventDefault()
+              handleSaveNote()
+            }
+          }}
+        >
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div className="p-4 border-b flex items-center justify-between">
               <input
@@ -467,14 +583,24 @@ export default function NotebookPage() {
                 <button
                   onClick={handleSaveNote}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                  title="Save (⌘+Enter)"
                 >
-                  {isSaving ? 'Saving...' : 'Save'}
+                  {isSaving ? 'Saving...' : (
+                    <>
+                      Save
+                      <span className="text-xs opacity-75">⌘↵</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
             <div className="flex-1 overflow-auto p-4">
-              <RichTextEditor content={editingNoteContent} onChange={setEditingNoteContent} />
+              <RichTextEditor 
+                content={editingNoteContent} 
+                onChange={setEditingNoteContent}
+                autoFocus={true}
+              />
             </div>
           </div>
         </div>
