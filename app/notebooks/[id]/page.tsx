@@ -537,6 +537,12 @@ export default function NotebookPage() {
       </div>
 
       {/* Loading overlay while fetching note */}
+      {/* TODO: Consider implementing master-detail view instead of modals
+          - Left panel: Note list (collapsible)
+          - Right panel: Selected note content (inline view/edit)
+          - Benefits: Better context, smoother navigation, no modal jumps
+          - Mobile: Keep modal approach for space constraints
+      */}
       {isLoadingNote && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 flex items-center gap-3">
