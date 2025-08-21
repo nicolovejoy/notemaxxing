@@ -80,20 +80,21 @@ Automatic deployment via Vercel on push to main branch.
 
 #### Bug Fixes & Features
 
-- [ ] Add read-only view mode for notes with view permission
-- [ ] Hide delete button on view-only shared notes
-- [ ] Fix note click behavior (first click does nothing, second works)
-- [ ] Fix date/timezone issues (shows 'Yesterday' for just-created items)
-- [ ] Fix folder name editing (broken)
-- [ ] Fix notebook name editing (broken)
+- [x] Add read-only view mode for notes with view permission
+- [x] Hide delete button on view-only shared notes
+- [x] Fix note click behavior (first click does nothing, second works)
+- [x] Fix date/timezone issues (shows 'Yesterday' for just-created items)
+- [x] Fix folder name editing (broken)
+- [x] Fix notebook name editing (broken)
 - [ ] Fix note name editing (if needed)
-- [ ] Fix real-time sync issues (cache invalidation on permissions change)
+- [x] Fix real-time sync issues (cache invalidation on permissions change)
 - [ ] Fix AI enhancement numbered list rendering
 - [ ] Change default share permission to 'can edit' instead of 'can view'
 - [ ] Build out quizzing and typemaxing
 - [ ] Fix user emails showing as UUIDs in share dialog (needs API endpoint)
 - [ ] Create seed script for generating test data
 - [ ] Build out user profiles, maybe teams, maybe friends
+- [ ] Implement master-detail view for notes (instead of modals)
 
 #### Production Readiness (eventually - not today)
 

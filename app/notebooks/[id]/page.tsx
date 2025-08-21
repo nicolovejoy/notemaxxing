@@ -80,6 +80,7 @@ export default function NotebookPage() {
   const [editingNoteTitle, setEditingNoteTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [isEditingNotebook, setIsEditingNotebook] = useState(false)
+  const [isLoadingNote, setIsLoadingNote] = useState(false)
 
   // Debounce search input to avoid too many API calls
   const debouncedSearch = useDebounce(search, 300)
@@ -481,18 +482,24 @@ export default function NotebookPage() {
                   onClick={async () => {
                     // For read-only users, just show the note without edit mode
                     const canEdit = !notebook?.shared || notebook?.permission === 'write'
-
-                    const data = await loadNoteView(notebookId, { noteId: note.id })
-                    const fullNote = data?.currentNote
-                    if (fullNote) {
-                      setSelectedNote(fullNote)
-                      if (canEdit) {
-                        setIsEditingNote(true)
-                        setEditingNoteTitle(fullNote.title)
-                        setEditingNoteContent(fullNote.content || '')
+                    
+                    setIsLoadingNote(true)
+                    try {
+                      const data = await loadNoteView(notebookId, { noteId: note.id })
+                      const fullNote = data?.currentNote
+                      if (fullNote) {
+                        setSelectedNote(fullNote)
+                        if (canEdit) {
+                          setIsEditingNote(true)
+                          setEditingNoteTitle(fullNote.title)
+                          setEditingNoteContent(fullNote.content || '')
+                        } else {
+                          // For read-only users, selectedNote will trigger the read-only modal
+                          setIsEditingNote(false)
+                        }
                       }
-                      // For read-only, we could show a read-only view
-                      // but for now just don't open the editor
+                    } finally {
+                      setIsLoadingNote(false)
                     }
                   }}
                   onEdit={
@@ -500,13 +507,18 @@ export default function NotebookPage() {
                     !notebook?.shared || notebook?.permission === 'write'
                       ? async () => {
                           // Same as onClick - open editor directly
-                          const data = await loadNoteView(notebookId, { noteId: note.id })
-                          const fullNote = data?.currentNote
-                          if (fullNote) {
-                            setSelectedNote(fullNote)
-                            setIsEditingNote(true)
-                            setEditingNoteTitle(fullNote.title)
-                            setEditingNoteContent(fullNote.content || '')
+                          setIsLoadingNote(true)
+                          try {
+                            const data = await loadNoteView(notebookId, { noteId: note.id })
+                            const fullNote = data?.currentNote
+                            if (fullNote) {
+                              setSelectedNote(fullNote)
+                              setIsEditingNote(true)
+                              setEditingNoteTitle(fullNote.title)
+                              setEditingNoteContent(fullNote.content || '')
+                            }
+                          } finally {
+                            setIsLoadingNote(false)
                           }
                         }
                       : undefined
@@ -523,6 +535,22 @@ export default function NotebookPage() {
           )}
         </main>
       </div>
+
+      {/* Loading overlay while fetching note */}
+      {/* TODO: Consider implementing master-detail view instead of modals
+          - Left panel: Note list (collapsible)
+          - Right panel: Selected note content (inline view/edit)
+          - Benefits: Better context, smoother navigation, no modal jumps
+          - Mobile: Keep modal approach for space constraints
+      */}
+      {isLoadingNote && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 flex items-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-gray-700">Loading note...</span>
+          </div>
+        </div>
+      )}
 
       {/* Read-only Note Viewer Modal */}
       {selectedNote && !isEditingNote && notebook?.shared && notebook?.permission === 'read' && (
