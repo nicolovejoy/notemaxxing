@@ -38,18 +38,26 @@ export async function GET(
 
     // Check if user has access (owner or has permission)
     const isOwner = notebook.owner_id === userId
+    let userPermission: 'owner' | 'read' | 'write' = 'owner'
 
     if (!isOwner) {
-      // Check for permissions
-      const { data: permission } = await supabase
-        .from('permissions')
-        .select('permission_level')
-        .eq('user_id', userId)
-        .eq('resource_id', notebookId)
-        .eq('resource_type', 'notebook')
-        .single()
+      // Check for folder-level permission (we use folder-only sharing)
+      if (notebook.folder_id) {
+        const { data: permission } = await supabase
+          .from('permissions')
+          .select('permission_level')
+          .eq('user_id', userId)
+          .eq('resource_id', notebook.folder_id)
+          .eq('resource_type', 'folder')
+          .neq('permission_level', 'none')
+          .single()
 
-      if (!permission) {
+        if (!permission) {
+          return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+        }
+        
+        userPermission = permission.permission_level as 'read' | 'write'
+      } else {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
       }
     }
@@ -96,6 +104,9 @@ export async function GET(
         color: notebook.color,
         folder_id: notebook.folder_id,
         folder_name: notebook.folders?.name || '',
+        owner_id: notebook.owner_id,
+        shared: !isOwner,
+        permission: userPermission,
       },
       notes: notesWithPreviews,
       currentNote: {

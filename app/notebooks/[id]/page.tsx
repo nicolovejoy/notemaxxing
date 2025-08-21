@@ -490,9 +490,10 @@ export default function NotebookPage() {
                         setIsEditingNote(true)
                         setEditingNoteTitle(fullNote.title)
                         setEditingNoteContent(fullNote.content || '')
+                      } else {
+                        // For read-only users, selectedNote will trigger the read-only modal
+                        setIsEditingNote(false)
                       }
-                      // For read-only, we could show a read-only view
-                      // but for now just don't open the editor
                     }
                   }}
                   onEdit={
