@@ -2,11 +2,25 @@
 
 Quick reference for AI assistants working on this codebase.
 
+## 🚨 SECURITY MIGRATION IN PROGRESS (2025-10-03)
+
+**Current State**: RLS policies created but NOT applied yet
+
+- Database still has NO RLS (vulnerable)
+- Server code updated to use SERVICE_ROLE_KEY
+- See `/SECURITY_MIGRATION.md` for full details
+
+**Before making changes**: Check if RLS has been applied:
+
+1. Check Supabase dashboard for RLS status
+2. If enabled, security is at BOTH API and database layer
+3. If disabled, security remains at API layer only
+
 ## Critical Rules
 
 ### Database
 
-- **NO RLS** - Security at API layer only
+- **RLS Status**: Currently disabled, migration prepared
 - **NO triggers/functions** - Set all fields explicitly
 - **Terraform managed** - Use `/infrastructure/terraform/` for schema changes
 

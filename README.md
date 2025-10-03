@@ -74,6 +74,29 @@ npm run type-check   # TypeScript checking
 
 Automatic deployment via Vercel on push to main branch.
 
+## Security Migration Status (2025-10-03)
+
+### ⚠️ IMPORTANT: RLS Migration Ready but NOT Applied
+
+**Current State**:
+
+- RLS policies created but NOT YET DEPLOYED
+- Server code updated to use SERVICE_ROLE_KEY
+- Database still running WITHOUT RLS (vulnerable but functional)
+
+**Next Steps When You Return**:
+
+1. Review `/SECURITY_MIGRATION.md` for full details
+2. Apply RLS policies from `/infrastructure/rls-policies.sql`
+3. Test invitation flow still works
+4. Monitor for permission errors
+
+**Files Changed**:
+
+- `/lib/supabase/server.ts` - Now uses SERVICE_ROLE_KEY
+- `/infrastructure/rls-policies.sql` - NEW: RLS policies to apply
+- `/SECURITY_MIGRATION.md` - NEW: Complete migration guide
+
 ## Project Roadmap
 
 ### Current TODOs

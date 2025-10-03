@@ -11,9 +11,13 @@ export async function createClient() {
 
   const cookieStore = await cookies()
 
+  // Use service role key for server-side operations to bypass RLS
+  // This is secure because this code only runs on the server
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseKey,
     {
       cookies: {
         getAll() {
