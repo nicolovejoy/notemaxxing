@@ -1,16 +1,11 @@
 # Notemaxxing
 
-A collaborative note-taking application with folders, notebooks, and real-time sharing.
-
-**Status**: Pre-production (limited users)
+Collaborative note-taking with folders, notebooks, and real-time sharing.
 
 ## Quick Start
 
 ```bash
-# Install dependencies
 npm install
-
-# Run development server
 npm run dev
 ```
 
@@ -20,130 +15,56 @@ Visit http://localhost:3000
 
 - **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
 - **Backend**: Supabase (PostgreSQL, Auth)
-- **Editor**: TipTap (rich text editing)
-- **State**: React Query (server state), Zustand (UI state)
-- **Deployment**: Vercel
+- **Editor**: TipTap (rich text)
+- **State**: React Query + Zustand
 
 ## Features
 
-### Core Functionality
+- Folders → Notebooks → Notes hierarchy
+- Rich text editing with AI enhancement (Claude)
+- Folder sharing with inherited permissions (`read` or `write`)
+- User authentication
 
-- ✅ Folders, notebooks, and notes hierarchy
-- ✅ Rich text editing with AI enhancement
-- ✅ Folder sharing with inherited permissions
-- ✅ User authentication
-- ✅ Admin console for user management
+## Sharing Model
 
-### Sharing System
-
-- **FOLDER-ONLY SHARING**: You can ONLY share folders (NOT individual notebooks or notes)
-- **Inherited permissions**: When you share a folder, ALL notebooks and notes inside automatically inherit those permissions
-- **Permission levels**: `read` (view only) or `write` (can edit)
-- **Invitation flow**: Email-based with 7-day expiry and preview
-- **Ownership model**: Notebooks inherit folder's owner, notes inherit notebook's owner
-- **Important**: Notebook/note sharing was intentionally removed to simplify the permission model
+- **Folder-only sharing** - Cannot share individual notebooks or notes
+- Shared folder contents inherit permissions automatically
+- Email-based invitations with 7-day expiry
 
 ## Development
-
-### Database Management
-
-**Database**: `dvuvhfjbjoemtoyfjjsg` (production)
-
-Schema changes via Terraform:
-
-```bash
-# 1. Update schema
-edit /infrastructure/setup-database.sql
-
-# 2. Apply changes (ask developer to do this, not agent)
-cd infrastructure/terraform
-terraform apply
-```
-
-### Scripts
 
 ```bash
 npm run dev          # Development server
 npm run build        # Production build
-npm run format       # Format code with Prettier
-npm run lint         # Run ESLint
-npm run type-check   # TypeScript checking
+npm run format       # Prettier
+npm run lint         # ESLint
 ```
+
+## Database
+
+Schema managed via Terraform in `/infrastructure/terraform/`.
 
 ## Deployment
 
-Automatic deployment via Vercel on push to main branch.
+Auto-deploys to Vercel on push to main.
 
-## Security Migration Status (2025-10-03)
+## Roadmap
 
-### ⚠️ IMPORTANT: RLS Migration Ready but NOT Applied
+### Planned Features
 
-**Current State**:
+- **Quizzmaxxing** - Quiz-based learning (multiple choice, true/false, fill-in-blank)
+- **Typemaxxing** - Typing-based learning (type answers from memory, WPM tracking)
+- Both features will use AI to generate questions from notes
 
-- RLS policies created but NOT YET DEPLOYED
-- Server code updated to use SERVICE_ROLE_KEY
-- Database still running WITHOUT RLS (vulnerable but functional)
+### TODOs
 
-**Next Steps When You Return**:
-
-1. Review `/SECURITY_MIGRATION.md` for full details
-2. Apply RLS policies from `/infrastructure/rls-policies.sql`
-3. Test invitation flow still works
-4. Monitor for permission errors
-
-**Files Changed**:
-
-- `/lib/supabase/server.ts` - Now uses SERVICE_ROLE_KEY
-- `/infrastructure/rls-policies.sql` - NEW: RLS policies to apply
-- `/SECURITY_MIGRATION.md` - NEW: Complete migration guide
-
-## Project Roadmap
-
-### Current TODOs
-
-#### Bug Fixes & Features
-
-- [x] Add read-only view mode for notes with view permission
-- [x] Hide delete button on view-only shared notes
-- [x] Fix note click behavior (first click does nothing, second works)
-- [x] Fix date/timezone issues (shows 'Yesterday' for just-created items)
-- [x] Fix folder name editing (broken)
-- [x] Fix notebook name editing (broken)
-- [ ] Fix note name editing (if needed)
-- [x] Fix real-time sync issues (cache invalidation on permissions change)
+- [ ] Deal with DB security issues. see below
 - [ ] Fix AI enhancement numbered list rendering
-- [ ] Change default share permission to 'can edit' instead of 'can view'
-- [ ] Build out quizzing and typemaxing
-- [ ] Fix user emails showing as UUIDs in share dialog (needs API endpoint)
-- [ ] Create seed script for generating test data
-- [ ] Build out user profiles, maybe teams, maybe friends
-- [ ] Implement master-detail view for notes (instead of modals)
-
-#### Production Readiness (eventually - not today)
-
+- [ ] Build Quizzmaxxing and Typemaxxing
+- [ ] Create seed script for test data
 - [ ] Add test suite
-- [ ] Set up CI/CD pipeline
-- [ ] Move admin emails from hardcoded to environment config
-- [ ] Code of conduct for users
-- [ ] Cost management and visibility
+- [ ] Move admin emails to env config
 
-#### Ask Max (UX Questions)
+## Security
 
-- [ ] Make ownership model clear in UX to users
-- [ ] Show ownership and sharing info more clearly in UI (owner label in dialog?)
-- [ ] Are folders and notebooks routes too similar? Is there a better approach?
-- [ ] AI assisted content creation (notes, notebooks, folders) as a way to lure friends into the ecosystem
-
-#### To Discuss
-
-- [ ] Admin access configuration approach
-
-## Documentation
-
-- `README.md` - This file, for developers
-- `CLAUDE.md` - Guidelines for AI assistants
-- `ARCHITECTURE.md` - Deep technical details
-
-## License
-
-Private project
+RLS migration prepared but not applied. See `SECURITY_MIGRATION.md`.
