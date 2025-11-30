@@ -35,6 +35,7 @@ export function RichTextEditor({ content, onChange, onBlur, autoFocus = false }:
     isSelection: boolean
   }>({ original: '', enhanced: '', improvements: [], isSelection: false })
   const floatingButtonRef = useRef<HTMLDivElement>(null)
+  const selectionTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const editor = useEditor({
     extensions: [
@@ -64,6 +65,12 @@ export function RichTextEditor({ content, onChange, onBlur, autoFocus = false }:
     if (!editor) return
 
     const updateSelection = () => {
+      // Clear any pending timer
+      if (selectionTimerRef.current) {
+        clearTimeout(selectionTimerRef.current)
+        selectionTimerRef.current = null
+      }
+
       const { selection } = editor.state
       const { from, to } = selection
       const text = editor.state.doc.textBetween(from, to, ' ')
@@ -85,11 +92,15 @@ export function RichTextEditor({ content, onChange, onBlur, autoFocus = false }:
 
         setSelectedText(text)
         // Don't set range here - we'll capture it when enhance is clicked
-        setFloatingButton({
-          x,
-          y: Math.max(10, coords.top - editorRect.top - 40), // Position above selection, min 10px from top
-          show: true,
-        })
+
+        // Delay showing the button to avoid triggering on triple-click select-all
+        selectionTimerRef.current = setTimeout(() => {
+          setFloatingButton({
+            x,
+            y: Math.max(10, coords.top - editorRect.top - 40), // Position above selection, min 10px from top
+            show: true,
+          })
+        }, 400)
       } else {
         setFloatingButton({ x: 0, y: 0, show: false })
         setSelectedText('')
@@ -100,6 +111,9 @@ export function RichTextEditor({ content, onChange, onBlur, autoFocus = false }:
     editor.on('selectionUpdate', updateSelection)
     return () => {
       editor.off('selectionUpdate', updateSelection)
+      if (selectionTimerRef.current) {
+        clearTimeout(selectionTimerRef.current)
+      }
     }
   }, [editor])
 
