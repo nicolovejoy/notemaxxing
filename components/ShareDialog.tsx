@@ -20,7 +20,7 @@ interface ShareDialogProps {
 
 export function ShareDialog({ resourceId, resourceType, resourceName, onClose }: ShareDialogProps) {
   const [email, setEmail] = useState('')
-  const [permission, setPermission] = useState<Permission>('read')
+  const [permission, setPermission] = useState<Permission>('write')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
