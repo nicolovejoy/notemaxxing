@@ -161,6 +161,7 @@ export type Database = {
           content: string | null
           created_at: string | null
           created_by: string | null
+          folder_id: string
           id: string
           notebook_id: string
           owner_id: string
@@ -171,6 +172,7 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           created_by?: string | null
+          folder_id: string
           id?: string
           notebook_id: string
           owner_id: string
@@ -181,6 +183,7 @@ export type Database = {
           content?: string | null
           created_at?: string | null
           created_by?: string | null
+          folder_id?: string
           id?: string
           notebook_id?: string
           owner_id?: string
@@ -193,6 +196,20 @@ export type Database = {
             columns: ['notebook_id']
             isOneToOne: false
             referencedRelation: 'notebooks'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notes_folder_id_fkey'
+            columns: ['folder_id']
+            isOneToOne: false
+            referencedRelation: 'folders'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'notes_folder_id_fkey'
+            columns: ['folder_id']
+            isOneToOne: false
+            referencedRelation: 'folders_with_stats'
             referencedColumns: ['id']
           },
         ]

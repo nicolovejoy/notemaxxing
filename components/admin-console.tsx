@@ -5,7 +5,21 @@ import { Modal } from './ui/Modal'
 import { StatusMessage } from './ui/StatusMessage'
 import { LoadingButton } from './ui/LoadingButton'
 import { Skeleton } from './ui/Skeleton'
-import { User, FileText, FolderOpen, StickyNote, Share2, RefreshCw, Trash2, Users, Activity, Heart, Database, AlertCircle, Zap } from 'lucide-react'
+import {
+  User,
+  FileText,
+  FolderOpen,
+  StickyNote,
+  Share2,
+  RefreshCw,
+  Trash2,
+  Users,
+  Activity,
+  Heart,
+  Database,
+  AlertCircle,
+  Zap,
+} from 'lucide-react'
 
 interface AdminConsoleProps {
   onClose: () => void
@@ -157,7 +171,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
   }
 
   const handleResetUserData = async (userId: string, email: string) => {
-    if (!confirm(`Are you sure you want to delete ALL data for user ${email}? This cannot be undone!`)) {
+    if (
+      !confirm(`Are you sure you want to delete ALL data for user ${email}? This cannot be undone!`)
+    ) {
       return
     }
 
@@ -251,9 +267,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
             <div>
               {/* Refresh button */}
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-medium text-gray-700">
-                  Total Users: {users.length}
-                </h3>
+                <h3 className="text-sm font-medium text-gray-700">Total Users: {users.length}</h3>
                 <button
                   onClick={fetchUsers}
                   disabled={loading}
@@ -292,9 +306,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                               </span>
                             )}
                           </div>
-                          <div className="mt-1 text-xs text-gray-500">
-                            ID: {user.id}
-                          </div>
+                          <div className="mt-1 text-xs text-gray-500">ID: {user.id}</div>
                           <div className="mt-2 flex gap-4 text-xs text-gray-600">
                             <span>Created: {formatDate(user.created_at)}</span>
                             {user.last_sign_in_at && (
@@ -323,7 +335,8 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                             <div className="flex items-center gap-1">
                               <Share2 className="h-3 w-3 text-gray-400" />
                               <span className="text-xs text-gray-600">
-                                {user.stats.permissions_granted} shared / {user.stats.permissions_received} received
+                                {user.stats.permissions_granted} shared /{' '}
+                                {user.stats.permissions_received} received
                               </span>
                             </div>
                           </div>
@@ -403,22 +416,28 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">{perm.granted_by_email}</span>
                                 <span className="text-gray-500">shared</span>
-                                <span className={`px-2 py-0.5 text-xs rounded ${
-                                  perm.resource_type === 'folder' 
-                                    ? 'bg-blue-100 text-blue-700' 
-                                    : 'bg-green-100 text-green-700'
-                                }`}>
+                                <span
+                                  className={`px-2 py-0.5 text-xs rounded ${
+                                    perm.resource_type === 'folder'
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-green-100 text-green-700'
+                                  }`}
+                                >
                                   {perm.resource_type}
                                 </span>
-                                <span className="font-medium">&quot;{perm.resource_name}&quot;</span>
+                                <span className="font-medium">
+                                  &quot;{perm.resource_name}&quot;
+                                </span>
                                 <span className="text-gray-500">with</span>
                                 <span className="font-medium">{perm.user_email}</span>
                               </div>
-                              <span className={`px-2 py-0.5 text-xs rounded ${
-                                perm.permission === 'write'
-                                  ? 'bg-orange-100 text-orange-700'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
+                              <span
+                                className={`px-2 py-0.5 text-xs rounded ${
+                                  perm.permission === 'write'
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}
+                              >
                                 {perm.permission}
                               </span>
                             </div>
@@ -434,7 +453,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                   {/* Pending Invitations */}
                   {invitations.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-2">Pending Invitations</h3>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                        Pending Invitations
+                      </h3>
                       <div className="space-y-2">
                         {invitations.map((inv) => (
                           <div
@@ -445,20 +466,24 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">{inv.invited_by_email}</span>
                                 <span className="text-gray-500">invited someone to</span>
-                                <span className={`px-2 py-0.5 text-xs rounded ${
-                                  inv.resource_type === 'folder' 
-                                    ? 'bg-blue-100 text-blue-700' 
-                                    : 'bg-green-100 text-green-700'
-                                }`}>
+                                <span
+                                  className={`px-2 py-0.5 text-xs rounded ${
+                                    inv.resource_type === 'folder'
+                                      ? 'bg-blue-100 text-blue-700'
+                                      : 'bg-green-100 text-green-700'
+                                  }`}
+                                >
                                   {inv.resource_type}
                                 </span>
                                 <span className="font-medium">&quot;{inv.resource_name}&quot;</span>
                               </div>
-                              <span className={`px-2 py-0.5 text-xs rounded ${
-                                inv.permission === 'write'
-                                  ? 'bg-orange-100 text-orange-700'
-                                  : 'bg-gray-100 text-gray-700'
-                              }`}>
+                              <span
+                                className={`px-2 py-0.5 text-xs rounded ${
+                                  inv.permission === 'write'
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}
+                              >
                                 {inv.permission}
                               </span>
                             </div>
@@ -482,12 +507,12 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                   <Heart className="h-6 w-6 text-red-500" />
                   <h3 className="text-lg font-semibold text-gray-900">System Health Monitoring</h3>
                 </div>
-                
+
                 <div className="space-y-4 text-sm text-gray-600">
                   <p className="font-medium text-gray-700">
                     Coming soon: Real-time health monitoring for your Notemaxxing instance
                   </p>
-                  
+
                   <div className="grid grid-cols-2 gap-6">
                     <div>
                       <h4 className="font-medium text-gray-700 mb-2">Planned Metrics:</h4>
@@ -496,33 +521,41 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                           <Database className="h-4 w-4 text-blue-500 mt-0.5" />
                           <div>
                             <span className="font-medium">Database Health</span>
-                            <div className="text-xs text-gray-500">Size, connections, query performance</div>
+                            <div className="text-xs text-gray-500">
+                              Size, connections, query performance
+                            </div>
                           </div>
                         </li>
                         <li className="flex items-start gap-2">
                           <AlertCircle className="h-4 w-4 text-yellow-500 mt-0.5" />
                           <div>
                             <span className="font-medium">Error Tracking</span>
-                            <div className="text-xs text-gray-500">API errors, failed operations</div>
+                            <div className="text-xs text-gray-500">
+                              API errors, failed operations
+                            </div>
                           </div>
                         </li>
                         <li className="flex items-start gap-2">
                           <Zap className="h-4 w-4 text-purple-500 mt-0.5" />
                           <div>
                             <span className="font-medium">Performance</span>
-                            <div className="text-xs text-gray-500">Response times, slow queries</div>
+                            <div className="text-xs text-gray-500">
+                              Response times, slow queries
+                            </div>
                           </div>
                         </li>
                         <li className="flex items-start gap-2">
                           <Users className="h-4 w-4 text-green-500 mt-0.5" />
                           <div>
                             <span className="font-medium">Real-time Connections</span>
-                            <div className="text-xs text-gray-500">Active users, WebSocket status</div>
+                            <div className="text-xs text-gray-500">
+                              Active users, WebSocket status
+                            </div>
                           </div>
                         </li>
                       </ul>
                     </div>
-                    
+
                     <div>
                       <h4 className="font-medium text-gray-700 mb-2">Why This Matters:</h4>
                       <ul className="space-y-2 text-gray-600">
@@ -534,11 +567,12 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                       </ul>
                     </div>
                   </div>
-                  
+
                   <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                     <p className="text-sm text-blue-700">
-                      <span className="font-medium">Note:</span> As the platform grows, this tab will provide critical insights
-                      into system health, helping maintain reliability and performance at scale.
+                      <span className="font-medium">Note:</span> As the platform grows, this tab
+                      will provide critical insights into system health, helping maintain
+                      reliability and performance at scale.
                     </p>
                   </div>
                 </div>
@@ -580,7 +614,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                           <Users className="h-4 w-4 text-blue-600" />
                           <span className="text-xs font-medium text-blue-600">Users</span>
                         </div>
-                        <div className="text-2xl font-bold text-gray-900">{systemStats.overview.total_users}</div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {systemStats.overview.total_users}
+                        </div>
                         <div className="text-xs text-gray-600 mt-1">
                           {systemStats.overview.active_users_30d} active (30d)
                         </div>
@@ -594,7 +630,9 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                           <FolderOpen className="h-4 w-4 text-green-600" />
                           <span className="text-xs font-medium text-green-600">Content</span>
                         </div>
-                        <div className="text-2xl font-bold text-gray-900">{systemStats.overview.total_folders}</div>
+                        <div className="text-2xl font-bold text-gray-900">
+                          {systemStats.overview.total_folders}
+                        </div>
                         <div className="text-xs text-gray-600 mt-1">
                           {systemStats.overview.total_notebooks} notebooks
                         </div>
@@ -608,10 +646,10 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                           <Share2 className="h-4 w-4 text-purple-600" />
                           <span className="text-xs font-medium text-purple-600">Sharing</span>
                         </div>
-                        <div className="text-2xl font-bold text-gray-900">{systemStats.overview.total_permissions}</div>
-                        <div className="text-xs text-gray-600 mt-1">
-                          active permissions
+                        <div className="text-2xl font-bold text-gray-900">
+                          {systemStats.overview.total_permissions}
                         </div>
+                        <div className="text-xs text-gray-600 mt-1">active permissions</div>
                         <div className="text-xs text-yellow-600 mt-1">
                           {systemStats.overview.pending_invitations} pending
                         </div>
@@ -634,18 +672,25 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                   {/* Top Users */}
                   <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <h3 className="text-sm font-semibold text-gray-700 mb-3">Top Content Creators</h3>
+                      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                        Top Content Creators
+                      </h3>
                       <div className="space-y-2">
                         {systemStats.top_creators.length === 0 ? (
                           <div className="text-sm text-gray-500">No data yet</div>
                         ) : (
                           systemStats.top_creators.map((creator, index) => (
-                            <div key={creator.email} className="flex items-center justify-between text-sm">
+                            <div
+                              key={creator.email}
+                              className="flex items-center justify-between text-sm"
+                            >
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-400">{index + 1}.</span>
                                 <span className="text-gray-700">{creator.email}</span>
                               </div>
-                              <span className="font-medium text-gray-900">{creator.count} items</span>
+                              <span className="font-medium text-gray-900">
+                                {creator.count} items
+                              </span>
                             </div>
                           ))
                         )}
@@ -659,12 +704,17 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                           <div className="text-sm text-gray-500">No sharing activity yet</div>
                         ) : (
                           systemStats.top_sharers.map((sharer, index) => (
-                            <div key={sharer.email} className="flex items-center justify-between text-sm">
+                            <div
+                              key={sharer.email}
+                              className="flex items-center justify-between text-sm"
+                            >
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-400">{index + 1}.</span>
                                 <span className="text-gray-700">{sharer.email}</span>
                               </div>
-                              <span className="font-medium text-gray-900">{sharer.count} shares</span>
+                              <span className="font-medium text-gray-900">
+                                {sharer.count} shares
+                              </span>
                             </div>
                           ))
                         )}
@@ -673,9 +723,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
-                  No stats available
-                </div>
+                <div className="text-center py-8 text-gray-500">No stats available</div>
               )}
             </div>
           )}

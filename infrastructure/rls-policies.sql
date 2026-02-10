@@ -138,31 +138,27 @@ CREATE POLICY "note_owner_all" ON public.notes
   USING (owner_id = auth.uid())
   WITH CHECK (owner_id = auth.uid());
 
--- Users can read notes in notebooks they have folder access to
+-- Users can read notes in folders they have access to
 CREATE POLICY "note_shared_read" ON public.notes
   FOR SELECT
   USING (
     EXISTS (
-      SELECT 1
-      FROM public.notebooks
-      JOIN public.permissions ON permissions.resource_id = notebooks.folder_id
-      WHERE notebooks.id = notes.notebook_id
-        AND permissions.user_id = auth.uid()
+      SELECT 1 FROM public.permissions
+      WHERE permissions.user_id = auth.uid()
+        AND permissions.resource_id = notes.folder_id
         AND permissions.resource_type = 'folder'
         AND permissions.permission_level IN ('read', 'write')
     )
   );
 
--- Users with write permission can create/update/delete notes
+-- Users with write permission can create notes
 CREATE POLICY "note_shared_write" ON public.notes
   FOR INSERT
   WITH CHECK (
     EXISTS (
-      SELECT 1
-      FROM public.notebooks
-      JOIN public.permissions ON permissions.resource_id = notebooks.folder_id
-      WHERE notebooks.id = notes.notebook_id
-        AND permissions.user_id = auth.uid()
+      SELECT 1 FROM public.permissions
+      WHERE permissions.user_id = auth.uid()
+        AND permissions.resource_id = notes.folder_id
         AND permissions.resource_type = 'folder'
         AND permissions.permission_level = 'write'
     )
@@ -172,22 +168,18 @@ CREATE POLICY "note_shared_update" ON public.notes
   FOR UPDATE
   USING (
     EXISTS (
-      SELECT 1
-      FROM public.notebooks
-      JOIN public.permissions ON permissions.resource_id = notebooks.folder_id
-      WHERE notebooks.id = notes.notebook_id
-        AND permissions.user_id = auth.uid()
+      SELECT 1 FROM public.permissions
+      WHERE permissions.user_id = auth.uid()
+        AND permissions.resource_id = notes.folder_id
         AND permissions.resource_type = 'folder'
         AND permissions.permission_level = 'write'
     )
   )
   WITH CHECK (
     EXISTS (
-      SELECT 1
-      FROM public.notebooks
-      JOIN public.permissions ON permissions.resource_id = notebooks.folder_id
-      WHERE notebooks.id = notes.notebook_id
-        AND permissions.user_id = auth.uid()
+      SELECT 1 FROM public.permissions
+      WHERE permissions.user_id = auth.uid()
+        AND permissions.resource_id = notes.folder_id
         AND permissions.resource_type = 'folder'
         AND permissions.permission_level = 'write'
     )
@@ -197,11 +189,9 @@ CREATE POLICY "note_shared_delete" ON public.notes
   FOR DELETE
   USING (
     EXISTS (
-      SELECT 1
-      FROM public.notebooks
-      JOIN public.permissions ON permissions.resource_id = notebooks.folder_id
-      WHERE notebooks.id = notes.notebook_id
-        AND permissions.user_id = auth.uid()
+      SELECT 1 FROM public.permissions
+      WHERE permissions.user_id = auth.uid()
+        AND permissions.resource_id = notes.folder_id
         AND permissions.resource_type = 'folder'
         AND permissions.permission_level = 'write'
     )

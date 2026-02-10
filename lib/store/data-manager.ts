@@ -340,6 +340,7 @@ class DataManager {
       owner_id: notebook.owner_id,
       created_by: user.id,
       notebook_id: notebookId,
+      folder_id: notebook.folder_id,
       title,
       content,
       created_at: new Date().toISOString(),
@@ -354,6 +355,7 @@ class DataManager {
         title,
         content,
         notebook_id: notebookId,
+        folder_id: notebook.folder_id,
         owner_id: notebook.owner_id,
         created_by: user.id,
       })

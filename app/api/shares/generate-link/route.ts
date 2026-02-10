@@ -146,30 +146,31 @@ export async function POST(request: NextRequest) {
 
     if (existingInvitation) {
       console.log('[Generate Link] Found existing invitation, updating expiry')
-      
+
       // Update expiry date to extend invitation
       const newExpiryDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-      
+
       const { error: updateError } = await supabase
         .from('invitations')
         .update({ expires_at: newExpiryDate })
         .eq('id', existingInvitation.id)
-      
+
       if (updateError) {
         console.error('[Generate Link] Error updating invitation:', updateError)
         return NextResponse.json({ error: 'Failed to update invitation' }, { status: 500 })
       }
 
       // Also update the public preview
-      await supabase
-        .from('public_invitation_previews')
-        .upsert({
+      await supabase.from('public_invitation_previews').upsert(
+        {
           token: existingInvitation.token,
           resource_name: resourceName,
           resource_type: resourceType,
           inviter_name: user.email || 'A user',
           expires_at: newExpiryDate,
-        }, { onConflict: 'token' })
+        },
+        { onConflict: 'token' }
+      )
 
       return NextResponse.json({
         success: true,
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
     // Create new invitation with explicit field values
     const token = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
-    
+
     const { data: invitation, error: inviteError } = await supabase
       .from('invitations')
       .insert({
@@ -193,7 +194,7 @@ export async function POST(request: NextRequest) {
         invitee_email: email.toLowerCase(),
         invited_by: user.id,
         expires_at: expiresAt,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       })
       .select()
       .single()
@@ -204,15 +205,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Create public preview for non-authenticated users
-    const { error: previewError } = await supabase
-      .from('public_invitation_previews')
-      .insert({
-        token: invitation.token,
-        resource_name: resourceName,
-        resource_type: resourceType,
-        inviter_name: user.email || 'A user',
-        expires_at: expiresAt
-      })
+    const { error: previewError } = await supabase.from('public_invitation_previews').insert({
+      token: invitation.token,
+      resource_name: resourceName,
+      resource_type: resourceType,
+      inviter_name: user.email || 'A user',
+      expires_at: expiresAt,
+    })
 
     if (previewError) {
       console.error('[Generate Link] Error creating public preview:', previewError)

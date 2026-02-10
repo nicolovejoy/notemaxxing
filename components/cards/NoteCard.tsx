@@ -27,11 +27,11 @@ export function NoteCard({
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     const now = new Date()
-    
+
     // Reset time parts for accurate day comparison
     const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
     const nowDay = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    
+
     const diffTime = nowDay.getTime() - dateDay.getTime()
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
 

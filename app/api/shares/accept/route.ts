@@ -46,10 +46,7 @@ export async function POST(request: NextRequest) {
     // 2. Check if invitation has expired
     if (new Date(invitation.expires_at) < new Date()) {
       console.error('[Accept Invitation] Invitation has expired')
-      return NextResponse.json(
-        { error: 'This invitation has expired' },
-        { status: 410 }
-      )
+      return NextResponse.json({ error: 'This invitation has expired' }, { status: 410 })
     }
 
     // 3. Check if user already has permission for this resource
@@ -62,13 +59,13 @@ export async function POST(request: NextRequest) {
 
     if (existingPermission) {
       console.log('[Accept Invitation] User already has permission for this resource')
-      
+
       // Mark invitation as accepted anyway
       await supabase
         .from('invitations')
         .update({
           accepted_at: new Date().toISOString(),
-          accepted_by: user.id
+          accepted_by: user.id,
         })
         .eq('id', invitation.id)
 
@@ -80,7 +77,7 @@ export async function POST(request: NextRequest) {
           resourceType: existingPermission.resource_type,
           resourceId: existingPermission.resource_id,
           permission: existingPermission.permission_level,
-        }
+        },
       })
     }
 
@@ -93,17 +90,14 @@ export async function POST(request: NextRequest) {
         resource_type: invitation.resource_type,
         permission_level: invitation.permission_level,
         granted_by: invitation.invited_by,
-        granted_at: new Date().toISOString()
+        granted_at: new Date().toISOString(),
       })
       .select()
       .single()
 
     if (permError) {
       console.error('[Accept Invitation] Error creating permission:', permError)
-      return NextResponse.json(
-        { error: 'Failed to create permission' },
-        { status: 500 }
-      )
+      return NextResponse.json({ error: 'Failed to create permission' }, { status: 500 })
     }
 
     console.log('[Accept Invitation] Permission created:', newPermission.id)
@@ -113,7 +107,7 @@ export async function POST(request: NextRequest) {
       .from('invitations')
       .update({
         accepted_at: new Date().toISOString(),
-        accepted_by: user.id
+        accepted_by: user.id,
       })
       .eq('id', invitation.id)
 
@@ -125,7 +119,7 @@ export async function POST(request: NextRequest) {
     // 6. Handle transfer_ownership_on_accept if needed
     if (invitation.transfer_ownership_on_accept && invitation.resource_type === 'folder') {
       console.log('[Accept Invitation] Transferring folder ownership')
-      
+
       // Update folder owner
       const { error: transferError } = await supabase
         .from('folders')
@@ -147,6 +141,17 @@ export async function POST(request: NextRequest) {
         console.error('[Accept Invitation] Error updating notebook ownership:', notebooksError)
         // Non-fatal: folder ownership was transferred
       }
+
+      // Update all notes in the folder to new owner
+      const { error: notesError } = await supabase
+        .from('notes')
+        .update({ owner_id: user.id })
+        .eq('folder_id', invitation.resource_id)
+
+      if (notesError) {
+        console.error('[Accept Invitation] Error updating note ownership:', notesError)
+        // Non-fatal: folder and notebook ownership were transferred
+      }
     }
 
     console.log('[Accept Invitation] Success - permission created:', newPermission.id)
@@ -167,7 +172,7 @@ export async function POST(request: NextRequest) {
         resourceType: newPermission.resource_type,
         resourceId: newPermission.resource_id,
         permission: newPermission.permission_level,
-      }
+      },
     })
   } catch (error) {
     console.error('[Accept Invitation] Unexpected error:', error)

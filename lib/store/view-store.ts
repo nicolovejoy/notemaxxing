@@ -287,7 +287,7 @@ export const useViewStore = create<ViewState>()(
 
         // Clear the request controller
         currentNoteViewRequest = null
-        
+
         // Return the data for immediate use
         return data
       } catch (error) {

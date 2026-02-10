@@ -60,35 +60,35 @@ export async function GET(_request: NextRequest) {
 
     // 6. Get user emails for better display
     const userIds = new Set<string>()
-    permissions?.forEach(perm => {
+    permissions?.forEach((perm) => {
       userIds.add(perm.user_id)
       userIds.add(perm.granted_by)
     })
-    invitations?.forEach(inv => {
+    invitations?.forEach((inv) => {
       userIds.add(inv.invited_by)
     })
 
     // Get user emails using auth.admin API
     const { data: authData } = await serviceClient.auth.admin.listUsers()
     const userMap = new Map<string, string>()
-    authData?.users.forEach(user => {
+    authData?.users.forEach((user) => {
       userMap.set(user.id, user.email || 'Unknown')
     })
 
     // 7. Get resource names for better display
     const folderIds = new Set<string>()
     const notebookIds = new Set<string>()
-    
-    permissions?.forEach(perm => {
+
+    permissions?.forEach((perm) => {
       if (perm.resource_type === 'folder') {
         folderIds.add(perm.resource_id)
       } else if (perm.resource_type === 'notebook') {
         notebookIds.add(perm.resource_id)
       }
     })
-    
+
     // Also add resource IDs from invitations
-    invitations?.forEach(inv => {
+    invitations?.forEach((inv) => {
       if (inv.resource_type === 'folder') {
         folderIds.add(inv.resource_id)
       } else if (inv.resource_type === 'notebook') {
@@ -103,8 +103,8 @@ export async function GET(_request: NextRequest) {
         .from('folders')
         .select('id, name')
         .in('id', Array.from(folderIds))
-      
-      folders?.forEach(folder => {
+
+      folders?.forEach((folder) => {
         folderMap.set(folder.id, folder.name)
       })
     }
@@ -116,29 +116,31 @@ export async function GET(_request: NextRequest) {
         .from('notebooks')
         .select('id, name')
         .in('id', Array.from(notebookIds))
-      
-      notebooks?.forEach(notebook => {
+
+      notebooks?.forEach((notebook) => {
         notebookMap.set(notebook.id, notebook.name)
       })
     }
 
     // 8. Enrich permissions with user emails and resource names
-    const enrichedPermissions = permissions?.map(perm => ({
+    const enrichedPermissions = permissions?.map((perm) => ({
       ...perm,
       user_email: userMap.get(perm.user_id) || perm.user_id,
       granted_by_email: userMap.get(perm.granted_by) || perm.granted_by,
-      resource_name: perm.resource_type === 'folder' 
-        ? folderMap.get(perm.resource_id) || 'Unknown Folder'
-        : notebookMap.get(perm.resource_id) || 'Unknown Notebook',
+      resource_name:
+        perm.resource_type === 'folder'
+          ? folderMap.get(perm.resource_id) || 'Unknown Folder'
+          : notebookMap.get(perm.resource_id) || 'Unknown Notebook',
     }))
 
     // 9. Enrich invitations
-    const enrichedInvitations = invitations?.map(inv => ({
+    const enrichedInvitations = invitations?.map((inv) => ({
       ...inv,
       invited_by_email: userMap.get(inv.invited_by) || inv.invited_by,
-      resource_name: inv.resource_type === 'folder'
-        ? folderMap.get(inv.resource_id) || 'Unknown Folder'
-        : notebookMap.get(inv.resource_id) || 'Unknown Notebook',
+      resource_name:
+        inv.resource_type === 'folder'
+          ? folderMap.get(inv.resource_id) || 'Unknown Folder'
+          : notebookMap.get(inv.resource_id) || 'Unknown Notebook',
     }))
 
     return NextResponse.json({
@@ -149,7 +151,7 @@ export async function GET(_request: NextRequest) {
         total_folders_shared: folderIds.size,
         total_notebooks_shared: notebookIds.size,
         pending_invitations: invitations?.length || 0,
-      }
+      },
     })
   } catch (error) {
     console.error('Admin permissions error:', error)

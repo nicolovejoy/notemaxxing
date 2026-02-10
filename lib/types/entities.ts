@@ -33,6 +33,7 @@ export interface Notebook extends OwnedEntity {
 
 export interface Note extends OwnedEntity {
   notebook_id: string
+  folder_id: string
   title: string
   content: string
 }

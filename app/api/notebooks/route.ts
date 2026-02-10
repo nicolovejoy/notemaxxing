@@ -96,10 +96,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
     }
 
-    // Check if user owns the notebook
+    // Check if user owns the notebook or has folder-level write permission
     const { data: notebook, error: fetchError } = await supabase
       .from('notebooks')
-      .select('owner_id')
+      .select('owner_id, folder_id')
       .eq('id', id)
       .single()
 
@@ -107,8 +107,24 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
     }
 
-    if (notebook.owner_id !== userId) {
-      return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
+    const isOwner = notebook.owner_id === userId
+    if (!isOwner) {
+      if (notebook.folder_id) {
+        const { data: permission } = await supabase
+          .from('permissions')
+          .select('permission_level')
+          .eq('user_id', userId)
+          .eq('resource_id', notebook.folder_id)
+          .eq('resource_type', 'folder')
+          .eq('permission_level', 'write')
+          .single()
+
+        if (!permission) {
+          return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
+        }
+      } else {
+        return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
+      }
     }
 
     const { data, error } = await supabase
@@ -144,7 +160,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
     }
 
-    const { error } = await supabase.from('notebooks').delete().eq('id', id).eq('user_id', userId)
+    const { error } = await supabase.from('notebooks').delete().eq('id', id).eq('owner_id', userId)
 
     if (error) throw error
 

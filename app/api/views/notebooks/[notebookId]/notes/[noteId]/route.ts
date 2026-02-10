@@ -55,7 +55,7 @@ export async function GET(
         if (!permission) {
           return NextResponse.json({ error: 'Access denied' }, { status: 403 })
         }
-        
+
         userPermission = permission.permission_level as 'read' | 'write'
       } else {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })

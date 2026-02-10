@@ -15,7 +15,12 @@ interface RichTextEditorProps {
   autoFocus?: boolean
 }
 
-export function RichTextEditor({ content, onChange, onBlur, autoFocus = false }: RichTextEditorProps) {
+export function RichTextEditor({
+  content,
+  onChange,
+  onBlur,
+  autoFocus = false,
+}: RichTextEditorProps) {
   const { enhance, isEnhancing } = useAI()
   const [contentHistory, setContentHistory] = useState<string[]>([])
   const [showUndo, setShowUndo] = useState(false)

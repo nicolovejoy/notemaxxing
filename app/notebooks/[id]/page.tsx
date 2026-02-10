@@ -253,7 +253,7 @@ export default function NotebookPage() {
               </div>
             </div>
           </aside>
-          
+
           {/* Main content skeleton */}
           <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex items-center justify-between mb-8">
@@ -274,7 +274,7 @@ export default function NotebookPage() {
       </div>
     )
   }
-  
+
   if (!loading && !notebook) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -442,11 +442,7 @@ export default function NotebookPage() {
             </div>
             {/* Shared indicator for notebooks in shared folders */}
             {notebook && notebook.shared && (
-              <SharedIndicator
-                shared={true}
-                sharedByMe={false}
-                permission={notebook.permission}
-              />
+              <SharedIndicator shared={true} sharedByMe={false} permission={notebook.permission} />
             )}
           </div>
 
@@ -482,7 +478,7 @@ export default function NotebookPage() {
                   onClick={async () => {
                     // For read-only users, just show the note without edit mode
                     const canEdit = !notebook?.shared || notebook?.permission === 'write'
-                    
+
                     setIsLoadingNote(true)
                     try {
                       const data = await loadNoteView(notebookId, { noteId: note.id })
@@ -571,7 +567,7 @@ export default function NotebookPage() {
               </button>
             </div>
             <div className="flex-1 overflow-auto p-6">
-              <div 
+              <div
                 className="prose prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: toHTML(selectedNote.content || '') }}
               />
@@ -582,7 +578,7 @@ export default function NotebookPage() {
 
       {/* Note Editor Modal */}
       {isEditingNote && selectedNote && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
           onKeyDown={(e) => {
             // Cmd+Enter or Ctrl+Enter to save
@@ -614,7 +610,9 @@ export default function NotebookPage() {
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
                   title="Save (⌘+Enter)"
                 >
-                  {isSaving ? 'Saving...' : (
+                  {isSaving ? (
+                    'Saving...'
+                  ) : (
                     <>
                       Save
                       <span className="text-xs opacity-75">⌘↵</span>
@@ -624,8 +622,8 @@ export default function NotebookPage() {
               </div>
             </div>
             <div className="flex-1 overflow-auto p-4">
-              <RichTextEditor 
-                content={editingNoteContent} 
+              <RichTextEditor
+                content={editingNoteContent}
                 onChange={setEditingNoteContent}
                 autoFocus={true}
               />

@@ -19,10 +19,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
     }
 
-    // Get notebook to inherit its owner_id and verify access
+    // Get notebook to inherit its owner_id and folder_id
     const { data: notebook } = await supabase
       .from('notebooks')
-      .select('id, owner_id')
+      .select('id, owner_id, folder_id')
       .eq('id', notebook_id)
       .single()
 
@@ -32,28 +32,24 @@ export async function POST(request: NextRequest) {
 
     // Check if user has write access
     const isOwner = notebook.owner_id === userId
-    
+
     if (!isOwner) {
-      // Get folder_id from notebook
-      const { data: notebookWithFolder } = await supabase
-        .from('notebooks')
-        .select('folder_id')
-        .eq('id', notebook_id)
-        .single()
-      
-      if (notebookWithFolder?.folder_id) {
+      if (notebook.folder_id) {
         // Check for folder-level write permission
         const { data: permission } = await supabase
           .from('permissions')
           .select('permission_level')
           .eq('user_id', userId)
-          .eq('resource_id', notebookWithFolder.folder_id)
+          .eq('resource_id', notebook.folder_id)
           .eq('resource_type', 'folder')
           .eq('permission_level', 'write')
           .single()
 
         if (!permission) {
-          return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+          return NextResponse.json(
+            { error: 'Access denied - write permission required' },
+            { status: 403 }
+          )
         }
       } else {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
@@ -66,6 +62,7 @@ export async function POST(request: NextRequest) {
         title: title || 'Untitled Note',
         content: content || '',
         notebook_id,
+        folder_id: notebook.folder_id,
         owner_id: notebook.owner_id, // Inherit from notebook
         created_by: userId, // Current user who created it
       })
@@ -98,17 +95,10 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Note ID is required' }, { status: 400 })
     }
 
-    // Verify note exists and get notebook info
+    // Verify note exists — folder_id is now on the note directly
     const { data: note } = await supabase
       .from('notes')
-      .select(`
-        id,
-        notebook_id,
-        notebooks!inner(
-          owner_id,
-          folder_id
-        )
-      `)
+      .select('id, notebook_id, owner_id, folder_id')
       .eq('id', id)
       .single()
 
@@ -117,22 +107,25 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if user has write access
-    const isOwner = note.notebooks.owner_id === userId
-    
+    const isOwner = note.owner_id === userId
+
     if (!isOwner) {
-      // Check for folder-level write permission
-      if (note.notebooks.folder_id) {
+      if (note.folder_id) {
+        // Check for folder-level write permission
         const { data: permission } = await supabase
           .from('permissions')
           .select('permission_level')
           .eq('user_id', userId)
-          .eq('resource_id', note.notebooks.folder_id)
+          .eq('resource_id', note.folder_id)
           .eq('resource_type', 'folder')
           .eq('permission_level', 'write')
           .single()
 
         if (!permission) {
-          return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+          return NextResponse.json(
+            { error: 'Access denied - write permission required' },
+            { status: 403 }
+          )
         }
       } else {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })
@@ -172,17 +165,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Note ID is required' }, { status: 400 })
     }
 
-    // Verify note exists and get notebook info
+    // Verify note exists — folder_id is now on the note directly
     const { data: note } = await supabase
       .from('notes')
-      .select(`
-        id,
-        notebook_id,
-        notebooks!inner(
-          owner_id,
-          folder_id
-        )
-      `)
+      .select('id, notebook_id, owner_id, folder_id')
       .eq('id', id)
       .single()
 
@@ -191,22 +177,25 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if user has write access
-    const isOwner = note.notebooks.owner_id === userId
-    
+    const isOwner = note.owner_id === userId
+
     if (!isOwner) {
-      // Check for folder-level write permission
-      if (note.notebooks.folder_id) {
+      if (note.folder_id) {
+        // Check for folder-level write permission
         const { data: permission } = await supabase
           .from('permissions')
           .select('permission_level')
           .eq('user_id', userId)
-          .eq('resource_id', note.notebooks.folder_id)
+          .eq('resource_id', note.folder_id)
           .eq('resource_type', 'folder')
           .eq('permission_level', 'write')
           .single()
 
         if (!permission) {
-          return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+          return NextResponse.json(
+            { error: 'Access denied - write permission required' },
+            { status: 403 }
+          )
         }
       } else {
         return NextResponse.json({ error: 'Access denied' }, { status: 403 })

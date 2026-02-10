@@ -41,13 +41,13 @@ export default function FolderDetailPage() {
 
   // Extract data from view
   const folder = folderView?.folder
-  const notebooks: Array<{ 
-    id: string; 
-    name: string; 
-    color: string; 
-    note_count?: number;
-    archived?: boolean;
-    shared_by_owner?: boolean;
+  const notebooks: Array<{
+    id: string
+    name: string
+    color: string
+    note_count?: number
+    archived?: boolean
+    shared_by_owner?: boolean
   }> = folderView?.notebooks || []
   const userPermission = folderView?.userPermission
   const isOwner = userPermission === 'owner'
@@ -252,12 +252,14 @@ export default function FolderDetailPage() {
                 shared={!isOwner}
                 sharedByMe={notebook.shared_by_owner}
                 permission={!isOwner ? userPermission : undefined}
-                onClick={() => handleNotebookClick({
-                  id: notebook.id,
-                  name: notebook.name,
-                  color: notebook.color,
-                  note_count: notebook.note_count || 0
-                })}
+                onClick={() =>
+                  handleNotebookClick({
+                    id: notebook.id,
+                    name: notebook.name,
+                    color: notebook.color,
+                    note_count: notebook.note_count || 0,
+                  })
+                }
                 onUpdate={() => refetch()}
               />
             ))}
@@ -313,7 +315,6 @@ export default function FolderDetailPage() {
           }}
         />
       )}
-
     </div>
   )
 }

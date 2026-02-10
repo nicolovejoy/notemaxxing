@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
     const userId = await getCurrentUserId()
@@ -37,14 +34,14 @@ export async function PATCH(
 
     // Now check if user is the owner of the resource
     let isOwner = false
-    
+
     if (permission.resource_type === 'folder') {
       const { data: folder } = await supabase
         .from('folders')
         .select('owner_id')
         .eq('id', permission.resource_id)
         .single()
-      
+
       isOwner = folder?.owner_id === userId
     } else if (permission.resource_type === 'notebook') {
       const { data: notebook } = await supabase
@@ -52,7 +49,7 @@ export async function PATCH(
         .select('owner_id')
         .eq('id', permission.resource_id)
         .single()
-      
+
       isOwner = notebook?.owner_id === userId
     }
 
@@ -109,14 +106,14 @@ export async function DELETE(
 
     // Now check if user is the owner of the resource
     let isOwner = false
-    
+
     if (permission.resource_type === 'folder') {
       const { data: folder } = await supabase
         .from('folders')
         .select('owner_id')
         .eq('id', permission.resource_id)
         .single()
-      
+
       isOwner = folder?.owner_id === userId
     } else if (permission.resource_type === 'notebook') {
       const { data: notebook } = await supabase
@@ -124,7 +121,7 @@ export async function DELETE(
         .select('owner_id')
         .eq('id', permission.resource_id)
         .single()
-      
+
       isOwner = notebook?.owner_id === userId
     }
 
@@ -136,10 +133,7 @@ export async function DELETE(
     }
 
     // Delete the permission
-    const { error } = await supabase
-      .from('permissions')
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.from('permissions').delete().eq('id', id)
 
     if (error) {
       console.error('Error deleting permission:', error)

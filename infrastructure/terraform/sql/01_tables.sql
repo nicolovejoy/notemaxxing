@@ -38,16 +38,19 @@ CREATE TABLE IF NOT EXISTS public.notes (
   owner_id uuid NOT NULL,
   created_by uuid NOT NULL,
   notebook_id uuid NOT NULL,
+  folder_id uuid NOT NULL,
   title text,
   content text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now(),
   PRIMARY KEY (id),
-  CONSTRAINT fk_notes_notebook FOREIGN KEY (notebook_id) REFERENCES public.notebooks (id) ON DELETE CASCADE
+  CONSTRAINT fk_notes_notebook FOREIGN KEY (notebook_id) REFERENCES public.notebooks (id) ON DELETE CASCADE,
+  CONSTRAINT fk_notes_folder FOREIGN KEY (folder_id) REFERENCES public.folders (id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_notes_notebook_id ON public.notes (notebook_id);
 CREATE INDEX IF NOT EXISTS idx_notes_owner_id ON public.notes (owner_id);
+CREATE INDEX IF NOT EXISTS idx_notes_folder_id ON public.notes (folder_id);
 
 CREATE TABLE IF NOT EXISTS public.quizzes (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -139,7 +142,7 @@ SELECT
   MAX(GREATEST(f.updated_at, n.updated_at, nt.updated_at)) as last_activity
 FROM public.folders f
 LEFT JOIN public.notebooks n ON n.folder_id = f.id
-LEFT JOIN public.notes nt ON nt.notebook_id = n.id
+LEFT JOIN public.notes nt ON nt.folder_id = f.id
 GROUP BY f.id, f.owner_id, f.name, f.color, f.created_at, f.updated_at;
 
 DROP VIEW IF EXISTS public.user_stats CASCADE;
@@ -152,7 +155,7 @@ SELECT
   COUNT(DISTINCT n.id) FILTER (WHERE n.archived = true) as total_archived
 FROM public.folders f
 LEFT JOIN public.notebooks n ON n.folder_id = f.id
-LEFT JOIN public.notes nt ON nt.notebook_id = n.id
+LEFT JOIN public.notes nt ON nt.folder_id = f.id
 GROUP BY f.owner_id;
 
 -- Grant permissions

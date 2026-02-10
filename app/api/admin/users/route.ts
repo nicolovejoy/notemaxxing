@@ -47,7 +47,13 @@ export async function GET(_request: NextRequest) {
     const usersWithStats = await Promise.all(
       authUsers.users.map(async (authUser) => {
         // Get counts for folders, notebooks, notes
-        const [foldersResult, notebooksResult, notesResult, permissionsGrantedResult, permissionsReceivedResult] = await Promise.all([
+        const [
+          foldersResult,
+          notebooksResult,
+          notesResult,
+          permissionsGrantedResult,
+          permissionsReceivedResult,
+        ] = await Promise.all([
           serviceClient
             .from('folders')
             .select('id', { count: 'exact', head: true })
