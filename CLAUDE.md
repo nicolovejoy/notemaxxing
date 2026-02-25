@@ -40,16 +40,17 @@ Component → API Route → Firebase Admin SDK → Firestore
 ## Current State
 
 - **Build**: Passing ✅
-- **Auth**: Firebase (Google sign-in) — Supabase fully removed
+- **Auth**: Firebase (Google + email/password) — Supabase fully removed
 - **AI Model**: `claude-sonnet-4-20250514`
-- **Next**: Functional testing with real Firebase env vars
+- **Firebase project**: `piano-house-shared` (shared with soiree)
+- **Indexes**: deployed via `firestore.indexes.json` — run `firebase deploy --only firestore:indexes` to rebuild
 
 ## Next Steps
 
-1. Run `npm run dev`, verify Google sign-in works
-2. Check `lib/api/sharing.ts` — confirm it sends Bearer token
-3. Test CRUD: folder → notebook → note
-4. Test share invite flow end-to-end
+1. Fix React Query cache invalidation after accept-invite and create-notebook-in-shared-folder (UI requires manual refresh)
+2. Write `firestore.rules` and deploy for defense-in-depth
+3. Test archive notebook, delete folder flows
+4. Test share revoke flow
 
 ## Planned Features
 
