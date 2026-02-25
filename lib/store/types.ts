@@ -1,32 +1,5 @@
-// Database types
-import type { Database } from '../supabase/database.types'
-
 // Entity types
-export type Folder = Database['public']['Tables']['folders']['Row'] & {
-  shared?: boolean
-  sharedByMe?: boolean
-  permission?: 'read' | 'write'
-}
-export type Notebook = Database['public']['Tables']['notebooks']['Row'] & {
-  shared?: boolean // True if accessible through any permission (folder or direct)
-  sharedDirectly?: boolean // True only if directly shared (not through folder)
-  sharedByMe?: boolean
-  permission?: 'read' | 'write'
-  note_count?: number // Populated by server for performance
-}
-export type Note = Database['public']['Tables']['notes']['Row']
-export type Quiz = Database['public']['Tables']['quizzes']['Row'] & {
-  questions: QuizQuestion[]
-}
-
-// Quiz types
-export interface QuizQuestion {
-  id: string
-  question: string
-  answer: string
-  options?: string[]
-  type: 'multiple-choice' | 'short-answer' | 'essay'
-}
+export type { Folder, Notebook, Note, Quiz, QuizQuestion } from '../types/entities'
 
 // Sharing types
 export type {

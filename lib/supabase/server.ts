@@ -1,35 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import type { Database } from './database.types'
-
+// Stub — Supabase removed, using Firebase instead
 export async function createClient() {
-  // Return a mock client if env vars are not set (for build time)
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    console.warn('Supabase environment variables not set')
-    return null as unknown as ReturnType<typeof createServerClient>
-  }
-
-  const cookieStore = await cookies()
-
-  // Use service role key for server-side operations to bypass RLS
-  // This is secure because this code only runs on the server
-  const supabaseKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  return createServerClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL, supabaseKey, {
-    cookies: {
-      getAll() {
-        return cookieStore.getAll()
-      },
-      setAll(cookiesToSet) {
-        try {
-          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-        } catch {
-          // The `setAll` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
-        }
-      },
-    },
-  })
+  return null
 }

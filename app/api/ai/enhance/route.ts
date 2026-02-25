@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import { getAuthenticatedSupabaseClient } from '@/lib/api/supabase-server-helpers'
+import { getAuthenticatedUser } from '@/lib/api/firebase-server-helpers'
 
 // Simple in-memory rate limiting (upgrade to Redis later)
 const rateLimits = new Map<string, number>()
@@ -27,15 +27,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Claude API key not configured' }, { status: 500 })
     }
 
-    // Get authenticated client
-    const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
+    const { uid, error } = await getAuthenticatedUser(request)
     if (error) return error
-    if (!supabase) {
-      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
-    }
 
     // Check rate limit
-    const hasCapacity = await checkRateLimit(user.id)
+    const hasCapacity = await checkRateLimit(uid)
     if (!hasCapacity) {
       return NextResponse.json(
         { error: 'Daily AI limit reached. Try again tomorrow!' },

@@ -1,40 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ folderId: string }> }
 ) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const { folderId } = await params
+  const db = getAdminDb()
 
-    const { folderId } = await params
+  const snap = await db
+    .collection('notebooks')
+    .where('folder_id', '==', folderId)
+    .where('owner_id', '==', uid)
+    .where('archived', '==', false)
+    .orderBy('updated_at', 'desc')
+    .limit(1)
+    .get()
 
-    // Get the most recently updated notebook in this folder
-    const { data: notebook, error } = await supabase
-      .from('notebooks')
-      .select('id, name, updated_at')
-      .eq('folder_id', folderId)
-      .eq('user_id', userId)
-      .eq('archived', false)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single()
-
-    if (error || !notebook) {
-      // No notebooks in folder, return null
-      return NextResponse.json({ notebook: null })
-    }
-
-    return NextResponse.json({ notebook })
-  } catch (error) {
-    console.error('Error fetching recent notebook:', error)
-    return NextResponse.json({ error: 'Failed to fetch recent notebook' }, { status: 500 })
+  if (snap.empty) {
+    return NextResponse.json({ notebook: null })
   }
+
+  const doc = snap.docs[0]
+  return NextResponse.json({ notebook: { id: doc.id, ...doc.data() } })
 }

@@ -6,7 +6,7 @@ import { useParams } from 'next/navigation'
 import { sharingApi } from '@/lib/api/sharing'
 import { Button } from '@/components/ui'
 import { Check, AlertCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { auth } from '@/lib/firebase/client'
 import { dataManager } from '@/lib/store/data-manager'
 
 export default function SharePage() {
@@ -28,19 +28,12 @@ export default function SharePage() {
   } | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
-  const [emailMismatch, _setEmailMismatch] = useState(false)
+  const [emailMismatch] = useState(false)
 
   useEffect(() => {
     const checkAuthAndLoadInvitation = async () => {
       try {
-        const supabase = createClient()
-        if (!supabase) {
-          throw new Error('Unable to initialize Supabase client')
-        }
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        const user = auth.currentUser
 
         setIsAuthenticated(!!user)
 

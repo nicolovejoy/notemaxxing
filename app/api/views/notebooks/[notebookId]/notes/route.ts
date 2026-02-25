@@ -1,233 +1,135 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ notebookId: string }> }
 ) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const { notebookId } = await params
+  const searchParams = request.nextUrl.searchParams
+  const offset = parseInt(searchParams.get('offset') || '0')
+  const limit = parseInt(searchParams.get('limit') || '20')
+  const search = searchParams.get('search') || ''
+  const sort = searchParams.get('sort') || 'recent'
+
+  const db = getAdminDb()
+
+  // Get notebook and check access
+  const notebookDoc = await db.collection('notebooks').doc(notebookId).get()
+  if (!notebookDoc.exists) {
+    return NextResponse.json({ error: 'Notebook not found', notebookId }, { status: 404 })
+  }
+
+  const notebook = notebookDoc.data()!
+  const isOwner = notebook.owner_id === uid
+  let folderPermLevel: string | null = null
+
+  if (!isOwner) {
+    if (!notebook.folder_id) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
     }
 
-    const { notebookId } = await params
-    const searchParams = request.nextUrl.searchParams
-    const offset = parseInt(searchParams.get('offset') || '0')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const search = searchParams.get('search') || ''
-    const sort = searchParams.get('sort') || 'recent' // recent | alphabetical | created
+    const permSnap = await db
+      .collection('permissions')
+      .where('user_id', '==', uid)
+      .where('resource_id', '==', notebook.folder_id)
+      .where('resource_type', '==', 'folder')
+      .get()
 
-    console.log('[API] Loading notes for notebook:', {
-      notebookId,
-      userId,
+    if (permSnap.empty) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
+    folderPermLevel = permSnap.docs[0].data().permission_level as string
+  }
+
+  // Get folder and sibling notebooks
+  let folderInfo: { id: string; name: string; color: string } | null = null
+  let siblingNotebooks: Array<{ id: string; name: string; color: string }> = []
+
+  if (notebook.folder_id) {
+    const folderDoc = await db.collection('folders').doc(notebook.folder_id as string).get()
+    if (folderDoc.exists) {
+      const f = folderDoc.data()!
+      folderInfo = { id: folderDoc.id, name: f.name as string, color: f.color as string }
+
+      const siblingsSnap = await db
+        .collection('notebooks')
+        .where('folder_id', '==', notebook.folder_id)
+        .where('archived', '==', false)
+        .orderBy('name')
+        .get()
+      siblingNotebooks = siblingsSnap.docs.map(doc => {
+        const d = doc.data()
+        return { id: doc.id, name: d.name as string, color: d.color as string }
+      })
+    }
+  }
+
+  // Fetch all notes for the notebook (sorting in Firestore, search in memory)
+  let orderField = 'updated_at'
+  if (sort === 'created') orderField = 'created_at'
+  else if (sort === 'alphabetical') orderField = 'title'
+
+  const notesSnap = await db
+    .collection('notes')
+    .where('notebook_id', '==', notebookId)
+    .orderBy(orderField, sort === 'alphabetical' ? 'asc' : 'desc')
+    .get()
+
+  let notes: Array<Record<string, unknown>> = notesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+  // In-memory search filter
+  if (search) {
+    const lower = search.toLowerCase()
+    notes = notes.filter(n => {
+      const title = (n.title as string || '').toLowerCase()
+      const content = (n.content as string || '').toLowerCase()
+      return title.includes(lower) || content.includes(lower)
+    })
+  }
+
+  const totalCount = notes.length
+  const paginated = notes.slice(offset, offset + limit)
+
+  const notesWithPreviews = paginated.map(note => {
+    const plainText = (note.content as string || '').replace(/<[^>]*>/g, '').substring(0, 150)
+    return {
+      id: note.id,
+      title: note.title,
+      preview: plainText || 'Empty note',
+      created_at: note.created_at,
+      updated_at: note.updated_at,
+    }
+  })
+
+  const userPermission: 'owner' | 'read' | 'write' = isOwner
+    ? 'owner'
+    : (folderPermLevel as 'read' | 'write') || 'read'
+
+  return NextResponse.json({
+    notebook: {
+      id: notebookDoc.id,
+      name: notebook.name,
+      color: notebook.color,
+      folder_id: notebook.folder_id,
+      folder_name: folderInfo?.name || '',
+      owner_id: notebook.owner_id,
+      shared: !isOwner,
+      permission: userPermission,
+    },
+    folder: folderInfo,
+    siblingNotebooks,
+    notes: notesWithPreviews,
+    currentNote: null,
+    pagination: {
+      total: totalCount,
       offset,
       limit,
-      search,
-      sort,
-    })
-
-    // Get notebook and folder info
-    const { data: notebook, error: notebookError } = await supabase
-      .from('notebooks')
-      .select(
-        `
-        id,
-        name,
-        color,
-        folder_id,
-        owner_id,
-        created_by
-      `
-      )
-      .eq('id', notebookId)
-      .single()
-
-    if (notebookError || !notebook) {
-      console.error('Notebook not found:', {
-        notebookId,
-        userId,
-        error: notebookError,
-        notebookData: notebook,
-      })
-      return NextResponse.json({ error: 'Notebook not found', notebookId }, { status: 404 })
-    }
-
-    // Check permissions
-    const isOwner = notebook.owner_id === userId
-    let folderPerm = null
-
-    if (!isOwner) {
-      // Check for folder-level permission (sharing is folder-only)
-      if (notebook.folder_id) {
-        const { data: folderPermData } = await supabase
-          .from('permissions')
-          .select('permission_level')
-          .eq('user_id', userId)
-          .eq('resource_id', notebook.folder_id)
-          .eq('resource_type', 'folder')
-          .neq('permission_level', 'none')
-          .single()
-
-        folderPerm = folderPermData
-
-        if (!folderPerm) {
-          console.error('Access denied - no permission:', {
-            notebookId,
-            userId,
-            notebookOwnerId: notebook.owner_id,
-          })
-          return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-        }
-      } else {
-        console.error('Access denied - no folder:', {
-          notebookId,
-          userId,
-          notebookOwnerId: notebook.owner_id,
-        })
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-      }
-    }
-
-    // Get folder info and sibling notebooks if notebook has a folder
-    let folderInfo = null
-    let siblingNotebooks: Array<{ id: string; name: string; color: string }> = []
-
-    if (notebook.folder_id) {
-      // Get folder details
-      const { data: folder } = await supabase
-        .from('folders')
-        .select('id, name, color')
-        .eq('id', notebook.folder_id)
-        .single()
-
-      if (folder) {
-        folderInfo = folder
-
-        // Get all notebooks in the same folder
-        const { data: siblings } = await supabase
-          .from('notebooks')
-          .select('id, name, color')
-          .eq('folder_id', notebook.folder_id)
-          .eq('archived', false)
-          .order('name')
-
-        siblingNotebooks = siblings || []
-      }
-    }
-
-    // Build base query for counting
-    let countQuery = supabase
-      .from('notes')
-      .select('*', { count: 'exact', head: true })
-      .eq('notebook_id', notebookId)
-
-    // Add search filter to count query
-    if (search) {
-      countQuery = countQuery.or(`title.ilike.%${search}%,content.ilike.%${search}%`)
-    }
-
-    const { count: totalCount, error: countError } = await countQuery
-
-    if (countError) throw countError
-
-    // Build query for fetching notes
-    let notesQuery = supabase
-      .from('notes')
-      .select(
-        `
-        id,
-        title,
-        created_at,
-        updated_at,
-        content
-      `
-      )
-      .eq('notebook_id', notebookId)
-
-    // Add search filter
-    if (search) {
-      notesQuery = notesQuery.or(`title.ilike.%${search}%,content.ilike.%${search}%`)
-    }
-
-    // Add sorting
-    switch (sort) {
-      case 'alphabetical':
-        notesQuery = notesQuery.order('title', { ascending: true })
-        break
-      case 'created':
-        notesQuery = notesQuery.order('created_at', { ascending: false })
-        break
-      case 'recent':
-      default:
-        notesQuery = notesQuery.order('updated_at', { ascending: false })
-        break
-    }
-
-    // Apply pagination
-    notesQuery = notesQuery.range(offset, offset + limit - 1)
-
-    const { data: notes, error: notesError } = await notesQuery
-
-    if (notesError) throw notesError
-
-    // Generate previews from actual content (first 150 chars)
-    const notesWithPreviews =
-      notes?.map(
-        (note: {
-          id: string
-          title: string
-          content: string
-          created_at: string
-          updated_at: string
-        }) => {
-          // Strip HTML tags and get first 150 characters for preview
-          const plainText = note.content
-            ? note.content.replace(/<[^>]*>/g, '').substring(0, 150)
-            : ''
-          return {
-            id: note.id,
-            title: note.title,
-            preview: plainText || 'Empty note',
-            created_at: note.created_at,
-            updated_at: note.updated_at,
-          }
-        }
-      ) || []
-
-    // Determine permission level for response
-    let userPermission: 'owner' | 'read' | 'write' = 'owner'
-    if (!isOwner) {
-      userPermission = (folderPerm?.permission_level || 'read') as 'read' | 'write'
-    }
-
-    return NextResponse.json({
-      notebook: {
-        id: notebook.id,
-        name: notebook.name,
-        color: notebook.color,
-        folder_id: notebook.folder_id,
-        folder_name: folderInfo?.name || '',
-        owner_id: notebook.owner_id,
-        shared: !isOwner,
-        permission: userPermission,
-      },
-      folder: folderInfo,
-      siblingNotebooks,
-      notes: notesWithPreviews,
-      currentNote: null, // Load separately when selected
-      pagination: {
-        total: totalCount || 0,
-        offset,
-        limit,
-        hasMore: offset + limit < (totalCount || 0),
-      },
-    })
-  } catch (error) {
-    console.error('Error fetching notes view:', error)
-    return NextResponse.json({ error: 'Failed to fetch notes view' }, { status: 500 })
-  }
+      hasMore: offset + limit < totalCount,
+    },
+  })
 }

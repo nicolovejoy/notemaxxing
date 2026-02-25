@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { Users, Trash2, Check, Copy, Link } from 'lucide-react'
 import { Modal, Button, IconButton } from './ui'
 import { sharingApi } from '@/lib/api/sharing'
-import { createClient } from '@/lib/supabase/client'
+import { auth } from '@/lib/firebase/client'
 import { FormField } from '@/components/ui/FormField'
 import { SelectField } from '@/components/ui/SelectField'
 import { StatusMessage } from '@/components/ui/StatusMessage'
@@ -63,18 +63,10 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
 
   // Get current user email
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const supabase = createClient()
-      if (!supabase) return
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (user?.email) {
-        setCurrentUserEmail(user.email)
-      }
+    const user = auth.currentUser
+    if (user?.email) {
+      setCurrentUserEmail(user.email)
     }
-    getCurrentUser()
   }, [])
 
   const handleSendInvitation = async () => {

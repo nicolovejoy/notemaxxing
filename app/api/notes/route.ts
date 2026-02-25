@@ -1,214 +1,121 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
+import type { Firestore } from 'firebase-admin/firestore'
 
-// POST /api/notes - Create a new note
+async function checkWriteAccess(db: Firestore, uid: string, ownerId: string, folderId: string | null): Promise<boolean> {
+  if (ownerId === uid) return true
+  if (!folderId) return false
+
+  const permSnap = await db
+    .collection('permissions')
+    .where('user_id', '==', uid)
+    .where('resource_id', '==', folderId)
+    .where('resource_type', '==', 'folder')
+    .where('permission_level', '==', 'write')
+    .get()
+
+  return !permSnap.empty
+}
+
 export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const body = await request.json()
+  const { title, content, notebook_id } = body
 
-    const body = await request.json()
-    const { title, content, notebook_id } = body
-
-    if (!notebook_id) {
-      return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
-    }
-
-    // Get notebook to inherit its owner_id and folder_id
-    const { data: notebook } = await supabase
-      .from('notebooks')
-      .select('id, owner_id, folder_id')
-      .eq('id', notebook_id)
-      .single()
-
-    if (!notebook) {
-      return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
-    }
-
-    // Check if user has write access
-    const isOwner = notebook.owner_id === userId
-
-    if (!isOwner) {
-      if (notebook.folder_id) {
-        // Check for folder-level write permission
-        const { data: permission } = await supabase
-          .from('permissions')
-          .select('permission_level')
-          .eq('user_id', userId)
-          .eq('resource_id', notebook.folder_id)
-          .eq('resource_type', 'folder')
-          .eq('permission_level', 'write')
-          .single()
-
-        if (!permission) {
-          return NextResponse.json(
-            { error: 'Access denied - write permission required' },
-            { status: 403 }
-          )
-        }
-      } else {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('notes')
-      .insert({
-        title: title || 'Untitled Note',
-        content: content || '',
-        notebook_id,
-        folder_id: notebook.folder_id,
-        owner_id: notebook.owner_id, // Inherit from notebook
-        created_by: userId, // Current user who created it
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error('Error creating note:', error)
-    return NextResponse.json({ error: 'Failed to create note' }, { status: 500 })
+  if (!notebook_id) {
+    return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
   }
+
+  const db = getAdminDb()
+  const notebookDoc = await db.collection('notebooks').doc(notebook_id).get()
+
+  if (!notebookDoc.exists) {
+    return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
+  }
+
+  const notebook = notebookDoc.data()!
+  const hasAccess = await checkWriteAccess(db, uid, notebook.owner_id, notebook.folder_id)
+
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+  }
+
+  const now = new Date().toISOString()
+  const data = {
+    title: title || 'Untitled Note',
+    content: content || '',
+    notebook_id,
+    folder_id: notebook.folder_id,
+    owner_id: notebook.owner_id,
+    created_by: uid,
+    created_at: now,
+    updated_at: now,
+  }
+
+  const ref = await db.collection('notes').add(data)
+  return NextResponse.json({ id: ref.id, ...data })
 }
 
-// PATCH /api/notes - Update a note
 export async function PATCH(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const body = await request.json()
+  const { id, title, content } = body
 
-    const body = await request.json()
-    const { id, title, content } = body
-
-    if (!id) {
-      return NextResponse.json({ error: 'Note ID is required' }, { status: 400 })
-    }
-
-    // Verify note exists — folder_id is now on the note directly
-    const { data: note } = await supabase
-      .from('notes')
-      .select('id, notebook_id, owner_id, folder_id')
-      .eq('id', id)
-      .single()
-
-    if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 })
-    }
-
-    // Check if user has write access
-    const isOwner = note.owner_id === userId
-
-    if (!isOwner) {
-      if (note.folder_id) {
-        // Check for folder-level write permission
-        const { data: permission } = await supabase
-          .from('permissions')
-          .select('permission_level')
-          .eq('user_id', userId)
-          .eq('resource_id', note.folder_id)
-          .eq('resource_type', 'folder')
-          .eq('permission_level', 'write')
-          .single()
-
-        if (!permission) {
-          return NextResponse.json(
-            { error: 'Access denied - write permission required' },
-            { status: 403 }
-          )
-        }
-      } else {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-      }
-    }
-
-    const { data, error } = await supabase
-      .from('notes')
-      .update({ title, content, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error('Error updating note:', error)
-    return NextResponse.json({ error: 'Failed to update note' }, { status: 500 })
+  if (!id) {
+    return NextResponse.json({ error: 'Note ID is required' }, { status: 400 })
   }
+
+  const db = getAdminDb()
+  const noteDoc = await db.collection('notes').doc(id).get()
+
+  if (!noteDoc.exists) {
+    return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+  }
+
+  const note = noteDoc.data()!
+  const hasAccess = await checkWriteAccess(db, uid, note.owner_id, note.folder_id)
+
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+  }
+
+  const updates: Record<string, string> = { updated_at: new Date().toISOString() }
+  if (title !== undefined) updates.title = title
+  if (content !== undefined) updates.content = content
+
+  await db.collection('notes').doc(id).update(updates)
+  return NextResponse.json({ id, ...note, ...updates })
 }
 
-// DELETE /api/notes - Delete a note
 export async function DELETE(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json({ error: 'Note ID is required' }, { status: 400 })
-    }
-
-    // Verify note exists — folder_id is now on the note directly
-    const { data: note } = await supabase
-      .from('notes')
-      .select('id, notebook_id, owner_id, folder_id')
-      .eq('id', id)
-      .single()
-
-    if (!note) {
-      return NextResponse.json({ error: 'Note not found' }, { status: 404 })
-    }
-
-    // Check if user has write access
-    const isOwner = note.owner_id === userId
-
-    if (!isOwner) {
-      if (note.folder_id) {
-        // Check for folder-level write permission
-        const { data: permission } = await supabase
-          .from('permissions')
-          .select('permission_level')
-          .eq('user_id', userId)
-          .eq('resource_id', note.folder_id)
-          .eq('resource_type', 'folder')
-          .eq('permission_level', 'write')
-          .single()
-
-        if (!permission) {
-          return NextResponse.json(
-            { error: 'Access denied - write permission required' },
-            { status: 403 }
-          )
-        }
-      } else {
-        return NextResponse.json({ error: 'Access denied' }, { status: 403 })
-      }
-    }
-
-    const { error } = await supabase.from('notes').delete().eq('id', id)
-
-    if (error) throw error
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting note:', error)
-    return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 })
+  if (!id) {
+    return NextResponse.json({ error: 'Note ID is required' }, { status: 400 })
   }
+
+  const db = getAdminDb()
+  const noteDoc = await db.collection('notes').doc(id).get()
+
+  if (!noteDoc.exists) {
+    return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+  }
+
+  const note = noteDoc.data()!
+  const hasAccess = await checkWriteAccess(db, uid, note.owner_id, note.folder_id)
+
+  if (!hasAccess) {
+    return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+  }
+
+  await db.collection('notes').doc(id).delete()
+  return NextResponse.json({ success: true })
 }

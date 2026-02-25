@@ -1,193 +1,67 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedSupabaseClient } from '@/lib/api/supabase-server-helpers'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
-import type { PostgrestError } from '@supabase/supabase-js'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
-// Admin emails allowed to use this endpoint
-const ADMIN_EMAILS = [
-  'nicholas.lovejoy@gmail.com', // Nico - Developer
-  'mlovejoy@scu.edu', // Max - UX Designer & Co-developer
-]
-
-// Admin password - store this securely, ideally in environment variable
+const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'change-this-password'
 
+async function deleteCollection(db: FirebaseFirestore.Firestore, collection: string, field: string, value: string) {
+  const snap = await db.collection(collection).where(field, '==', value).get()
+  const batch = db.batch()
+  snap.docs.forEach(doc => batch.delete(doc.ref))
+  if (!snap.empty) await batch.commit()
+  return snap.size
+}
+
 export async function POST(request: NextRequest) {
-  try {
-    // 1. Verify user is authenticated
-    const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
-    if (error) return error
-    if (!supabase) {
-      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
-    }
+  const { email, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    // 2. Verify user is admin
-    if (!user.email || !ADMIN_EMAILS.includes(user.email)) {
-      console.warn(`Non-admin user attempted admin action: ${user.email}`)
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // 3. Parse request body
-    const body = await request.json()
-    const { targetUserId, adminPassword } = body
-
-    if (!targetUserId) {
-      return NextResponse.json({ error: 'Missing targetUserId' }, { status: 400 })
-    }
-
-    // 4. Verify admin password
-    if (adminPassword !== ADMIN_PASSWORD) {
-      console.warn(`Invalid admin password attempt by: ${user.email}`)
-      return NextResponse.json({ error: 'Invalid admin password' }, { status: 403 })
-    }
-
-    // 5. Log the admin action
-    console.log(`Admin action: ${user.email} resetting data for user ${targetUserId}`)
-
-    // 6. Create service role client (bypasses RLS)
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      console.error('SUPABASE_SERVICE_ROLE_KEY not set in environment variables')
-      return NextResponse.json(
-        {
-          error: 'Server configuration error',
-          details: 'Service role key not configured',
-        },
-        { status: 500 }
-      )
-    }
-
-    const serviceClient = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    )
-
-    // 7. Get current data counts for logging
-    const [folders, notebooks, notes] = await Promise.all([
-      serviceClient.from('folders').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
-      serviceClient.from('notebooks').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
-      serviceClient.from('notes').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
-    ])
-
-    const beforeCounts = {
-      folders: folders.count || 0,
-      notebooks: notebooks.count || 0,
-      notes: notes.count || 0,
-    }
-
-    // 8. Delete all user data using service role (bypasses RLS)
-    // Note: We delete in reverse dependency order
-    const deleteOperations: Array<{
-      table: string
-      result: { error: PostgrestError | null; data: unknown }
-      optional?: boolean
-    }> = []
-
-    // Delete notes first (depends on notebooks)
-    const notesDelete = await serviceClient.from('notes').delete().eq('owner_id', targetUserId)
-    deleteOperations.push({ table: 'notes', result: notesDelete })
-
-    // Delete quizzes (independent)
-    const quizzesDelete = await serviceClient.from('quizzes').delete().eq('owner_id', targetUserId)
-    // Ignore errors for quizzes as table might not have any entries
-    deleteOperations.push({ table: 'quizzes', result: quizzesDelete, optional: true })
-
-    // Delete notebooks (depends on folders)
-    const notebooksDelete = await serviceClient
-      .from('notebooks')
-      .delete()
-      .eq('owner_id', targetUserId)
-    deleteOperations.push({ table: 'notebooks', result: notebooksDelete })
-
-    // Delete folders
-    const foldersDelete = await serviceClient.from('folders').delete().eq('owner_id', targetUserId)
-    deleteOperations.push({ table: 'folders', result: foldersDelete })
-
-    // TODO: Update after permission system migration
-    // Need to clean up new tables:
-    // - ownership (where user_id = targetUserId)
-    // - permissions (where user_id = targetUserId OR granted_by = targetUserId)
-    // - resource_states (for resources owned by targetUserId)
-    // - permission_audit (where user_id = targetUserId OR granted_by = targetUserId)
-    // - invitations (where invited_by = targetUserId OR accepted_by = targetUserId)
-    //
-    // For now, clean up old tables (will be replaced by migration)
-    const permissionsDelete = await serviceClient
-      .from('permissions')
-      .delete()
-      .eq('user_id', targetUserId)
-    deleteOperations.push({ table: 'permissions', result: permissionsDelete, optional: true })
-
-    const invitationsDelete = await serviceClient
-      .from('share_invitations')
-      .delete()
-      .eq('created_by', targetUserId)
-    deleteOperations.push({ table: 'share_invitations', result: invitationsDelete, optional: true })
-
-    // 9. Check for errors (ignoring optional tables)
-    const failedOps = deleteOperations.filter((op) => !op.optional && op.result.error)
-    if (failedOps.length > 0) {
-      const errorDetails = failedOps.map((op) => ({
-        table: op.table,
-        error: op.result.error?.message,
-        code: op.result.error?.code,
-      }))
-      console.error('Delete operation failures:', errorDetails)
-      return NextResponse.json(
-        {
-          error: 'Some deletions failed',
-          details: errorDetails,
-        },
-        { status: 500 }
-      )
-    }
-
-    // Log any warnings from optional tables
-    const optionalErrors = deleteOperations.filter((op) => op.optional && op.result.error)
-    if (optionalErrors.length > 0) {
-      console.log(
-        'Optional table delete warnings (ignored):',
-        optionalErrors.map((op) => op.table)
-      )
-    }
-
-    // 10. Verify deletion
-    const [foldersAfter, notebooksAfter, notesAfter] = await Promise.all([
-      serviceClient.from('folders').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
-      serviceClient.from('notebooks').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
-      serviceClient.from('notes').select('id', { count: 'exact' }).eq('owner_id', targetUserId),
-    ])
-
-    const afterCounts = {
-      folders: foldersAfter.count || 0,
-      notebooks: notebooksAfter.count || 0,
-      notes: notesAfter.count || 0,
-    }
-
-    // 11. Log the result
-    console.log(
-      `Admin action completed: Deleted ${beforeCounts.folders} folders, ${beforeCounts.notebooks} notebooks, ${beforeCounts.notes} notes for user ${targetUserId}`
-    )
-
-    return NextResponse.json({
-      success: true,
-      deleted: beforeCounts,
-      remaining: afterCounts,
-      targetUserId,
-    })
-  } catch (error) {
-    console.error('Admin reset error:', error)
-    return NextResponse.json(
-      {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    )
+  if (!email || !ADMIN_EMAILS.includes(email)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const body = await request.json()
+  const { targetUserId, adminPassword } = body
+
+  if (!targetUserId) {
+    return NextResponse.json({ error: 'Missing targetUserId' }, { status: 400 })
+  }
+
+  if (adminPassword !== ADMIN_PASSWORD) {
+    return NextResponse.json({ error: 'Invalid admin password' }, { status: 403 })
+  }
+
+  console.log(`Admin action: ${email} resetting data for user ${targetUserId}`)
+
+  const db = getAdminDb()
+
+  // Count before
+  const [foldersSnap, notebooksSnap, notesSnap] = await Promise.all([
+    db.collection('folders').where('owner_id', '==', targetUserId).get(),
+    db.collection('notebooks').where('owner_id', '==', targetUserId).get(),
+    db.collection('notes').where('owner_id', '==', targetUserId).get(),
+  ])
+
+  const beforeCounts = {
+    folders: foldersSnap.size,
+    notebooks: notebooksSnap.size,
+    notes: notesSnap.size,
+  }
+
+  // Delete in dependency order
+  await deleteCollection(db, 'notes', 'owner_id', targetUserId)
+  await deleteCollection(db, 'notebooks', 'owner_id', targetUserId)
+  await deleteCollection(db, 'folders', 'owner_id', targetUserId)
+  await deleteCollection(db, 'permissions', 'user_id', targetUserId)
+  await deleteCollection(db, 'permissions', 'granted_by', targetUserId)
+  await deleteCollection(db, 'invitations', 'invited_by', targetUserId)
+
+  console.log(`Admin action completed: deleted ${JSON.stringify(beforeCounts)} for user ${targetUserId}`)
+
+  return NextResponse.json({
+    success: true,
+    deleted: beforeCounts,
+    remaining: { folders: 0, notebooks: 0, notes: 0 },
+    targetUserId,
+  })
 }

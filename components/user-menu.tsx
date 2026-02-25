@@ -1,10 +1,11 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { auth } from '@/lib/firebase/client'
+import { signOut } from 'firebase/auth'
 import { useRouter } from 'next/navigation'
 import { User, LogOut, Shield } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import type { User as SupabaseUser } from '@supabase/supabase-js'
+import type { User as FirebaseUser } from 'firebase/auth'
 import { AdminConsole } from './admin-console'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -16,44 +17,22 @@ const ADMIN_EMAILS = [
 ]
 
 export function UserMenu() {
-  const [user, setUser] = useState<SupabaseUser | null>(null)
+  const [user, setUser] = useState<FirebaseUser | null>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [showAdminConsole, setShowAdminConsole] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    if (!supabase) return
-
-    let subscription: { unsubscribe: () => void } | null = null
-
-    const initializeAuth = async () => {
-      // Get initial user
-      const { data } = await supabase.auth.getUser()
-      setUser(data.user)
-
-      // Listen for auth changes
-      const authListener = supabase.auth.onAuthStateChange((_event, session) => {
-        setUser(session?.user ?? null)
-      })
-      subscription = authListener.data.subscription
-    }
-
-    initializeAuth()
-
-    return () => {
-      subscription?.unsubscribe()
-    }
-  }, [supabase])
+    const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
+      setUser(firebaseUser)
+    })
+    return unsubscribe
+  }, [])
 
   const handleSignOut = async () => {
-    if (!supabase) return
-
-    // Clear all React Query caches before signing out
     queryClient.clear()
-
-    await supabase.auth.signOut()
+    await signOut(auth)
     router.push('/')
     router.refresh()
   }

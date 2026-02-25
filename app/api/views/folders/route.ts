@@ -1,274 +1,185 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
-export async function GET() {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+export async function GET(request: Request) {
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const db = getAdminDb()
 
-    // Get folders user has access to (owned or shared)
-    // First get all folders the user owns
-    const { data: ownedFolders, error: ownedError } = await supabase
-      .from('folders_with_stats')
-      .select('*')
-      .eq('owner_id', userId)
+  // Owned folders
+  const ownedSnap = await db.collection('folders').where('owner_id', '==', uid).get()
+  const ownedFolders = ownedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  const ownedFolderIds = new Set(ownedFolders.map(f => f.id))
 
-    if (ownedError) throw ownedError
+  // Folder-level permissions shared with this user
+  const sharedPermsSnap = await db
+    .collection('permissions')
+    .where('user_id', '==', uid)
+    .where('resource_type', '==', 'folder')
+    .get()
 
-    // Then get folders shared with the user via permissions
-    const { data: sharedPerms, error: permError } = await supabase
-      .from('permissions')
-      .select('resource_id, permission_level')
-      .eq('user_id', userId)
-      .eq('resource_type', 'folder')
-      .neq('permission_level', 'none')
+  const sharedPerms = sharedPermsSnap.docs.map(doc => doc.data())
+  const permissionMap: Record<string, string> = {}
+  sharedPerms.forEach(p => { permissionMap[p.resource_id as string] = p.permission_level as string })
 
-    if (permError) throw permError
+  // Fetch shared folder docs
+  const sharedFolderIds = sharedPerms
+    .map(p => p.resource_id as string)
+    .filter(id => !ownedFolderIds.has(id))
 
-    type FolderFromView = {
-      id: string
-      name: string
-      color: string
-      notebook_count: number
-      note_count: number
-      archived_count: number
-      created_at: string
-      updated_at: string
-      owner_id: string
-    }
-
-    let sharedFolders: FolderFromView[] = []
-    if (sharedPerms && sharedPerms.length > 0) {
-      const sharedFolderIds = sharedPerms.map((p: { resource_id: string }) => p.resource_id)
-      const { data: sharedFolderData, error: sharedError } = await supabase
-        .from('folders_with_stats')
-        .select('*')
-        .in('id', sharedFolderIds)
-
-      if (sharedError) throw sharedError
-      sharedFolders = sharedFolderData || []
-    }
-
-    // Get list of folders that the user has shared with others
-    let sharedByMeFolderIds: Set<string> = new Set()
-    if (ownedFolders && ownedFolders.length > 0) {
-      const ownedFolderIds = ownedFolders.map((f: { id: string }) => f.id)
-      const { data: sharedByMe } = await supabase
-        .from('permissions')
-        .select('resource_id')
-        .in('resource_id', ownedFolderIds)
-        .eq('resource_type', 'folder')
-        .eq('granted_by', userId)
-
-      if (sharedByMe) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        sharedByMeFolderIds = new Set(sharedByMe.map((p: any) => p.resource_id))
-      }
-    }
-
-    // Create permission map for shared folders
-    const permissionMap: Record<string, string> = {}
-    if (sharedPerms) {
-      sharedPerms.forEach((p: { resource_id: string; permission_level: string }) => {
-        permissionMap[p.resource_id] = p.permission_level
-      })
-    }
-
-    // Combine owned and shared folders with proper flags
-    const folders = [
-      ...(ownedFolders || []).map((f: FolderFromView) => ({
-        ...f,
-        sharedByMe: sharedByMeFolderIds.has(f.id),
-        sharedWithMe: false,
-        permission: 'owner' as const,
-      })),
-      ...sharedFolders.map((f: FolderFromView) => ({
-        ...f,
-        sharedByMe: false,
-        sharedWithMe: true,
-        permission: permissionMap[f.id] || 'read',
-      })),
-    ].sort((a, b) => a.name.localeCompare(b.name))
-
-    // Get all notebooks for these folders to show in the UI
-    const folderIds = folders?.map((f: { id: string }) => f.id) || []
-
-    let notebooksWithCounts: Array<{
-      id: string
-      name: string
-      color: string
-      folder_id: string
-      note_count: number
-    }> = []
-    const mostRecentNotebookByFolder: Record<string, string> = {}
-
-    if (folderIds.length > 0) {
-      // Get notebooks with updated_at for finding most recent
-      const { data: notebooks, error: notebooksError } = await supabase
-        .from('notebooks')
-        .select('id, name, color, folder_id, updated_at')
-        .in('folder_id', folderIds)
-        .eq('archived', false)
-        .order('name')
-
-      if (notebooksError) throw notebooksError
-
-      // Find most recent notebook for each folder
-      notebooks?.forEach((nb: { id: string; folder_id: string; updated_at: string }) => {
-        if (!mostRecentNotebookByFolder[nb.folder_id]) {
-          mostRecentNotebookByFolder[nb.folder_id] = nb.id
-        } else {
-          // Compare updated_at to find most recent
-          const currentMostRecent = notebooks.find(
-            (n: { id: string; updated_at: string }) =>
-              n.id === mostRecentNotebookByFolder[nb.folder_id]
-          )
-          if (
-            currentMostRecent &&
-            new Date(nb.updated_at) > new Date(currentMostRecent.updated_at)
-          ) {
-            mostRecentNotebookByFolder[nb.folder_id] = nb.id
-          }
-        }
-      })
-
-      // Get note counts for each notebook
-      const notebookIds = notebooks?.map((n: { id: string }) => n.id) || []
-
-      if (notebookIds.length > 0) {
-        const { data: noteCounts, error: noteCountError } = await supabase
-          .from('notes')
-          .select('notebook_id')
-          .in('notebook_id', notebookIds)
-
-        if (noteCountError) throw noteCountError
-
-        // Count notes per notebook
-        const noteCountMap =
-          noteCounts?.reduce(
-            (acc: Record<string, number>, note: { notebook_id: string }) => {
-              acc[note.notebook_id] = (acc[note.notebook_id] || 0) + 1
-              return acc
-            },
-            {} as Record<string, number>
-          ) || {}
-
-        // Add note counts to notebooks
-        notebooksWithCounts =
-          notebooks?.map((nb: { id: string; name: string; color: string; folder_id: string }) => ({
-            id: nb.id,
-            name: nb.name,
-            color: nb.color,
-            folder_id: nb.folder_id,
-            note_count: noteCountMap[nb.id] || 0,
-          })) || []
-      }
-    }
-
-    // Group notebooks by folder
-    type NotebookSummary = { id: string; name: string; color: string; note_count: number }
-    const notebooksByFolder = notebooksWithCounts.reduce<Record<string, NotebookSummary[]>>(
-      (acc, nb) => {
-        if (!acc[nb.folder_id]) acc[nb.folder_id] = []
-        acc[nb.folder_id].push({
-          id: nb.id,
-          name: nb.name,
-          color: nb.color,
-          note_count: nb.note_count,
-        })
-        return acc
-      },
-      {}
-    )
-
-    // Add notebooks and most recent notebook ID to each folder (keep all flags)
-    const foldersWithNotebooks =
-      folders?.map((folder) => ({
-        ...folder,
-        notebooks: notebooksByFolder[folder.id] || [],
-        most_recent_notebook_id: mostRecentNotebookByFolder[folder.id] || null,
-      })) || []
-
-    // Get orphaned shared notebooks (shared notebooks whose folders we can't access)
-    // Get notebook permissions
-    const { data: notebookPerms, error: nbPermError } = await supabase
-      .from('permissions')
-      .select('resource_id, permission_level')
-      .eq('user_id', userId)
-      .eq('resource_type', 'notebook')
-      .neq('permission_level', 'none')
-
-    if (nbPermError) throw nbPermError
-
-    type OrphanedNotebook = {
-      id: string
-      name: string
-      color: string
-      note_count: number
-      shared_by: string
-      permission: string
-      is_owner: boolean
-    }
-
-    let orphanedNotebooks: OrphanedNotebook[] = []
-    if (notebookPerms && notebookPerms.length > 0) {
-      const sharedNotebookIds = notebookPerms.map((p: { resource_id: string }) => p.resource_id)
-      const { data: sharedNotebookData, error: sharedNbError } = await supabase
-        .from('notebooks')
-        .select('id, name, color, folder_id')
-        .in('id', sharedNotebookIds)
-
-      if (sharedNbError) throw sharedNbError
-
-      // Filter orphaned notebooks (those whose folders we don't have access to)
-      const accessibleFolderIds = new Set(folderIds)
-      orphanedNotebooks = (sharedNotebookData || [])
-        .filter((nb: { folder_id: string }) => !accessibleFolderIds.has(nb.folder_id))
-        .map((nb: { id: string; name: string; color: string }) => {
-          const perm = notebookPerms.find((p: { resource_id: string }) => p.resource_id === nb.id)
-          return {
-            id: nb.id,
-            name: nb.name,
-            color: nb.color,
-            note_count: 0, // TODO: Add count
-            shared_by: 'Shared', // TODO: Get actual sharer name
-            permission: perm?.permission_level || 'read',
-            is_owner: false,
-          }
-        })
-    }
-
-    // Get user stats from the view
-    const { data: userStatsData, error: statsError } = await supabase
-      .from('user_stats')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle() // Use maybeSingle() since user might have no folders yet
-
-    if (statsError) {
-      console.error('Error fetching user stats:', statsError)
-    }
-
-    // Format response - folders already have stats from the view!
-    const stats = userStatsData || {
-      total_folders: folders?.length || 0,
-      total_notebooks: 0,
-      total_notes: 0,
-      total_archived: 0,
-    }
-
-    return NextResponse.json({
-      folders: foldersWithNotebooks || [],
-      orphanedNotebooks,
-      stats,
-    })
-  } catch (error) {
-    console.error('Error fetching folders view:', error)
-    return NextResponse.json({ error: 'Failed to fetch folders view' }, { status: 500 })
+  const sharedFolders: Array<Record<string, unknown>> = []
+  for (const fid of sharedFolderIds) {
+    const doc = await db.collection('folders').doc(fid).get()
+    if (doc.exists) sharedFolders.push({ id: doc.id, ...doc.data() })
   }
+
+  // Which owned folders are shared by this user with others
+  const sharedByMeSnap = await db
+    .collection('permissions')
+    .where('resource_type', '==', 'folder')
+    .where('granted_by', '==', uid)
+    .get()
+  const sharedByMeIds = new Set(
+    sharedByMeSnap.docs
+      .map(doc => doc.data().resource_id as string)
+      .filter(id => ownedFolderIds.has(id))
+  )
+
+  // Build combined folder list
+  const allFolders: Array<Record<string, unknown>> = ([] as Array<Record<string, unknown>>).concat(
+    ownedFolders.map(f => ({
+      ...f,
+      sharedByMe: sharedByMeIds.has(f.id),
+      sharedWithMe: false,
+      permission: 'owner',
+    })),
+    sharedFolders.map(f => ({
+      ...f,
+      sharedByMe: false,
+      sharedWithMe: true,
+      permission: permissionMap[f.id as string] || 'read',
+    }))
+  ).sort((a, b) => (a.name as string).localeCompare(b.name as string))
+
+  const allFolderIds = allFolders.map(f => f.id as string)
+
+  // Get all non-archived notebooks for accessible folders
+  let allNotebooks: Array<Record<string, unknown>> = []
+  if (allFolderIds.length > 0) {
+    const notebooksSnap = await db
+      .collection('notebooks')
+      .where('folder_id', 'in', allFolderIds)
+      .where('archived', '==', false)
+      .orderBy('name')
+      .get()
+    allNotebooks = notebooksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  }
+
+  // Get archived notebooks for archived_count per folder
+  const archivedCountMap: Record<string, number> = {}
+  if (allFolderIds.length > 0) {
+    const archivedSnap = await db
+      .collection('notebooks')
+      .where('folder_id', 'in', allFolderIds)
+      .where('archived', '==', true)
+      .get()
+    archivedSnap.docs.forEach(doc => {
+      const fid = doc.data().folder_id as string
+      archivedCountMap[fid] = (archivedCountMap[fid] || 0) + 1
+    })
+  }
+
+  // Most recent notebook per folder (by updated_at)
+  const mostRecentByFolder: Record<string, string> = {}
+  allNotebooks.forEach(nb => {
+    const fid = nb.folder_id as string
+    if (!mostRecentByFolder[fid]) {
+      mostRecentByFolder[fid] = nb.id as string
+    } else {
+      const currentBest = allNotebooks.find(n => n.id === mostRecentByFolder[fid])
+      if (currentBest && new Date(nb.updated_at as string) > new Date(currentBest.updated_at as string)) {
+        mostRecentByFolder[fid] = nb.id as string
+      }
+    }
+  })
+
+  // Note counts per notebook
+  const notebookIds = allNotebooks.map(n => n.id as string)
+  const noteCountMap: Record<string, number> = {}
+  if (notebookIds.length > 0) {
+    const notesSnap = await db
+      .collection('notes')
+      .where('notebook_id', 'in', notebookIds)
+      .get()
+    notesSnap.docs.forEach(doc => {
+      const nbId = doc.data().notebook_id as string
+      noteCountMap[nbId] = (noteCountMap[nbId] || 0) + 1
+    })
+  }
+
+  // Group notebooks by folder with note counts
+  const notebooksByFolder: Record<string, Array<{ id: string; name: string; color: string; note_count: number }>> = {}
+  allNotebooks.forEach(nb => {
+    const fid = nb.folder_id as string
+    if (!notebooksByFolder[fid]) notebooksByFolder[fid] = []
+    notebooksByFolder[fid].push({
+      id: nb.id as string,
+      name: nb.name as string,
+      color: nb.color as string,
+      note_count: noteCountMap[nb.id as string] || 0,
+    })
+  })
+
+  // Compose folder responses
+  const foldersWithNotebooks = allFolders.map(folder => ({
+    ...folder,
+    notebook_count: (notebooksByFolder[folder.id as string] || []).length,
+    note_count: (notebooksByFolder[folder.id as string] || []).reduce((s, n) => s + n.note_count, 0),
+    archived_count: archivedCountMap[folder.id as string] || 0,
+    notebooks: notebooksByFolder[folder.id as string] || [],
+    most_recent_notebook_id: mostRecentByFolder[folder.id as string] || null,
+  }))
+
+  // Orphaned notebooks: shared at notebook level, but folder not in our list
+  const accessibleFolderIds = new Set(allFolderIds)
+  const nbPermsSnap = await db
+    .collection('permissions')
+    .where('user_id', '==', uid)
+    .where('resource_type', '==', 'notebook')
+    .get()
+
+  const orphanedNotebooks: Array<Record<string, unknown>> = []
+  for (const permDoc of nbPermsSnap.docs) {
+    const perm = permDoc.data()
+    const nbDoc = await db.collection('notebooks').doc(perm.resource_id as string).get()
+    if (!nbDoc.exists) continue
+    const nb = nbDoc.data()!
+    if (!accessibleFolderIds.has(nb.folder_id as string)) {
+      orphanedNotebooks.push({
+        id: nbDoc.id,
+        name: nb.name,
+        color: nb.color,
+        note_count: 0,
+        shared_by: 'Shared',
+        permission: perm.permission_level,
+        is_owner: false,
+      })
+    }
+  }
+
+  // Stats
+  const totalNotes = Object.values(noteCountMap).reduce((a, b) => a + b, 0)
+  const totalArchived = Object.values(archivedCountMap).reduce((a, b) => a + b, 0)
+
+  return NextResponse.json({
+    folders: foldersWithNotebooks,
+    orphanedNotebooks,
+    stats: {
+      total_folders: allFolders.length,
+      total_notebooks: allNotebooks.length,
+      total_notes: totalNotes,
+      total_archived: totalArchived,
+    },
+  })
 }

@@ -1,47 +1,24 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
 export async function POST(request: Request) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const { resourceIds, resourceType } = await request.json()
 
-    const { resourceIds, resourceType } = await request.json()
-
-    if (!resourceIds || !Array.isArray(resourceIds) || resourceIds.length === 0) {
-      return NextResponse.json({ error: 'Invalid resource IDs' }, { status: 400 })
-    }
-
-    // Use RPC function to get permissions (bypasses RLS)
-    const { data: permissions, error } = await supabase.rpc('get_resource_permissions', {
-      resource_ids: resourceIds,
-      resource_type_param: resourceType || null,
-    })
-
-    if (error) {
-      console.error('Error fetching permissions via RPC:', error)
-      // Fallback to direct query if RPC doesn't exist
-      const { data: directPerms, error: directError } = await supabase
-        .from('permissions')
-        .select('*')
-        .in('resource_id', resourceIds)
-
-      if (directError) {
-        console.error('Error fetching permissions directly:', directError)
-        return NextResponse.json({ permissions: [] })
-      }
-
-      return NextResponse.json({ permissions: directPerms || [] })
-    }
-
-    return NextResponse.json({ permissions: permissions || [] })
-  } catch (error) {
-    console.error('Error in permissions endpoint:', error)
-    return NextResponse.json({ error: 'Failed to fetch permissions' }, { status: 500 })
+  if (!resourceIds || !Array.isArray(resourceIds) || resourceIds.length === 0) {
+    return NextResponse.json({ error: 'Invalid resource IDs' }, { status: 400 })
   }
+
+  const db = getAdminDb()
+  let query = db.collection('permissions').where('resource_id', 'in', resourceIds)
+  if (resourceType) {
+    query = query.where('resource_type', '==', resourceType)
+  }
+
+  const snap = await query.get()
+  const permissions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+
+  return NextResponse.json({ permissions })
 }

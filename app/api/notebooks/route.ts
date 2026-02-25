@@ -1,172 +1,122 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
-// GET /api/notebooks - Get all notebooks for a user
-export async function GET() {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+export async function GET(request: NextRequest) {
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const db = getAdminDb()
+  const snap = await db
+    .collection('notebooks')
+    .where('owner_id', '==', uid)
+    .orderBy('updated_at', 'desc')
+    .get()
 
-    const { data, error } = await supabase
-      .from('notebooks_with_stats')
-      .select('*')
-      .eq('user_id', userId)
-      .order('updated_at', { ascending: false })
-
-    if (error) throw error
-
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error('Error fetching notebooks:', error)
-    return NextResponse.json({ error: 'Failed to fetch notebooks' }, { status: 500 })
-  }
+  const notebooks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  return NextResponse.json(notebooks)
 }
 
-// POST /api/notebooks - Create a new notebook
 export async function POST(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const body = await request.json()
+  const { name, color, folder_id } = body
 
-    const body = await request.json()
-    const { name, color, folder_id } = body
-
-    if (!name || !color || !folder_id) {
-      return NextResponse.json(
-        { error: 'Name, color, and folder_id are required' },
-        { status: 400 }
-      )
-    }
-
-    // Get the folder to inherit its owner_id
-    const { data: folder, error: folderError } = await supabase
-      .from('folders')
-      .select('owner_id')
-      .eq('id', folder_id)
-      .single()
-
-    if (folderError || !folder) {
-      return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
-    }
-
-    const { data, error } = await supabase
-      .from('notebooks')
-      .insert({
-        name,
-        color,
-        folder_id,
-        owner_id: folder.owner_id, // Inherit from folder
-        created_by: userId, // Current user who created it
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error('Error creating notebook:', error)
-    return NextResponse.json({ error: 'Failed to create notebook' }, { status: 500 })
+  if (!name || !color || !folder_id) {
+    return NextResponse.json(
+      { error: 'Name, color, and folder_id are required' },
+      { status: 400 }
+    )
   }
+
+  const db = getAdminDb()
+  const folderDoc = await db.collection('folders').doc(folder_id).get()
+
+  if (!folderDoc.exists) {
+    return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
+  }
+
+  const folder = folderDoc.data()!
+  const now = new Date().toISOString()
+  const data = {
+    name,
+    color,
+    folder_id,
+    owner_id: folder.owner_id,
+    created_by: uid,
+    archived: false,
+    archived_at: null,
+    created_at: now,
+    updated_at: now,
+  }
+
+  const ref = await db.collection('notebooks').add(data)
+  return NextResponse.json({ id: ref.id, ...data })
 }
 
-// PATCH /api/notebooks - Update a notebook
 export async function PATCH(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const body = await request.json()
+  const { id, ...updates } = body
 
-    const body = await request.json()
-    const { id, ...updates } = body
+  if (!id) {
+    return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
+  }
 
-    if (!id) {
-      return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
-    }
+  const db = getAdminDb()
+  const notebookDoc = await db.collection('notebooks').doc(id).get()
 
-    // Check if user owns the notebook or has folder-level write permission
-    const { data: notebook, error: fetchError } = await supabase
-      .from('notebooks')
-      .select('owner_id, folder_id')
-      .eq('id', id)
-      .single()
+  if (!notebookDoc.exists) {
+    return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
+  }
 
-    if (fetchError || !notebook) {
-      return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
-    }
+  const notebook = notebookDoc.data()!
+  const isOwner = notebook.owner_id === uid
 
-    const isOwner = notebook.owner_id === userId
-    if (!isOwner) {
-      if (notebook.folder_id) {
-        const { data: permission } = await supabase
-          .from('permissions')
-          .select('permission_level')
-          .eq('user_id', userId)
-          .eq('resource_id', notebook.folder_id)
-          .eq('resource_type', 'folder')
-          .eq('permission_level', 'write')
-          .single()
+  if (!isOwner) {
+    if (notebook.folder_id) {
+      const permSnap = await db
+        .collection('permissions')
+        .where('user_id', '==', uid)
+        .where('resource_id', '==', notebook.folder_id)
+        .where('resource_type', '==', 'folder')
+        .where('permission_level', '==', 'write')
+        .get()
 
-        if (!permission) {
-          return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
-        }
-      } else {
+      if (permSnap.empty) {
         return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
       }
+    } else {
+      return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
     }
-
-    const { data, error } = await supabase
-      .from('notebooks')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return NextResponse.json(data)
-  } catch (error) {
-    console.error('Error updating notebook:', error)
-    return NextResponse.json({ error: 'Failed to update notebook' }, { status: 500 })
   }
+
+  const safeUpdates = { ...updates, updated_at: new Date().toISOString() }
+  await db.collection('notebooks').doc(id).update(safeUpdates)
+  return NextResponse.json({ id, ...notebook, ...safeUpdates })
 }
 
-// DELETE /api/notebooks - Delete a notebook
 export async function DELETE(request: NextRequest) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const { searchParams } = new URL(request.url)
+  const id = searchParams.get('id')
 
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
-    }
-
-    const { error } = await supabase.from('notebooks').delete().eq('id', id).eq('owner_id', userId)
-
-    if (error) throw error
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error deleting notebook:', error)
-    return NextResponse.json({ error: 'Failed to delete notebook' }, { status: 500 })
+  if (!id) {
+    return NextResponse.json({ error: 'Notebook ID is required' }, { status: 400 })
   }
+
+  const db = getAdminDb()
+  const notebookDoc = await db.collection('notebooks').doc(id).get()
+
+  if (!notebookDoc.exists || notebookDoc.data()!.owner_id !== uid) {
+    return NextResponse.json({ error: 'Notebook not found' }, { status: 404 })
+  }
+
+  await db.collection('notebooks').doc(id).delete()
+  return NextResponse.json({ success: true })
 }

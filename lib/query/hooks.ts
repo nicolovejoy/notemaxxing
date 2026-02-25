@@ -1,14 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import type { Database } from '@/lib/supabase/database.types'
-
-// Types from database
-type Folder = Database['public']['Tables']['folders']['Row']
-type Notebook = Database['public']['Tables']['notebooks']['Row']
-type Note = Database['public']['Tables']['notes']['Row']
+import type { Folder, Notebook, Note } from '@/lib/types/entities'
 
 // Extended types with computed fields
-interface FolderWithStats extends Folder {
+interface FolderWithStats extends Omit<Folder, 'permission'> {
   notebook_count: number
   note_count: number
   archived_count: number
@@ -22,7 +17,7 @@ interface FolderWithStats extends Folder {
   sharedWithMe?: boolean
 }
 
-interface NotebookWithStats extends Notebook {
+interface NotebookWithStats extends Omit<Notebook, 'permission'> {
   note_count?: number
   permission?: 'owner' | 'write' | 'read'
   shared_by?: string

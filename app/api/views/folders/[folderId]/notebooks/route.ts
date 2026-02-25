@@ -1,66 +1,60 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
-import { getCurrentUserId } from '@/lib/supabase/auth-helpers'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ folderId: string }> }
 ) {
-  try {
-    const supabase = await createClient()
-    const userId = await getCurrentUserId()
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  const { folderId } = await params
+  const searchParams = request.nextUrl.searchParams
+  const offset = parseInt(searchParams.get('offset') || '0')
+  const limit = parseInt(searchParams.get('limit') || '20')
 
-    const { folderId } = await params
-    const searchParams = request.nextUrl.searchParams
-    const offset = parseInt(searchParams.get('offset') || '0')
-    const limit = parseInt(searchParams.get('limit') || '20')
+  const db = getAdminDb()
 
-    // Get folder info
-    const { data: folder, error: folderError } = await supabase
-      .from('folders')
-      .select('id, name, color')
-      .eq('id', folderId)
-      .eq('user_id', userId)
-      .single()
+  // Get folder and verify access
+  const folderDoc = await db.collection('folders').doc(folderId).get()
+  if (!folderDoc.exists) {
+    return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
+  }
 
-    if (folderError || !folder) {
+  const folder = folderDoc.data()!
+  const isOwner = folder.owner_id === uid
+
+  if (!isOwner) {
+    const permSnap = await db
+      .collection('permissions')
+      .where('user_id', '==', uid)
+      .where('resource_id', '==', folderId)
+      .where('resource_type', '==', 'folder')
+      .get()
+    if (permSnap.empty) {
       return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
     }
-
-    // Get total count
-    const { count: totalCount, error: countError } = await supabase
-      .from('notebooks_with_stats')
-      .select('*', { count: 'exact', head: true })
-      .eq('folder_id', folderId)
-
-    if (countError) throw countError
-
-    // Get paginated notebooks with stats from the view
-    const { data: notebooks, error: notebooksError } = await supabase
-      .from('notebooks_with_stats')
-      .select('*')
-      .eq('folder_id', folderId)
-      .order('updated_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (notebooksError) throw notebooksError
-
-    return NextResponse.json({
-      folder,
-      notebooks: notebooks || [],
-      pagination: {
-        total: totalCount || 0,
-        offset,
-        limit,
-        hasMore: offset + limit < (totalCount || 0),
-      },
-    })
-  } catch (error) {
-    console.error('Error fetching notebook view:', error)
-    return NextResponse.json({ error: 'Failed to fetch notebook view' }, { status: 500 })
   }
+
+  // Get all notebooks for this folder (sorted by updated_at desc)
+  const notebooksSnap = await db
+    .collection('notebooks')
+    .where('folder_id', '==', folderId)
+    .orderBy('updated_at', 'desc')
+    .get()
+
+  const allNotebooks = notebooksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  const totalCount = allNotebooks.length
+  const notebooks = allNotebooks.slice(offset, offset + limit)
+
+  return NextResponse.json({
+    folder: { id: folderDoc.id, name: folder.name, color: folder.color },
+    notebooks,
+    pagination: {
+      total: totalCount,
+      offset,
+      limit,
+      hasMore: offset + limit < totalCount,
+    },
+  })
 }

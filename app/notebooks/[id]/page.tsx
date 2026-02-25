@@ -422,7 +422,7 @@ export default function NotebookPage() {
                       {previewData?.name || notebook?.name || 'Loading...'}
                     </h1>
                   )}
-                  {user && notebook && notebook.owner_id === user.id && !isEditingNotebook && (
+                  {user && notebook && notebook.owner_id === user.uid && !isEditingNotebook && (
                     <button
                       onClick={() => setIsEditingNotebook(true)}
                       className="p-1 text-gray-400 hover:text-gray-600 transition-colors"

@@ -7,6 +7,7 @@
 - **NO triggers/functions** - Set all fields explicitly
 - **Terraform managed** - Use `/infrastructure/terraform/` for schema changes
 - RLS prepared but not applied (see `SECURITY_MIGRATION.md`)
+- **Pending migration**: `infrastructure/migrations/002_add_folder_id_to_notes.sql` must run before deploy
 
 ### Data Flow
 
@@ -21,7 +22,7 @@ Component → API Route → Supabase → Database
 
 - `owner_id` required on all resources
 - Notebooks inherit folder's `owner_id`
-- Notes inherit notebook's `owner_id`
+- Notes inherit notebook's `owner_id` and `folder_id`
 
 ### Sharing Model
 

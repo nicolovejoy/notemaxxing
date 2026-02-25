@@ -1,4 +1,3 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { SeedDataOptions, SeedTemplate } from './types'
 import { defaultSeedTemplate } from './default-with-tutorials'
 
@@ -9,17 +8,8 @@ const TEMPLATES: Record<string, SeedTemplate> = {
 }
 
 export class SeedService {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private supabase: SupabaseClient<any>
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  constructor(supabase: SupabaseClient<any>) {
-    this.supabase = supabase
-  }
-
   async seedUserData(options: SeedDataOptions): Promise<{ success: boolean; error?: string }> {
     try {
-      // Get template or use custom data
       const template =
         options.customData || TEMPLATES[options.templateId || 'default-with-tutorials']
 
@@ -27,54 +17,47 @@ export class SeedService {
         throw new Error('No valid template found')
       }
 
-      // Create folders
       for (const folderData of template.folders || []) {
-        const { data: folder, error: folderError } = await this.supabase
-          .from('folders')
-          .insert({
-            name: folderData.name,
-            color: folderData.color,
-            owner_id: options.userId,
-          })
-          .select()
-          .single()
-
-        if (folderError) {
-          console.error('Error creating folder:', folderError)
+        const folderRes = await fetch('/api/folders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: folderData.name, color: folderData.color }),
+        })
+        if (!folderRes.ok) {
+          console.error('Error creating folder:', await folderRes.text())
           continue
         }
+        const folder = await folderRes.json()
 
-        // Create notebooks in folder
         for (const notebookData of folderData.notebooks) {
-          const { data: notebook, error: notebookError } = await this.supabase
-            .from('notebooks')
-            .insert({
+          const notebookRes = await fetch('/api/notebooks', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
               name: notebookData.name,
               color: notebookData.color,
               folder_id: folder.id,
-              owner_id: options.userId,
-              created_by: options.userId,
-            })
-            .select()
-            .single()
-
-          if (notebookError) {
-            console.error('Error creating notebook:', notebookError)
+            }),
+          })
+          if (!notebookRes.ok) {
+            console.error('Error creating notebook:', await notebookRes.text())
             continue
           }
+          const notebook = await notebookRes.json()
 
-          // Create notes in notebook
           for (const noteData of notebookData.notes) {
-            const { error: noteError } = await this.supabase.from('notes').insert({
-              title: noteData.title,
-              content: noteData.content,
-              notebook_id: notebook.id,
-              owner_id: options.userId,
-              created_by: options.userId,
+            const noteRes = await fetch('/api/notes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: noteData.title,
+                content: noteData.content,
+                notebook_id: notebook.id,
+                folder_id: folder.id,
+              }),
             })
-
-            if (noteError) {
-              console.error('Error creating note:', noteError)
+            if (!noteRes.ok) {
+              console.error('Error creating note:', await noteRes.text())
             }
           }
         }
@@ -90,14 +73,11 @@ export class SeedService {
     }
   }
 
-  async checkIfUserHasData(userId: string): Promise<boolean> {
-    const { data, error } = await this.supabase
-      .from('folders')
-      .select('id')
-      .eq('owner_id', userId)
-      .limit(1)
-
-    return !error && data && data.length > 0
+  async checkIfUserHasData(): Promise<boolean> {
+    const res = await fetch('/api/views/folders')
+    if (!res.ok) return false
+    const data = await res.json()
+    return data?.folders?.length > 0
   }
 
   getAvailableTemplates() {
@@ -109,11 +89,7 @@ export class SeedService {
     }))
   }
 
-  // Future method for AI-generated custom templates
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async generateCustomTemplate(interests: string[], style?: string): Promise<SeedTemplate> {
-    // This will use AI to generate a custom template based on interests
-    // For now, return default template as fallback
+  async generateCustomTemplate(_interests: string[], _style?: string): Promise<SeedTemplate> {
     return defaultSeedTemplate
   }
 }

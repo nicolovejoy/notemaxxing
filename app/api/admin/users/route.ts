@@ -1,109 +1,74 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedSupabaseClient } from '@/lib/api/supabase-server-helpers'
-import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
+import { getAdminAuth } from '@/lib/firebase/admin'
 
-// Admin emails allowed to use this endpoint
 const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
 
-export async function GET(_request: NextRequest) {
-  try {
-    // 1. Verify user is authenticated
-    const { client: supabase, user, error } = await getAuthenticatedSupabaseClient()
-    if (error) return error
-    if (!supabase) {
-      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
-    }
+export async function GET(request: NextRequest) {
+  const { email, error } = await getAuthenticatedUser(request)
+  if (error) return error
 
-    // 2. Verify user is admin
-    if (!user.email || !ADMIN_EMAILS.includes(user.email)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-    }
-
-    // 3. Create service role client to access auth.users
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-    }
-
-    const serviceClient = createServiceClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    )
-
-    // 4. Get all users from auth.users
-    const { data: authUsers, error: authError } = await serviceClient.auth.admin.listUsers()
-
-    if (authError) {
-      console.error('Error fetching users:', authError)
-      return NextResponse.json({ error: 'Failed to fetch users' }, { status: 500 })
-    }
-
-    // 5. Get stats for each user
-    const usersWithStats = await Promise.all(
-      authUsers.users.map(async (authUser) => {
-        // Get counts for folders, notebooks, notes
-        const [
-          foldersResult,
-          notebooksResult,
-          notesResult,
-          permissionsGrantedResult,
-          permissionsReceivedResult,
-        ] = await Promise.all([
-          serviceClient
-            .from('folders')
-            .select('id', { count: 'exact', head: true })
-            .eq('owner_id', authUser.id),
-          serviceClient
-            .from('notebooks')
-            .select('id', { count: 'exact', head: true })
-            .eq('owner_id', authUser.id),
-          serviceClient
-            .from('notes')
-            .select('id', { count: 'exact', head: true })
-            .eq('owner_id', authUser.id),
-          serviceClient
-            .from('permissions')
-            .select('id', { count: 'exact', head: true })
-            .eq('granted_by', authUser.id),
-          serviceClient
-            .from('permissions')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', authUser.id),
-        ])
-
-        return {
-          id: authUser.id,
-          email: authUser.email || 'No email',
-          created_at: authUser.created_at,
-          last_sign_in_at: authUser.last_sign_in_at,
-          is_admin: authUser.email ? ADMIN_EMAILS.includes(authUser.email) : false,
-          stats: {
-            folders: foldersResult.count || 0,
-            notebooks: notebooksResult.count || 0,
-            notes: notesResult.count || 0,
-            permissions_granted: permissionsGrantedResult.count || 0,
-            permissions_received: permissionsReceivedResult.count || 0,
-          },
-        }
-      })
-    )
-
-    // 6. Sort by created_at (newest first)
-    usersWithStats.sort((a, b) => {
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    })
-
-    return NextResponse.json({
-      users: usersWithStats,
-      total: usersWithStats.length,
-    })
-  } catch (error) {
-    console.error('Admin users list error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  if (!email || !ADMIN_EMAILS.includes(email)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+
+  const db = getAdminDb()
+
+  // Fetch users and all content in parallel
+  const [listUsersResult, foldersSnap, notebooksSnap, notesSnap, permissionsSnap] =
+    await Promise.all([
+      getAdminAuth().listUsers(),
+      db.collection('folders').select('owner_id').get(),
+      db.collection('notebooks').select('owner_id').get(),
+      db.collection('notes').select('owner_id').get(),
+      db.collection('permissions').select('user_id', 'granted_by').get(),
+    ])
+
+  // Build count maps by uid
+  const folderCounts = new Map<string, number>()
+  const notebookCounts = new Map<string, number>()
+  const noteCounts = new Map<string, number>()
+  const permGrantedCounts = new Map<string, number>()
+  const permReceivedCounts = new Map<string, number>()
+
+  foldersSnap.docs.forEach(d => {
+    const uid = d.data().owner_id as string
+    folderCounts.set(uid, (folderCounts.get(uid) || 0) + 1)
+  })
+  notebooksSnap.docs.forEach(d => {
+    const uid = d.data().owner_id as string
+    notebookCounts.set(uid, (notebookCounts.get(uid) || 0) + 1)
+  })
+  notesSnap.docs.forEach(d => {
+    const uid = d.data().owner_id as string
+    noteCounts.set(uid, (noteCounts.get(uid) || 0) + 1)
+  })
+  permissionsSnap.docs.forEach(d => {
+    const data = d.data()
+    const uid = data.user_id as string
+    const grantedBy = data.granted_by as string
+    permReceivedCounts.set(uid, (permReceivedCounts.get(uid) || 0) + 1)
+    permGrantedCounts.set(grantedBy, (permGrantedCounts.get(grantedBy) || 0) + 1)
+  })
+
+  const usersWithStats = listUsersResult.users.map(u => ({
+    id: u.uid,
+    email: u.email || 'No email',
+    created_at: u.metadata.creationTime,
+    last_sign_in_at: u.metadata.lastSignInTime,
+    is_admin: u.email ? ADMIN_EMAILS.includes(u.email) : false,
+    stats: {
+      folders: folderCounts.get(u.uid) || 0,
+      notebooks: notebookCounts.get(u.uid) || 0,
+      notes: noteCounts.get(u.uid) || 0,
+      permissions_granted: permGrantedCounts.get(u.uid) || 0,
+      permissions_received: permReceivedCounts.get(u.uid) || 0,
+    },
+  }))
+
+  usersWithStats.sort((a, b) =>
+    new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime()
+  )
+
+  return NextResponse.json({ users: usersWithStats, total: usersWithStats.length })
 }
