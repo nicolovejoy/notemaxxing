@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: fake
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: fake.firebaseapp.com
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: fake
+          NEXT_PUBLIC_FIREBASE_APP_ID: fake
+          FIREBASE_SERVICE_ACCOUNT: '{"type":"service_account","project_id":"fake","private_key_id":"fake","private_key":"-----BEGIN RSA PRIVATE KEY-----\nMIIBogIBAAJBALRiMLAHudeSA/x3hB2f+2NRkJMOiH2lCOr2wENfRSAhMbCFGpM\nh/RwJBBGJWq0pJGYGBMSaGOIEmlGJkMFhWkCAwEAAQJAVUGV2r44USE3IYLqMRMA\nkKGsamVb2Bxe8Xhy+t8IlZMbKaFwEMhKJTEN+kJJPsaQfGnAiCPDGDCT0M+yPaMA\nQQDhjL2alMuKHu/3YaLMgkPi5fKNFXksqRWDC4VsDKLDgs0vb+7k8JBq6kIfHBXV\nvGa11M8hFwZG2RxJKnijJpEhAkEA0K1xZCzT3Fx2xVW8kHal/FXxAqPJtVp5o+h1\n6oQ+YJ5mHk7FNHOb6VREdQZBBQ33dwGElkAuGGNmLlcEmHlbqQJAOy6LEbHDjwN+\nJkDGxJJ3fORd/kiFA6JBTt7LQh3O/+qJHnlYfnFEBTpN6o/RMPXR3+9HPyGSK1K5\nJt8W6GY5oQJAbNaV+8Gr9yVoPIu0c4H8/yeGCqPbUyQvz/gJHMdGJ3VHC1cU2gGa\n6CjLWITCFSjQn3O5s6wIoJ/CRaKgE8pFiQJAS6NdQ4c0qQJArlW0Xb0pQqyXrLIr\nrgNbNqC9JIIwjk5F/yQS1MJKjv7M89U6JTpdFnWrecY34bEr0RzJJBiGEg==\n-----END RSA PRIVATE KEY-----\n","client_email":"fake@fake.iam.gserviceaccount.com","client_id":"0","auth_uri":"https://accounts.google.com/o/oauth2/auth","token_uri":"https://oauth2.googleapis.com/token","auth_provider_x509_cert_url":"https://www.googleapis.com/oauth2/v1/certs","client_x509_cert_url":"https://www.googleapis.com/robot/v1/metadata/x509/fake"}'
