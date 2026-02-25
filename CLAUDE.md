@@ -4,19 +4,18 @@
 
 ### Database
 
-- **NO triggers/functions** - Set all fields explicitly
-- **Terraform managed** - Use `/infrastructure/terraform/` for schema changes
-- RLS prepared but not applied (see `SECURITY_MIGRATION.md`)
-- **Pending migration**: `infrastructure/migrations/002_add_folder_id_to_notes.sql` must run before deploy
+- **Firestore** — collections: folders, notebooks, notes, permissions, invitations, invitationPreviews
+- Fields use snake_case; doc ID becomes the `id` field
+- Timestamps stored as ISO strings
 
 ### Data Flow
 
 ```
-Component → API Route → Supabase → Database
+Component → API Route → Firebase Admin SDK → Firestore
 ```
 
-- **NEVER** use Supabase directly in components
-- Exception: `usePermissionSync` for realtime subscriptions (read-only)
+- **NEVER** use Firebase/Firestore directly in components
+- Auth: Firebase Auth (Google sign-in only), Bearer token on all API requests
 
 ### Ownership Model
 
@@ -40,9 +39,17 @@ Component → API Route → Supabase → Database
 
 ## Current State
 
-- **Build**: Passing
+- **Build**: Passing ✅
+- **Auth**: Firebase (Google sign-in) — Supabase fully removed
 - **AI Model**: `claude-sonnet-4-20250514`
-- **Sharing**: Working
+- **Next**: Functional testing with real Firebase env vars
+
+## Next Steps
+
+1. Run `npm run dev`, verify Google sign-in works
+2. Check `lib/api/sharing.ts` — confirm it sends Bearer token
+3. Test CRUD: folder → notebook → note
+4. Test share invite flow end-to-end
 
 ## Planned Features
 
