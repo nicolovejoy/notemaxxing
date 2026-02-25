@@ -1,24 +1,6 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    "no-restricted-imports": [
-      "error",
-      {
-        "paths": [
-          {
-            "name": "@supabase/supabase-js",
-            "importNames": ["createClient"],
-            "message": "Direct Supabase client usage is forbidden in components! Use API routes instead. (RLS is disabled - API routes provide security layer)"
-          }
-        ],
-        "patterns": [
-          {
-            "group": ["**/lib/supabase/client", "**/lib/supabase/client.ts"],
-            "message": "Don't import Supabase client directly in components! Use API routes for data fetching. (RLS is disabled - API routes are our security boundary)"
-          }
-        ]
-      }
-    ],
     "@typescript-eslint/no-unused-vars": [
       "error",
       {

@@ -42,8 +42,3 @@ next-env.d.ts
 
 # build info
 lib/build-info.json
-
-# supabase
-supabase/.temp/
-supabase/.branches/
-supabase/.env

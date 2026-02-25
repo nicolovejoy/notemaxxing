@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 import { Modal } from './ui/Modal'
 import { StatusMessage } from './ui/StatusMessage'
 import { LoadingButton } from './ui/LoadingButton'
@@ -118,7 +119,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch('/api/admin/users')
+      const response = await apiFetch('/api/admin/users')
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.error || 'Failed to fetch users')
@@ -136,7 +137,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch('/api/admin/permissions')
+      const response = await apiFetch('/api/admin/permissions')
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.error || 'Failed to fetch permissions')
@@ -156,7 +157,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch('/api/admin/stats')
+      const response = await apiFetch('/api/admin/stats')
       if (!response.ok) {
         const data = await response.json()
         throw new Error(data.error || 'Failed to fetch stats')
@@ -182,7 +183,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
 
     setResettingUser(userId)
     try {
-      const response = await fetch('/api/admin/reset-user-data', {
+      const response = await apiFetch('/api/admin/reset-user-data', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ targetUserId: userId, adminPassword }),

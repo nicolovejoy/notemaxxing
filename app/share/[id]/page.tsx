@@ -8,7 +8,6 @@ import { Button } from '@/components/ui'
 import { Check, AlertCircle } from 'lucide-react'
 import { auth } from '@/lib/firebase/client'
 import { apiFetch } from '@/lib/firebase/api-fetch'
-import { dataManager } from '@/lib/store/data-manager'
 
 export default function SharePage() {
   const params = useParams()
@@ -97,9 +96,6 @@ export default function SharePage() {
     try {
       const result = await sharingApi.acceptInvitation(invitationId)
       setSuccess(true)
-
-      // Refresh data store to load newly shared resources
-      await dataManager.refresh()
 
       // Redirect to the appropriate page after accepting
       setTimeout(() => {

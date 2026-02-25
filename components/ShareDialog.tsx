@@ -5,6 +5,7 @@ import { Users, Trash2, Check, Copy, Link } from 'lucide-react'
 import { Modal, Button, IconButton } from './ui'
 import { sharingApi } from '@/lib/api/sharing'
 import { auth } from '@/lib/firebase/client'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 import { FormField } from '@/components/ui/FormField'
 import { SelectField } from '@/components/ui/SelectField'
 import { StatusMessage } from '@/components/ui/StatusMessage'
@@ -306,13 +307,9 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
                           resourceType: share.resourceType,
                         })
 
-                        // Use API route instead of direct Supabase call
                         try {
-                          const response = await fetch(`/api/permissions/${share.id}`, {
+                          const response = await apiFetch(`/api/permissions/${share.id}`, {
                             method: 'PATCH',
-                            headers: {
-                              'Content-Type': 'application/json',
-                            },
                             body: JSON.stringify({ permission_level: newLevel }),
                           })
 
