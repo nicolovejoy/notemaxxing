@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
 
   const [permissionsSnap, invitationsSnap, listUsersResult] = await Promise.all([
     db.collection('permissions').orderBy('granted_at', 'desc').get(),
-    db.collection('invitations')
+    db
+      .collection('invitations')
       .where('accepted_at', '==', null)
       .where('expires_at', '>', now)
       .orderBy('expires_at', 'desc')
@@ -26,14 +27,14 @@ export async function GET(request: NextRequest) {
   ])
 
   const userMap = new Map<string, string>()
-  listUsersResult.users.forEach(u => userMap.set(u.uid, u.email || 'Unknown'))
+  listUsersResult.users.forEach((u) => userMap.set(u.uid, u.email || 'Unknown'))
 
   // Collect resource IDs
   const folderIds = new Set<string>()
   const notebookIds = new Set<string>()
 
-  const permissions = permissionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-  const invitations = invitationsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  const permissions = permissionsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  const invitations = invitationsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
   ;[...permissions, ...invitations].forEach((item: Record<string, unknown>) => {
     if (item.resource_type === 'folder') folderIds.add(item.resource_id as string)
@@ -54,7 +55,9 @@ export async function GET(request: NextRequest) {
   }
 
   const getResourceName = (type: string, id: string) =>
-    type === 'folder' ? (folderMap.get(id) || 'Unknown Folder') : (notebookMap.get(id) || 'Unknown Notebook')
+    type === 'folder'
+      ? folderMap.get(id) || 'Unknown Folder'
+      : notebookMap.get(id) || 'Unknown Notebook'
 
   const enrichedPermissions = permissions.map((perm: Record<string, unknown>) => ({
     ...perm,

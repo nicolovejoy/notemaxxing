@@ -45,7 +45,10 @@ export async function POST(request: NextRequest) {
   if (!existingSnap.empty) {
     const existing = existingSnap.docs[0].data()
     if (existing.accepted_at) {
-      return NextResponse.json({ error: 'User already has access to this resource' }, { status: 409 })
+      return NextResponse.json(
+        { error: 'User already has access to this resource' },
+        { status: 409 }
+      )
     }
     return NextResponse.json({ error: 'Invitation already sent' }, { status: 409 })
   }

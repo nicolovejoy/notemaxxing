@@ -55,17 +55,14 @@ export async function GET(
     .orderBy('created_at', 'desc')
     .get()
 
-  const notebooks = notebooksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-  const notebookIds = notebooks.map(n => n.id)
+  const notebooks = notebooksSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  const notebookIds = notebooks.map((n) => n.id)
 
   // Get note counts
   const noteCountMap: Record<string, number> = {}
   if (notebookIds.length > 0) {
-    const notesSnap = await db
-      .collection('notes')
-      .where('notebook_id', 'in', notebookIds)
-      .get()
-    notesSnap.docs.forEach(doc => {
+    const notesSnap = await db.collection('notes').where('notebook_id', 'in', notebookIds).get()
+    notesSnap.docs.forEach((doc) => {
       const nb_id = doc.data().notebook_id as string
       noteCountMap[nb_id] = (noteCountMap[nb_id] || 0) + 1
     })
@@ -79,10 +76,10 @@ export async function GET(
       .where('resource_type', '==', 'notebook')
       .where('granted_by', '==', uid)
       .get()
-    nbSharesSnap.docs.forEach(doc => sharedNotebookIds.add(doc.data().resource_id as string))
+    nbSharesSnap.docs.forEach((doc) => sharedNotebookIds.add(doc.data().resource_id as string))
   }
 
-  const notebooksWithDetails = notebooks.map(nb => ({
+  const notebooksWithDetails = notebooks.map((nb) => ({
     ...nb,
     note_count: noteCountMap[nb.id] || 0,
     shared_by_owner: sharedNotebookIds.has(nb.id),

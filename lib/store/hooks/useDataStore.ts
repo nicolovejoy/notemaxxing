@@ -97,7 +97,9 @@ export const useOrphanedSharedNotebooks = () => {
     const accessibleFolderIds = new Set(folders.map((f) => f.id))
     // Only return notebooks that are DIRECTLY shared and whose folder is NOT accessible
     return notebooks.filter(
-      (n) => (n as unknown as Record<string, unknown>).sharedDirectly && !accessibleFolderIds.has(n.folder_id)
+      (n) =>
+        (n as unknown as Record<string, unknown>).sharedDirectly &&
+        !accessibleFolderIds.has(n.folder_id)
     )
   })
 }

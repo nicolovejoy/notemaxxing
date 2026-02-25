@@ -2,10 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAdminDb, getAdminAuth } from '@/lib/firebase/admin'
 
 // Public endpoint — no auth required
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: invitationId } = await params
   const db = getAdminDb()
 
@@ -28,12 +25,18 @@ export async function GET(
   }
 
   if (invitation.accepted_at) {
-    return NextResponse.json({ error: 'This invitation has already been accepted' }, { status: 409 })
+    return NextResponse.json(
+      { error: 'This invitation has already been accepted' },
+      { status: 409 }
+    )
   }
 
   // Get resource name
   const collection = invitation.resource_type === 'folder' ? 'folders' : 'notebooks'
-  const resourceDoc = await db.collection(collection).doc(invitation.resource_id as string).get()
+  const resourceDoc = await db
+    .collection(collection)
+    .doc(invitation.resource_id as string)
+    .get()
   const resourceName = resourceDoc.exists ? (resourceDoc.data()!.name as string) : 'Unknown'
 
   // Get inviter email

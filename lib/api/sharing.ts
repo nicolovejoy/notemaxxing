@@ -4,12 +4,13 @@ import type {
   Permission,
   ResourceType,
 } from '@/lib/types/sharing'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 
 const API_BASE = '/api/shares'
 
 export const sharingApi = {
   async sendInvitation(data: ShareInviteRequest) {
-    const response = await fetch(`${API_BASE}/invite`, {
+    const response = await apiFetch(`${API_BASE}/invite`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -29,7 +30,7 @@ export const sharingApi = {
     permission: Permission
     email: string
   }) {
-    const response = await fetch(`${API_BASE}/generate-link`, {
+    const response = await apiFetch(`${API_BASE}/generate-link`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
@@ -44,7 +45,7 @@ export const sharingApi = {
   },
 
   async acceptInvitation(invitationId: string) {
-    const response = await fetch(`${API_BASE}/accept`, {
+    const response = await apiFetch(`${API_BASE}/accept`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ invitationId }),
@@ -59,7 +60,7 @@ export const sharingApi = {
   },
 
   async listShares(): Promise<ShareListResponse> {
-    const response = await fetch(`${API_BASE}/list`)
+    const response = await apiFetch(`${API_BASE}/list`)
 
     if (!response.ok) {
       const error = await response.json()
@@ -71,7 +72,7 @@ export const sharingApi = {
 
   async revokePermission(permissionId: string) {
     // Try DELETE first, fallback to POST if 404
-    let response = await fetch(`${API_BASE}/revoke`, {
+    let response = await apiFetch(`${API_BASE}/revoke`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ permissionId }),
@@ -79,7 +80,7 @@ export const sharingApi = {
 
     // If DELETE returns 404, try POST as fallback
     if (response.status === 404) {
-      response = await fetch(`${API_BASE}/revoke`, {
+      response = await apiFetch(`${API_BASE}/revoke`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ permissionId }),

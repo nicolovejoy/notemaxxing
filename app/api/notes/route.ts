@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 import type { Firestore } from 'firebase-admin/firestore'
 
-async function checkWriteAccess(db: Firestore, uid: string, ownerId: string, folderId: string | null): Promise<boolean> {
+async function checkWriteAccess(
+  db: Firestore,
+  uid: string,
+  ownerId: string,
+  folderId: string | null
+): Promise<boolean> {
   if (ownerId === uid) return true
   if (!folderId) return false
 
@@ -39,7 +44,10 @@ export async function POST(request: NextRequest) {
   const hasAccess = await checkWriteAccess(db, uid, notebook.owner_id, notebook.folder_id)
 
   if (!hasAccess) {
-    return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Access denied - write permission required' },
+      { status: 403 }
+    )
   }
 
   const now = new Date().toISOString()
@@ -80,7 +88,10 @@ export async function PATCH(request: NextRequest) {
   const hasAccess = await checkWriteAccess(db, uid, note.owner_id, note.folder_id)
 
   if (!hasAccess) {
-    return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Access denied - write permission required' },
+      { status: 403 }
+    )
   }
 
   const updates: Record<string, string> = { updated_at: new Date().toISOString() }
@@ -113,7 +124,10 @@ export async function DELETE(request: NextRequest) {
   const hasAccess = await checkWriteAccess(db, uid, note.owner_id, note.folder_id)
 
   if (!hasAccess) {
-    return NextResponse.json({ error: 'Access denied - write permission required' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Access denied - write permission required' },
+      { status: 403 }
+    )
   }
 
   await db.collection('notes').doc(id).delete()

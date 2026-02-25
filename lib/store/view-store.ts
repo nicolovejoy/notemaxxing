@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 
 // Track ongoing requests to prevent duplicates
 let currentNoteViewRequest: AbortController | null = null
@@ -163,7 +164,7 @@ export const useViewStore = create<ViewState>()(
       })
 
       try {
-        const response = await fetch('/api/views/folders', {
+        const response = await apiFetch('/api/views/folders', {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
@@ -193,7 +194,7 @@ export const useViewStore = create<ViewState>()(
       })
 
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/views/folders/${folderId}/notebooks?offset=${offset}&limit=20`,
           {
             credentials: 'include',
@@ -263,7 +264,7 @@ export const useViewStore = create<ViewState>()(
           url = `/api/views/notebooks/${notebookId}/notes?${params}`
         }
 
-        const response = await fetch(url, {
+        const response = await apiFetch(url, {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',

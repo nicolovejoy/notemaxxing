@@ -1,0 +1,196 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "folders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "owner_id", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "notebooks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "folder_id", "order": "ASCENDING" },
+        { "fieldPath": "archived", "order": "ASCENDING" },
+        { "fieldPath": "name", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notebooks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "folder_id", "order": "ASCENDING" },
+        { "fieldPath": "archived", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notebooks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "folder_id", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notebooks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "folder_id", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notebooks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "owner_id", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notebooks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "folder_id", "order": "ASCENDING" },
+        { "fieldPath": "owner_id", "order": "ASCENDING" },
+        { "fieldPath": "archived", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "notebook_id", "order": "ASCENDING" },
+        { "fieldPath": "updated_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "notebook_id", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "notebook_id", "order": "ASCENDING" },
+        { "fieldPath": "title", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "permissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_id", "order": "ASCENDING" },
+        { "fieldPath": "resource_type", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "permissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "resource_type", "order": "ASCENDING" },
+        { "fieldPath": "granted_by", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "permissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "resource_id", "order": "ASCENDING" },
+        { "fieldPath": "resource_type", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "permissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "resource_id", "order": "ASCENDING" },
+        { "fieldPath": "resource_type", "order": "ASCENDING" },
+        { "fieldPath": "user_id", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "permissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "resource_id", "order": "ASCENDING" },
+        { "fieldPath": "resource_type", "order": "ASCENDING" },
+        { "fieldPath": "granted_by", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "permissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_id", "order": "ASCENDING" },
+        { "fieldPath": "resource_id", "order": "ASCENDING" },
+        { "fieldPath": "resource_type", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "permissions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "user_id", "order": "ASCENDING" },
+        { "fieldPath": "resource_id", "order": "ASCENDING" },
+        { "fieldPath": "resource_type", "order": "ASCENDING" },
+        { "fieldPath": "permission_level", "order": "ASCENDING" }
+      ]
+    },
+
+    {
+      "collectionGroup": "invitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "token", "order": "ASCENDING" },
+        { "fieldPath": "accepted_at", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "invitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "resource_type", "order": "ASCENDING" },
+        { "fieldPath": "resource_id", "order": "ASCENDING" },
+        { "fieldPath": "invitee_email", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "invitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "resource_id", "order": "ASCENDING" },
+        { "fieldPath": "invitee_email", "order": "ASCENDING" },
+        { "fieldPath": "accepted_at", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "invitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "invitee_email", "order": "ASCENDING" },
+        { "fieldPath": "accepted_at", "order": "ASCENDING" },
+        { "fieldPath": "expires_at", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "invitations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "accepted_at", "order": "ASCENDING" },
+        { "fieldPath": "expires_at", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

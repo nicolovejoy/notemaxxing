@@ -17,6 +17,7 @@ import { useNoteView, useViewLoading, useViewActions, useViewError } from '@/lib
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { toPlainText, toHTML } from '@/lib/utils/content'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 
 type SortOption = 'recent' | 'alphabetical' | 'created'
 
@@ -122,7 +123,7 @@ export default function NotebookPage() {
   const handleCreateNote = async () => {
     setIsSaving(true)
     try {
-      const response = await fetch('/api/notes', {
+      const response = await apiFetch('/api/notes', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -164,7 +165,7 @@ export default function NotebookPage() {
       // Auto-generate title from content if title is empty
       const finalTitle = editingNoteTitle.trim() || generateTitleFromContent(editingNoteContent)
 
-      const response = await fetch('/api/notes', {
+      const response = await apiFetch('/api/notes', {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -195,7 +196,7 @@ export default function NotebookPage() {
     if (!confirm('Are you sure you want to delete this note?')) return
 
     try {
-      const response = await fetch(`/api/notes?id=${noteId}`, {
+      const response = await apiFetch(`/api/notes?id=${noteId}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -389,7 +390,7 @@ export default function NotebookPage() {
                       onSave={async (newName) => {
                         if (newName !== notebook?.name) {
                           try {
-                            const response = await fetch('/api/notebooks', {
+                            const response = await apiFetch('/api/notebooks', {
                               method: 'PATCH',
                               headers: { 'Content-Type': 'application/json' },
                               body: JSON.stringify({

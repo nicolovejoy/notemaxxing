@@ -24,7 +24,7 @@ export function UserMenu() {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(firebaseUser => {
+    const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
       setUser(firebaseUser)
     })
     return unsubscribe

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 
 interface UseAIReturn {
   enhance: (content: string) => Promise<string>
@@ -15,7 +16,7 @@ export function useAI(): UseAIReturn {
     setError(null)
 
     try {
-      const response = await fetch('/api/ai/enhance', {
+      const response = await apiFetch('/api/ai/enhance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     .orderBy('updated_at', 'desc')
     .get()
 
-  const notebooks = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  const notebooks = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
   return NextResponse.json(notebooks)
 }
 
@@ -24,10 +24,7 @@ export async function POST(request: NextRequest) {
   const { name, color, folder_id } = body
 
   if (!name || !color || !folder_id) {
-    return NextResponse.json(
-      { error: 'Name, color, and folder_id are required' },
-      { status: 400 }
-    )
+    return NextResponse.json({ error: 'Name, color, and folder_id are required' }, { status: 400 })
   }
 
   const db = getAdminDb()

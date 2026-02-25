@@ -4,10 +4,15 @@ import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-help
 const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'change-this-password'
 
-async function deleteCollection(db: FirebaseFirestore.Firestore, collection: string, field: string, value: string) {
+async function deleteCollection(
+  db: FirebaseFirestore.Firestore,
+  collection: string,
+  field: string,
+  value: string
+) {
   const snap = await db.collection(collection).where(field, '==', value).get()
   const batch = db.batch()
-  snap.docs.forEach(doc => batch.delete(doc.ref))
+  snap.docs.forEach((doc) => batch.delete(doc.ref))
   if (!snap.empty) await batch.commit()
   return snap.size
 }
@@ -56,7 +61,9 @@ export async function POST(request: NextRequest) {
   await deleteCollection(db, 'permissions', 'granted_by', targetUserId)
   await deleteCollection(db, 'invitations', 'invited_by', targetUserId)
 
-  console.log(`Admin action completed: deleted ${JSON.stringify(beforeCounts)} for user ${targetUserId}`)
+  console.log(
+    `Admin action completed: deleted ${JSON.stringify(beforeCounts)} for user ${targetUserId}`
+  )
 
   return NextResponse.json({
     success: true,

@@ -54,13 +54,16 @@ export async function POST(request: NextRequest) {
     const existingDoc = existingSnap.docs[0]
     await existingDoc.ref.update({ expires_at: newExpiry })
 
-    await db.collection('invitationPreviews').doc(existingDoc.data().token as string).set({
-      token: existingDoc.data().token,
-      resource_name: resourceName,
-      resource_type: resourceType,
-      inviter_name: callerEmail || 'A user',
-      expires_at: newExpiry,
-    })
+    await db
+      .collection('invitationPreviews')
+      .doc(existingDoc.data().token as string)
+      .set({
+        token: existingDoc.data().token,
+        resource_name: resourceName,
+        resource_type: resourceType,
+        inviter_name: callerEmail || 'A user',
+        expires_at: newExpiry,
+      })
 
     return NextResponse.json({
       success: true,
@@ -86,13 +89,16 @@ export async function POST(request: NextRequest) {
     transfer_ownership_on_accept: false,
   })
 
-  await db.collection('invitationPreviews').doc(token).set({
-    token,
-    resource_name: resourceName,
-    resource_type: resourceType,
-    inviter_name: callerEmail || 'A user',
-    expires_at: newExpiry,
-  })
+  await db
+    .collection('invitationPreviews')
+    .doc(token)
+    .set({
+      token,
+      resource_name: resourceName,
+      resource_type: resourceType,
+      inviter_name: callerEmail || 'A user',
+      expires_at: newExpiry,
+    })
 
   return NextResponse.json({ success: true, invitationId: token, expiresAt: newExpiry })
 }

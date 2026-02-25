@@ -21,10 +21,16 @@ async function handleRevoke(request: NextRequest) {
 
   const perm = permDoc.data()!
   const collection = perm.resource_type === 'folder' ? 'folders' : 'notebooks'
-  const resourceDoc = await db.collection(collection).doc(perm.resource_id as string).get()
+  const resourceDoc = await db
+    .collection(collection)
+    .doc(perm.resource_id as string)
+    .get()
 
   if (!resourceDoc.exists || resourceDoc.data()!.owner_id !== uid) {
-    return NextResponse.json({ error: 'You are not authorized to revoke this permission' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'You are not authorized to revoke this permission' },
+      { status: 403 }
+    )
   }
 
   await permDoc.ref.delete()

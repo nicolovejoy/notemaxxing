@@ -43,7 +43,7 @@ export async function GET(
     .orderBy('updated_at', 'desc')
     .get()
 
-  const allNotebooks = notebooksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  const allNotebooks = notebooksSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
   const totalCount = allNotebooks.length
   const notebooks = allNotebooks.slice(offset, offset + limit)
 

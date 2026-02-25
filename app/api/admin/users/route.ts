@@ -31,19 +31,19 @@ export async function GET(request: NextRequest) {
   const permGrantedCounts = new Map<string, number>()
   const permReceivedCounts = new Map<string, number>()
 
-  foldersSnap.docs.forEach(d => {
+  foldersSnap.docs.forEach((d) => {
     const uid = d.data().owner_id as string
     folderCounts.set(uid, (folderCounts.get(uid) || 0) + 1)
   })
-  notebooksSnap.docs.forEach(d => {
+  notebooksSnap.docs.forEach((d) => {
     const uid = d.data().owner_id as string
     notebookCounts.set(uid, (notebookCounts.get(uid) || 0) + 1)
   })
-  notesSnap.docs.forEach(d => {
+  notesSnap.docs.forEach((d) => {
     const uid = d.data().owner_id as string
     noteCounts.set(uid, (noteCounts.get(uid) || 0) + 1)
   })
-  permissionsSnap.docs.forEach(d => {
+  permissionsSnap.docs.forEach((d) => {
     const data = d.data()
     const uid = data.user_id as string
     const grantedBy = data.granted_by as string
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     permGrantedCounts.set(grantedBy, (permGrantedCounts.get(grantedBy) || 0) + 1)
   })
 
-  const usersWithStats = listUsersResult.users.map(u => ({
+  const usersWithStats = listUsersResult.users.map((u) => ({
     id: u.uid,
     email: u.email || 'No email',
     created_at: u.metadata.creationTime,
@@ -66,8 +66,8 @@ export async function GET(request: NextRequest) {
     },
   }))
 
-  usersWithStats.sort((a, b) =>
-    new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime()
+  usersWithStats.sort(
+    (a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime()
   )
 
   return NextResponse.json({ users: usersWithStats, total: usersWithStats.length })

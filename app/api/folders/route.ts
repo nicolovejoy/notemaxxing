@@ -14,9 +14,18 @@ export async function POST(request: NextRequest) {
 
   const db = getAdminDb()
   const now = new Date().toISOString()
-  const ref = await db.collection('folders').add({ name, color, owner_id: uid, created_at: now, updated_at: now })
+  const ref = await db
+    .collection('folders')
+    .add({ name, color, owner_id: uid, created_at: now, updated_at: now })
 
-  return NextResponse.json({ id: ref.id, name, color, owner_id: uid, created_at: now, updated_at: now })
+  return NextResponse.json({
+    id: ref.id,
+    name,
+    color,
+    owner_id: uid,
+    created_at: now,
+    updated_at: now,
+  })
 }
 
 export async function PATCH(request: NextRequest) {

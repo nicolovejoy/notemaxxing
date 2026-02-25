@@ -1,4 +1,5 @@
 import { SeedDataOptions, SeedTemplate } from './types'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 import { defaultSeedTemplate } from './default-with-tutorials'
 
 // Template registry
@@ -18,7 +19,7 @@ export class SeedService {
       }
 
       for (const folderData of template.folders || []) {
-        const folderRes = await fetch('/api/folders', {
+        const folderRes = await apiFetch('/api/folders', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: folderData.name, color: folderData.color }),
@@ -30,7 +31,7 @@ export class SeedService {
         const folder = await folderRes.json()
 
         for (const notebookData of folderData.notebooks) {
-          const notebookRes = await fetch('/api/notebooks', {
+          const notebookRes = await apiFetch('/api/notebooks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -46,7 +47,7 @@ export class SeedService {
           const notebook = await notebookRes.json()
 
           for (const noteData of notebookData.notes) {
-            const noteRes = await fetch('/api/notes', {
+            const noteRes = await apiFetch('/api/notes', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -74,7 +75,7 @@ export class SeedService {
   }
 
   async checkIfUserHasData(): Promise<boolean> {
-    const res = await fetch('/api/views/folders')
+    const res = await apiFetch('/api/views/folders')
     if (!res.ok) return false
     const data = await res.json()
     return data?.folders?.length > 0

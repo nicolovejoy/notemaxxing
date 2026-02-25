@@ -5,6 +5,7 @@ type FetchOptions = Omit<RequestInit, 'headers'> & {
 }
 
 export async function apiFetch(url: string, options: FetchOptions = {}): Promise<Response> {
+  await auth.authStateReady()
   const user = auth.currentUser
   const token = user ? await user.getIdToken() : null
 

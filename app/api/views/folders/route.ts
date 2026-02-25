@@ -9,8 +9,8 @@ export async function GET(request: Request) {
 
   // Owned folders
   const ownedSnap = await db.collection('folders').where('owner_id', '==', uid).get()
-  const ownedFolders = ownedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
-  const ownedFolderIds = new Set(ownedFolders.map(f => f.id))
+  const ownedFolders = ownedSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  const ownedFolderIds = new Set(ownedFolders.map((f) => f.id))
 
   // Folder-level permissions shared with this user
   const sharedPermsSnap = await db
@@ -19,14 +19,16 @@ export async function GET(request: Request) {
     .where('resource_type', '==', 'folder')
     .get()
 
-  const sharedPerms = sharedPermsSnap.docs.map(doc => doc.data())
+  const sharedPerms = sharedPermsSnap.docs.map((doc) => doc.data())
   const permissionMap: Record<string, string> = {}
-  sharedPerms.forEach(p => { permissionMap[p.resource_id as string] = p.permission_level as string })
+  sharedPerms.forEach((p) => {
+    permissionMap[p.resource_id as string] = p.permission_level as string
+  })
 
   // Fetch shared folder docs
   const sharedFolderIds = sharedPerms
-    .map(p => p.resource_id as string)
-    .filter(id => !ownedFolderIds.has(id))
+    .map((p) => p.resource_id as string)
+    .filter((id) => !ownedFolderIds.has(id))
 
   const sharedFolders: Array<Record<string, unknown>> = []
   for (const fid of sharedFolderIds) {
@@ -42,27 +44,29 @@ export async function GET(request: Request) {
     .get()
   const sharedByMeIds = new Set(
     sharedByMeSnap.docs
-      .map(doc => doc.data().resource_id as string)
-      .filter(id => ownedFolderIds.has(id))
+      .map((doc) => doc.data().resource_id as string)
+      .filter((id) => ownedFolderIds.has(id))
   )
 
   // Build combined folder list
-  const allFolders: Array<Record<string, unknown>> = ([] as Array<Record<string, unknown>>).concat(
-    ownedFolders.map(f => ({
-      ...f,
-      sharedByMe: sharedByMeIds.has(f.id),
-      sharedWithMe: false,
-      permission: 'owner',
-    })),
-    sharedFolders.map(f => ({
-      ...f,
-      sharedByMe: false,
-      sharedWithMe: true,
-      permission: permissionMap[f.id as string] || 'read',
-    }))
-  ).sort((a, b) => (a.name as string).localeCompare(b.name as string))
+  const allFolders: Array<Record<string, unknown>> = ([] as Array<Record<string, unknown>>)
+    .concat(
+      ownedFolders.map((f) => ({
+        ...f,
+        sharedByMe: sharedByMeIds.has(f.id),
+        sharedWithMe: false,
+        permission: 'owner',
+      })),
+      sharedFolders.map((f) => ({
+        ...f,
+        sharedByMe: false,
+        sharedWithMe: true,
+        permission: permissionMap[f.id as string] || 'read',
+      }))
+    )
+    .sort((a, b) => (a.name as string).localeCompare(b.name as string))
 
-  const allFolderIds = allFolders.map(f => f.id as string)
+  const allFolderIds = allFolders.map((f) => f.id as string)
 
   // Get all non-archived notebooks for accessible folders
   let allNotebooks: Array<Record<string, unknown>> = []
@@ -73,7 +77,7 @@ export async function GET(request: Request) {
       .where('archived', '==', false)
       .orderBy('name')
       .get()
-    allNotebooks = notebooksSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+    allNotebooks = notebooksSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
   }
 
   // Get archived notebooks for archived_count per folder
@@ -84,7 +88,7 @@ export async function GET(request: Request) {
       .where('folder_id', 'in', allFolderIds)
       .where('archived', '==', true)
       .get()
-    archivedSnap.docs.forEach(doc => {
+    archivedSnap.docs.forEach((doc) => {
       const fid = doc.data().folder_id as string
       archivedCountMap[fid] = (archivedCountMap[fid] || 0) + 1
     })
@@ -92,35 +96,38 @@ export async function GET(request: Request) {
 
   // Most recent notebook per folder (by updated_at)
   const mostRecentByFolder: Record<string, string> = {}
-  allNotebooks.forEach(nb => {
+  allNotebooks.forEach((nb) => {
     const fid = nb.folder_id as string
     if (!mostRecentByFolder[fid]) {
       mostRecentByFolder[fid] = nb.id as string
     } else {
-      const currentBest = allNotebooks.find(n => n.id === mostRecentByFolder[fid])
-      if (currentBest && new Date(nb.updated_at as string) > new Date(currentBest.updated_at as string)) {
+      const currentBest = allNotebooks.find((n) => n.id === mostRecentByFolder[fid])
+      if (
+        currentBest &&
+        new Date(nb.updated_at as string) > new Date(currentBest.updated_at as string)
+      ) {
         mostRecentByFolder[fid] = nb.id as string
       }
     }
   })
 
   // Note counts per notebook
-  const notebookIds = allNotebooks.map(n => n.id as string)
+  const notebookIds = allNotebooks.map((n) => n.id as string)
   const noteCountMap: Record<string, number> = {}
   if (notebookIds.length > 0) {
-    const notesSnap = await db
-      .collection('notes')
-      .where('notebook_id', 'in', notebookIds)
-      .get()
-    notesSnap.docs.forEach(doc => {
+    const notesSnap = await db.collection('notes').where('notebook_id', 'in', notebookIds).get()
+    notesSnap.docs.forEach((doc) => {
       const nbId = doc.data().notebook_id as string
       noteCountMap[nbId] = (noteCountMap[nbId] || 0) + 1
     })
   }
 
   // Group notebooks by folder with note counts
-  const notebooksByFolder: Record<string, Array<{ id: string; name: string; color: string; note_count: number }>> = {}
-  allNotebooks.forEach(nb => {
+  const notebooksByFolder: Record<
+    string,
+    Array<{ id: string; name: string; color: string; note_count: number }>
+  > = {}
+  allNotebooks.forEach((nb) => {
     const fid = nb.folder_id as string
     if (!notebooksByFolder[fid]) notebooksByFolder[fid] = []
     notebooksByFolder[fid].push({
@@ -132,10 +139,13 @@ export async function GET(request: Request) {
   })
 
   // Compose folder responses
-  const foldersWithNotebooks = allFolders.map(folder => ({
+  const foldersWithNotebooks = allFolders.map((folder) => ({
     ...folder,
     notebook_count: (notebooksByFolder[folder.id as string] || []).length,
-    note_count: (notebooksByFolder[folder.id as string] || []).reduce((s, n) => s + n.note_count, 0),
+    note_count: (notebooksByFolder[folder.id as string] || []).reduce(
+      (s, n) => s + n.note_count,
+      0
+    ),
     archived_count: archivedCountMap[folder.id as string] || 0,
     notebooks: notebooksByFolder[folder.id as string] || [],
     most_recent_notebook_id: mostRecentByFolder[folder.id as string] || null,
@@ -152,7 +162,10 @@ export async function GET(request: Request) {
   const orphanedNotebooks: Array<Record<string, unknown>> = []
   for (const permDoc of nbPermsSnap.docs) {
     const perm = permDoc.data()
-    const nbDoc = await db.collection('notebooks').doc(perm.resource_id as string).get()
+    const nbDoc = await db
+      .collection('notebooks')
+      .doc(perm.resource_id as string)
+      .get()
     if (!nbDoc.exists) continue
     const nb = nbDoc.data()!
     if (!accessibleFolderIds.has(nb.folder_id as string)) {

@@ -51,7 +51,10 @@ export async function GET(
   let siblingNotebooks: Array<{ id: string; name: string; color: string }> = []
 
   if (notebook.folder_id) {
-    const folderDoc = await db.collection('folders').doc(notebook.folder_id as string).get()
+    const folderDoc = await db
+      .collection('folders')
+      .doc(notebook.folder_id as string)
+      .get()
     if (folderDoc.exists) {
       const f = folderDoc.data()!
       folderInfo = { id: folderDoc.id, name: f.name as string, color: f.color as string }
@@ -62,7 +65,7 @@ export async function GET(
         .where('archived', '==', false)
         .orderBy('name')
         .get()
-      siblingNotebooks = siblingsSnap.docs.map(doc => {
+      siblingNotebooks = siblingsSnap.docs.map((doc) => {
         const d = doc.data()
         return { id: doc.id, name: d.name as string, color: d.color as string }
       })
@@ -80,14 +83,17 @@ export async function GET(
     .orderBy(orderField, sort === 'alphabetical' ? 'asc' : 'desc')
     .get()
 
-  let notes: Array<Record<string, unknown>> = notesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  let notes: Array<Record<string, unknown>> = notesSnap.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }))
 
   // In-memory search filter
   if (search) {
     const lower = search.toLowerCase()
-    notes = notes.filter(n => {
-      const title = (n.title as string || '').toLowerCase()
-      const content = (n.content as string || '').toLowerCase()
+    notes = notes.filter((n) => {
+      const title = ((n.title as string) || '').toLowerCase()
+      const content = ((n.content as string) || '').toLowerCase()
       return title.includes(lower) || content.includes(lower)
     })
   }
@@ -95,8 +101,8 @@ export async function GET(
   const totalCount = notes.length
   const paginated = notes.slice(offset, offset + limit)
 
-  const notesWithPreviews = paginated.map(note => {
-    const plainText = (note.content as string || '').replace(/<[^>]*>/g, '').substring(0, 150)
+  const notesWithPreviews = paginated.map((note) => {
+    const plainText = ((note.content as string) || '').replace(/<[^>]*>/g, '').substring(0, 150)
     return {
       id: note.id,
       title: note.title,

@@ -20,6 +20,7 @@ import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
 import { useFolderDetailView } from '@/lib/query/hooks'
 import { LoadingGrid } from '@/components/common/LoadingGrid'
 import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 
 export default function FolderDetailPage() {
   const params = useParams()
@@ -59,7 +60,7 @@ export default function FolderDetailPage() {
     setCreating(true)
     try {
       // Use API route instead of direct Supabase call
-      const response = await fetch('/api/notebooks', {
+      const response = await apiFetch('/api/notebooks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +181,7 @@ export default function FolderDetailPage() {
                 onSave={async (newName) => {
                   if (newName !== folder?.name) {
                     try {
-                      const response = await fetch('/api/folders', {
+                      const response = await apiFetch('/api/folders', {
                         method: 'PATCH',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

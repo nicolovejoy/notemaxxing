@@ -32,15 +32,17 @@ export async function GET(request: NextRequest) {
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
 
-  const activeUsers = users.filter(u => u.metadata.lastSignInTime && new Date(u.metadata.lastSignInTime) > thirtyDaysAgo).length
-  const newUsers = users.filter(u => new Date(u.metadata.creationTime!) > sevenDaysAgo).length
+  const activeUsers = users.filter(
+    (u) => u.metadata.lastSignInTime && new Date(u.metadata.lastSignInTime) > thirtyDaysAgo
+  ).length
+  const newUsers = users.filter((u) => new Date(u.metadata.creationTime!) > sevenDaysAgo).length
 
   const userMap = new Map<string, string>()
-  users.forEach(u => userMap.set(u.uid, u.email || 'Unknown'))
+  users.forEach((u) => userMap.set(u.uid, u.email || 'Unknown'))
 
   // Top sharers
   const sharerCounts = new Map<string, number>()
-  permissionsSnap.docs.forEach(doc => {
+  permissionsSnap.docs.forEach((doc) => {
     const grantedBy = doc.data().granted_by as string
     sharerCounts.set(grantedBy, (sharerCounts.get(grantedBy) || 0) + 1)
   })
@@ -51,7 +53,7 @@ export async function GET(request: NextRequest) {
 
   // Top creators (by folder count as proxy)
   const creatorCounts = new Map<string, number>()
-  ;[...foldersSnap.docs, ...notebooksSnap.docs, ...notesSnap.docs].forEach(doc => {
+  ;[...foldersSnap.docs, ...notebooksSnap.docs, ...notesSnap.docs].forEach((doc) => {
     const owner = doc.data().owner_id as string
     creatorCounts.set(owner, (creatorCounts.get(owner) || 0) + 1)
   })

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   }
 
   const snap = await query.get()
-  const permissions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+  const permissions = snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
 
   return NextResponse.json({ permissions })
 }

@@ -7,6 +7,7 @@ import { sharingApi } from '@/lib/api/sharing'
 import { Button } from '@/components/ui'
 import { Check, AlertCircle } from 'lucide-react'
 import { auth } from '@/lib/firebase/client'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 import { dataManager } from '@/lib/store/data-manager'
 
 export default function SharePage() {
@@ -42,7 +43,7 @@ export default function SharePage() {
         }
 
         // Load invitation preview (works for unauthenticated users)
-        const response = await fetch(`/api/shares/invitation-preview/${invitationId}`)
+        const response = await apiFetch(`/api/shares/invitation-preview/${invitationId}`)
         if (!response.ok) {
           const error = await response.json()
           throw new Error(error.error || 'Invalid invitation')

@@ -18,10 +18,10 @@ export function useAuth() {
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(
-      firebaseUser => {
+      (firebaseUser) => {
         setAuthState({ user: firebaseUser, loading: false, error: null })
       },
-      error => {
+      (error) => {
         setAuthState({ user: null, loading: false, error })
       }
     )
@@ -32,7 +32,7 @@ export function useAuth() {
     try {
       await firebaseSignOut(auth)
     } catch (error) {
-      setAuthState(prev => ({ ...prev, error: error as Error }))
+      setAuthState((prev) => ({ ...prev, error: error as Error }))
     }
   }
 

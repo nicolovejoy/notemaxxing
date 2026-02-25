@@ -42,7 +42,10 @@ export async function GET(
   // Get folder name
   let folderName = ''
   if (notebook.folder_id) {
-    const folderDoc = await db.collection('folders').doc(notebook.folder_id as string).get()
+    const folderDoc = await db
+      .collection('folders')
+      .doc(notebook.folder_id as string)
+      .get()
     if (folderDoc.exists) folderName = folderDoc.data()!.name as string
   }
 
@@ -62,16 +65,15 @@ export async function GET(
     .limit(20)
     .get()
 
-  const notesWithPreviews = notesSnap.docs.map(doc => {
+  const notesWithPreviews = notesSnap.docs.map((doc) => {
     const n = doc.data()
     return {
       id: doc.id,
       title: n.title,
       created_at: n.created_at,
       updated_at: n.updated_at,
-      preview: doc.id === noteId
-        ? (note.content as string || '').substring(0, 150)
-        : 'Note preview...',
+      preview:
+        doc.id === noteId ? ((note.content as string) || '').substring(0, 150) : 'Note preview...',
     }
   })
 

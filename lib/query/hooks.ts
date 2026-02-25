@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import type { Folder, Notebook, Note } from '@/lib/types/entities'
+import { apiFetch } from '@/lib/firebase/api-fetch'
 
 // Extended types with computed fields
 interface FolderWithStats extends Omit<Folder, 'permission'> {
@@ -48,7 +49,7 @@ interface NotebookView {
 const api = {
   // Folders
   async getFoldersView(): Promise<FolderView> {
-    const res = await fetch('/api/views/folders')
+    const res = await apiFetch('/api/views/folders')
     if (!res.ok) {
       if (res.status === 401) {
         // Return empty data for unauthenticated users
@@ -69,7 +70,7 @@ const api = {
   },
 
   async createFolder(folder: Partial<Folder>) {
-    const res = await fetch('/api/folders', {
+    const res = await apiFetch('/api/folders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(folder),
@@ -79,7 +80,7 @@ const api = {
   },
 
   async updateFolder(id: string, updates: Partial<Folder>) {
-    const res = await fetch(`/api/folders/${id}`, {
+    const res = await apiFetch(`/api/folders/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
@@ -89,7 +90,7 @@ const api = {
   },
 
   async deleteFolder(id: string) {
-    const res = await fetch(`/api/folders/${id}`, {
+    const res = await apiFetch(`/api/folders/${id}`, {
       method: 'DELETE',
     })
     if (!res.ok) throw new Error('Failed to delete folder')
@@ -114,13 +115,13 @@ const api = {
         }
       })
     }
-    const res = await fetch(`/api/views/notebooks/${notebookId}/notes?${searchParams}`)
+    const res = await apiFetch(`/api/views/notebooks/${notebookId}/notes?${searchParams}`)
     if (!res.ok) throw new Error('Failed to fetch notebook')
     return res.json()
   },
 
   async createNotebook(notebook: Partial<Notebook>) {
-    const res = await fetch('/api/notebooks', {
+    const res = await apiFetch('/api/notebooks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(notebook),
@@ -130,7 +131,7 @@ const api = {
   },
 
   async updateNotebook(id: string, updates: Partial<Notebook>) {
-    const res = await fetch(`/api/notebooks/${id}`, {
+    const res = await apiFetch(`/api/notebooks/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
@@ -141,7 +142,7 @@ const api = {
 
   // Notes
   async createNote(note: Partial<Note>) {
-    const res = await fetch('/api/notes', {
+    const res = await apiFetch('/api/notes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(note),
@@ -151,7 +152,7 @@ const api = {
   },
 
   async updateNote(id: string, updates: Partial<Note>) {
-    const res = await fetch(`/api/notes/${id}`, {
+    const res = await apiFetch(`/api/notes/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updates),
@@ -161,7 +162,7 @@ const api = {
   },
 
   async deleteNote(id: string) {
-    const res = await fetch(`/api/notes/${id}`, {
+    const res = await apiFetch(`/api/notes/${id}`, {
       method: 'DELETE',
     })
     if (!res.ok) throw new Error('Failed to delete note')
@@ -389,7 +390,7 @@ export function useFolderDetailView(folderId: string | null) {
     queryKey: ['folder-detail', folderId],
     queryFn: async () => {
       if (!folderId) return null
-      const response = await fetch(`/api/views/folders/${folderId}`)
+      const response = await apiFetch(`/api/views/folders/${folderId}`)
       if (!response.ok) {
         if (response.status === 404) throw new Error('Folder not found')
         if (response.status === 403) throw new Error('Access denied')

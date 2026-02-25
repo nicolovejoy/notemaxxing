@@ -75,12 +75,12 @@ export async function POST(request: NextRequest) {
 
     const notebooksSnap = await db.collection('notebooks').where('folder_id', '==', folderId).get()
     const nbBatch = db.batch()
-    notebooksSnap.docs.forEach(doc => nbBatch.update(doc.ref, { owner_id: uid }))
+    notebooksSnap.docs.forEach((doc) => nbBatch.update(doc.ref, { owner_id: uid }))
     if (!notebooksSnap.empty) await nbBatch.commit()
 
     const notesSnap = await db.collection('notes').where('folder_id', '==', folderId).get()
     const notesBatch = db.batch()
-    notesSnap.docs.forEach(doc => notesBatch.update(doc.ref, { owner_id: uid }))
+    notesSnap.docs.forEach((doc) => notesBatch.update(doc.ref, { owner_id: uid }))
     if (!notesSnap.empty) await notesBatch.commit()
   }
 

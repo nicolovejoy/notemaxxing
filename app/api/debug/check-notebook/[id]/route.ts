@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { uid, error } = await getAuthenticatedUser(request)
   if (error) return error
 
