@@ -15,7 +15,7 @@ Component → API Route → Firebase Admin SDK → Firestore
 ```
 
 - **NEVER** use Firebase/Firestore directly in components
-- Auth: Firebase Auth (Google sign-in only), Bearer token on all API requests
+- Auth: Firebase Auth (Google + email/password), Bearer token on all API requests
 
 ### Ownership Model
 
@@ -47,10 +47,9 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 ## Next Steps
 
-1. Fix React Query cache invalidation after accept-invite and create-notebook-in-shared-folder (UI requires manual refresh)
-2. Write `firestore.rules` and deploy for defense-in-depth
-3. Test archive notebook, delete folder flows
-4. Test share revoke flow
+1. Extract shared API helpers (ADMIN_EMAILS, email validation, permission checking)
+2. Fix React Query cache invalidation after accept-invite and create-notebook-in-shared-folder (UI requires manual refresh)
+3. Write `firestore.rules` and deploy for defense-in-depth
 
 ## Planned Features
 
