@@ -22,6 +22,7 @@ interface NotebookCardProps {
   onDelete?: () => void
   onUpdate?: (newName: string) => void
   onCancelEdit?: () => void
+  onMouseEnter?: () => void
 }
 
 export function NotebookCard({
@@ -43,10 +44,12 @@ export function NotebookCard({
   onDelete,
   onUpdate,
   onCancelEdit,
+  onMouseEnter,
 }: NotebookCardProps) {
   return (
     <div
       className={`${color} ${archived ? 'opacity-60' : ''} rounded-lg p-3 cursor-pointer hover:shadow-sm transition-shadow group relative`}
+      onMouseEnter={onMouseEnter}
     >
       {isEditing ? (
         <div className="flex items-center gap-2">

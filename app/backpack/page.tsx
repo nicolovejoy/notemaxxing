@@ -16,7 +16,9 @@ import { Card, CardBody } from '@/components/ui/Card'
 import { SharedIndicator } from '@/components/SharedIndicator'
 import { ShareDialog } from '@/components/ShareDialog'
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR } from '@/lib/constants'
+import { useQueryClient } from '@tanstack/react-query'
 import { useFoldersView, useCreateFolder } from '@/lib/query/hooks'
+import { prefetchFolderDetail, prefetchNotebookView } from '@/lib/query/prefetch'
 import { useAuth } from '@/lib/hooks/useAuth'
 import type { Folder } from '@/lib/types/entities'
 import { StatsBar } from '@/components/common/StatsBar'
@@ -27,6 +29,7 @@ const NOTEBOOKS_PREVIEW_COUNT = 3
 
 export default function BackpackPage() {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { user, loading: authLoading } = useAuth()
 
   // React Query - Data is cached from home page! No duplicate fetches!
@@ -162,6 +165,7 @@ export default function BackpackPage() {
                   <div
                     className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white cursor-pointer hover:from-blue-100 transition-all"
                     onClick={() => handleFolderClick(folder.id)}
+                    onMouseEnter={() => prefetchFolderDetail(queryClient, folder.id)}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className={`p-2 rounded ${folder.color}`}>
@@ -206,6 +210,7 @@ export default function BackpackPage() {
                                 note_count: notebook.note_count || 0,
                               })
                             }
+                            onMouseEnter={() => prefetchNotebookView(queryClient, notebook.id)}
                             className="w-full px-3 py-2 rounded hover:bg-gray-50 transition-colors text-left"
                           >
                             <div className="flex items-center justify-between">

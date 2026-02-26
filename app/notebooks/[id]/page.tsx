@@ -32,6 +32,7 @@ import {
   useDeleteNote,
   useRenameNotebook,
 } from '@/lib/query/hooks'
+import { prefetchNotebookView } from '@/lib/query/prefetch'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { toPlainText, toHTML } from '@/lib/utils/content'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -523,6 +524,7 @@ export default function NotebookPage() {
                   <Link
                     key={nb.id}
                     href={`/notebooks/${nb.id}`}
+                    onMouseEnter={() => prefetchNotebookView(queryClient, nb.id)}
                     className={`flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors ${
                       nb.id === notebookId ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
                     }`}

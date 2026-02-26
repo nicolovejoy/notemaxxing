@@ -53,9 +53,10 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 ## Next Steps
 
-1. Deploy `firestore.rules` — run `firebase deploy --only firestore:rules --project piano-house-shared` after review
-2. Revive admin console (usage analytics, user activity)
-3. AI study topic generator → typemaxxing + quizzmaxxing integration
+1. Deploy Firestore indexes + rules — `firebase deploy --only firestore:indexes,firestore:rules --project piano-house-shared`
+2. Prefetching/caching strategy — reduce DB round-trips, discuss Redux-like layer alongside React Query
+3. Shared DB separation — `piano-house-shared` is shared with soiree, need collection prefixing or separate project
+4. AI study topic generator → typemaxxing + quizzmaxxing integration
 
 ## Planned Features
 

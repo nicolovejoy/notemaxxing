@@ -18,6 +18,7 @@ import { SharedIndicator } from '@/components/SharedIndicator'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
 import { useFolderDetailView } from '@/lib/query/hooks'
+import { prefetchNotebookView } from '@/lib/query/prefetch'
 import { useQueryClient } from '@tanstack/react-query'
 import { LoadingGrid } from '@/components/common/LoadingGrid'
 import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
@@ -285,6 +286,7 @@ export default function FolderDetailPage() {
                     note_count: notebook.note_count || 0,
                   })
                 }
+                onMouseEnter={() => prefetchNotebookView(queryClient, notebook.id)}
                 onUpdate={() => refetch()}
               />
             ))}

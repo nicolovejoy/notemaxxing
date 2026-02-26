@@ -82,8 +82,15 @@ export interface NotebookView {
   }
 }
 
+// Stale time constants (shared with prefetch.ts)
+export const STALE_TIMES = {
+  FOLDERS_VIEW: 5 * 60 * 1000, // 5 min
+  FOLDER_DETAIL: 2 * 60 * 1000, // 2 min
+  NOTEBOOK_VIEW: 60 * 1000, // 1 min
+}
+
 // API Functions (these call your existing endpoints)
-const api = {
+export const api = {
   // Folders
   async getFoldersView(): Promise<FolderView> {
     const res = await apiFetch('/api/views/folders')
@@ -200,6 +207,16 @@ const api = {
     if (!res.ok) throw new Error('Failed to delete note')
     return res.json()
   },
+
+  async getFolderDetailView(folderId: string) {
+    const response = await apiFetch(`/api/views/folders/${folderId}`)
+    if (!response.ok) {
+      if (response.status === 404) throw new Error('Folder not found')
+      if (response.status === 403) throw new Error('Access denied')
+      throw new Error('Failed to fetch folder')
+    }
+    return response.json()
+  },
 }
 
 // ============================================
@@ -210,7 +227,7 @@ export function useFoldersView(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['folders-view'],
     queryFn: api.getFoldersView,
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIMES.FOLDERS_VIEW,
     retry: (failureCount, error) => {
       if (error instanceof Error && error.message.includes('401')) {
         return false
@@ -235,7 +252,7 @@ export function useNotebookView(
     queryKey: ['notebook-view', notebookId, params],
     queryFn: ({ signal }) => api.getNotebookView(notebookId!, params, signal),
     enabled: !!notebookId,
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIMES.NOTEBOOK_VIEW,
   })
 }
 
@@ -349,17 +366,8 @@ export function useDeleteNote(notebookId: string) {
 export function useFolderDetailView(folderId: string | null) {
   return useQuery({
     queryKey: ['folder-detail', folderId],
-    queryFn: async () => {
-      if (!folderId) return null
-      const response = await apiFetch(`/api/views/folders/${folderId}`)
-      if (!response.ok) {
-        if (response.status === 404) throw new Error('Folder not found')
-        if (response.status === 403) throw new Error('Access denied')
-        throw new Error('Failed to fetch folder')
-      }
-      return response.json()
-    },
+    queryFn: () => api.getFolderDetailView(folderId!),
     enabled: !!folderId,
-    staleTime: 30 * 1000,
+    staleTime: STALE_TIMES.FOLDER_DETAIL,
   })
 }
