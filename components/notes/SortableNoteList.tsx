@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useRef, useCallback } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -10,7 +10,12 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { NoteListItem } from '@/components/cards/NoteListItem'
 
@@ -92,9 +97,16 @@ export function SortableNoteList({
   onReorder,
 }: SortableNoteListProps) {
   const [items, setItems] = useState<NoteItem[]>(notes)
+  // Track whether we have a pending optimistic reorder to prevent
+  // the notes prop sync from clobbering it
+  const reorderPending = useRef(false)
 
-  // Update items when notes prop changes (e.g., after server refresh)
+  // Sync from props, but skip if we just did an optimistic reorder
   React.useEffect(() => {
+    if (reorderPending.current) {
+      reorderPending.current = false
+      return
+    }
     setItems(notes)
   }, [notes])
 
@@ -107,45 +119,48 @@ export function SortableNoteList({
 
   const sensors = useSensors(pointerSensor, touchSensor)
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
 
-    if (!over || active.id === over.id) return
+      if (!over || active.id === over.id) return
 
-    const oldIndex = items.findIndex((n) => n.id === active.id)
-    const newIndex = items.findIndex((n) => n.id === over.id)
+      setItems((prev) => {
+        const oldIndex = prev.findIndex((n) => n.id === active.id)
+        const newIndex = prev.findIndex((n) => n.id === over.id)
 
-    if (oldIndex === -1 || newIndex === -1) return
+        if (oldIndex === -1 || newIndex === -1) return prev
 
-    // Compute new position as midpoint of neighbors
-    let newPosition: number
-    if (newIndex === 0) {
-      // Moving to the start
-      const firstPos = items[0].position ?? 1000
-      newPosition = Math.floor(firstPos / 2)
-      if (newPosition === 0) newPosition = 1
-    } else if (newIndex >= items.length - 1) {
-      // Moving to the end
-      const lastPos = items[items.length - 1].position ?? items.length * 1000
-      newPosition = lastPos + 1000
-    } else {
-      // Moving between two items
-      const beforeIndex = newIndex < oldIndex ? newIndex - 1 : newIndex
-      const afterIndex = newIndex < oldIndex ? newIndex : newIndex + 1
-      const beforePos = items[beforeIndex].position ?? beforeIndex * 1000
-      const afterPos = items[afterIndex].position ?? afterIndex * 1000
-      newPosition = Math.floor((beforePos + afterPos) / 2)
-    }
+        const reordered = arrayMove(prev, oldIndex, newIndex)
 
-    // Optimistic reorder
-    const reordered = [...items]
-    const [moved] = reordered.splice(oldIndex, 1)
-    moved.position = newPosition
-    reordered.splice(newIndex, 0, moved)
-    setItems(reordered)
+        // Compute new position as midpoint of neighbors in the NEW array
+        let newPosition: number
+        if (newIndex === 0) {
+          const nextPos = reordered[1]?.position ?? 2000
+          newPosition = Math.max(1, Math.floor(nextPos / 2))
+        } else if (newIndex >= reordered.length - 1) {
+          const prevPos = reordered[reordered.length - 2]?.position ?? (reordered.length - 1) * 1000
+          newPosition = prevPos + 1000
+        } else {
+          const prevPos = reordered[newIndex - 1]?.position ?? (newIndex - 1) * 1000
+          const nextPos = reordered[newIndex + 1]?.position ?? (newIndex + 1) * 1000
+          newPosition = Math.floor((prevPos + nextPos) / 2)
+        }
 
-    onReorder(active.id as string, newPosition)
-  }
+        // Update position on the moved item
+        reordered[newIndex] = { ...reordered[newIndex], position: newPosition }
+
+        // Mark that we have an optimistic update, so the useEffect skips the next notes sync
+        reorderPending.current = true
+
+        // Fire the API call
+        onReorder(active.id as string, newPosition)
+
+        return reordered
+      })
+    },
+    [onReorder]
+  )
 
   if (!canDrag) {
     return (
