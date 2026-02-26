@@ -298,7 +298,13 @@ export default function FolderDetailPage() {
         onClose={() => setShowCreateModal(false)}
         title="Create New Notebook"
       >
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleCreateNotebook()
+          }}
+          className="space-y-4"
+        >
           <FormField
             label="Notebook Name"
             value={newNotebookName}
@@ -313,19 +319,23 @@ export default function FolderDetailPage() {
             label="Notebook Color"
           />
           <div className="flex gap-3 justify-end pt-4">
-            <LoadingButton variant="secondary" onClick={() => setShowCreateModal(false)}>
+            <LoadingButton
+              variant="secondary"
+              onClick={() => setShowCreateModal(false)}
+              type="button"
+            >
               Cancel
             </LoadingButton>
             <LoadingButton
               variant="primary"
-              onClick={handleCreateNotebook}
+              type="submit"
               loading={creating}
               disabled={!newNotebookName.trim()}
             >
               Create Notebook
             </LoadingButton>
           </div>
-        </div>
+        </form>
       </Modal>
 
       {/* Share Dialog for Folder */}

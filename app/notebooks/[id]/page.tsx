@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -17,6 +17,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { Modal } from '@/components/ui/Modal'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Dropdown } from '@/components/ui/Dropdown'
@@ -100,6 +101,9 @@ export default function NotebookPage() {
   const [editingNoteTitle, setEditingNoteTitle] = useState('')
   const [isEditingNotebook, setIsEditingNotebook] = useState(false)
   const [isLoadingNote, setIsLoadingNote] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const originalTitleRef = useRef('')
+  const originalContentRef = useRef('')
 
   // Debounce search input to avoid too many API calls
   const debouncedSearch = useDebounce(search, 300)
@@ -167,6 +171,8 @@ export default function NotebookPage() {
           setIsEditingNote(true)
           setEditingNoteTitle(fullNote.title)
           setEditingNoteContent(fullNote.content || '')
+          originalTitleRef.current = fullNote.title
+          originalContentRef.current = fullNote.content || ''
         } else {
           setIsEditingNote(false)
         }
@@ -183,6 +189,8 @@ export default function NotebookPage() {
     setIsEditingNote(true)
     setEditingNoteTitle('')
     setEditingNoteContent('')
+    originalTitleRef.current = ''
+    originalContentRef.current = ''
   }, [])
 
   // Handle note save — creates if new, updates if existing
@@ -225,19 +233,23 @@ export default function NotebookPage() {
     isSaving,
   ])
 
-  // Handle note deletion
-  const handleDeleteNote = async (noteId: string) => {
-    if (!confirm('Are you sure you want to delete this note?')) return
+  // Handle note deletion — shows confirmation modal
+  const handleDeleteNote = (noteId: string) => {
+    setConfirmDeleteId(noteId)
+  }
 
+  const confirmDelete = async () => {
+    if (!confirmDeleteId) return
     try {
-      await deleteNote.mutateAsync(noteId)
-
-      if (selectedNote?.id === noteId) {
+      await deleteNote.mutateAsync(confirmDeleteId)
+      if (selectedNote?.id === confirmDeleteId) {
         setSelectedNote(null)
         setIsEditingNote(false)
       }
     } catch (err) {
       console.error('Error deleting note:', err)
+    } finally {
+      setConfirmDeleteId(null)
     }
   }
 
@@ -273,6 +285,10 @@ export default function NotebookPage() {
       // Escape to close note editor/viewer
       if (e.key === 'Escape' && (isEditingNote || selectedNote)) {
         e.preventDefault()
+        const hasChanges =
+          editingNoteTitle !== originalTitleRef.current ||
+          editingNoteContent !== originalContentRef.current
+        if (hasChanges && !confirm('You have unsaved changes. Discard them?')) return
         handleCloseNote()
         return
       }
@@ -288,7 +304,15 @@ export default function NotebookPage() {
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [canEdit, isEditingNote, isEditingNotebook, handleCreateNote, selectedNote])
+  }, [
+    canEdit,
+    isEditingNote,
+    isEditingNotebook,
+    handleCreateNote,
+    selectedNote,
+    editingNoteTitle,
+    editingNoteContent,
+  ])
 
   if (error) {
     return (
@@ -709,6 +733,33 @@ export default function NotebookPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!confirmDeleteId}
+        onClose={() => setConfirmDeleteId(null)}
+        title="Delete Note"
+        size="sm"
+      >
+        <p className="text-gray-600 mb-6">
+          Are you sure you want to delete this note? This cannot be undone.
+        </p>
+        <div className="flex gap-3 justify-end">
+          <button
+            onClick={() => setConfirmDeleteId(null)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={confirmDelete}
+            disabled={deleteNote.isPending}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+          >
+            {deleteNote.isPending ? 'Deleting...' : 'Delete'}
+          </button>
+        </div>
+      </Modal>
     </div>
   )
 }
