@@ -17,7 +17,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { Modal } from '@/components/ui/Modal'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Dropdown } from '@/components/ui/Dropdown'
@@ -102,6 +102,7 @@ export default function NotebookPage() {
   const [isEditingNotebook, setIsEditingNotebook] = useState(false)
   const [isLoadingNote, setIsLoadingNote] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
   const originalTitleRef = useRef('')
   const originalContentRef = useRef('')
 
@@ -283,12 +284,15 @@ export default function NotebookPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Escape to close note editor/viewer
-      if (e.key === 'Escape' && (isEditingNote || selectedNote)) {
+      if (e.key === 'Escape' && (isEditingNote || selectedNote) && !showDiscardConfirm) {
         e.preventDefault()
         const hasChanges =
           editingNoteTitle !== originalTitleRef.current ||
           editingNoteContent !== originalContentRef.current
-        if (hasChanges && !confirm('You have unsaved changes. Discard them?')) return
+        if (hasChanges) {
+          setShowDiscardConfirm(true)
+          return
+        }
         handleCloseNote()
         return
       }
@@ -312,6 +316,7 @@ export default function NotebookPage() {
     selectedNote,
     editingNoteTitle,
     editingNoteContent,
+    showDiscardConfirm,
   ])
 
   if (error) {
@@ -734,32 +739,32 @@ export default function NotebookPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      <Modal
+      {/* Delete Confirmation */}
+      <ConfirmDialog
         isOpen={!!confirmDeleteId}
-        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
         title="Delete Note"
-        size="sm"
-      >
-        <p className="text-gray-600 mb-6">
-          Are you sure you want to delete this note? This cannot be undone.
-        </p>
-        <div className="flex gap-3 justify-end">
-          <button
-            onClick={() => setConfirmDeleteId(null)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={confirmDelete}
-            disabled={deleteNote.isPending}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
-          >
-            {deleteNote.isPending ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </Modal>
+        message="Are you sure? This cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteNote.isPending}
+      />
+
+      {/* Discard Unsaved Changes Confirmation */}
+      <ConfirmDialog
+        isOpen={showDiscardConfirm}
+        onConfirm={() => {
+          setShowDiscardConfirm(false)
+          handleCloseNote()
+        }}
+        onCancel={() => setShowDiscardConfirm(false)}
+        title="Unsaved Changes"
+        message="You have unsaved changes. Discard them?"
+        confirmLabel="Discard"
+        cancelLabel="Keep Editing"
+        variant="warning"
+      />
     </div>
   )
 }
