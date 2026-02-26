@@ -219,6 +219,13 @@ export default function NotebookPage() {
     }
   }
 
+  // Close editor/viewer and refresh the notes list
+  const handleCloseNote = () => {
+    setSelectedNote(null)
+    setIsEditingNote(false)
+    loadNoteView(notebookId, { search: debouncedSearch, sort: sortOption })
+  }
+
   // Handle note reorder
   const handleReorder = async (noteId: string, newPosition: number) => {
     try {
@@ -575,7 +582,7 @@ export default function NotebookPage() {
                 </span>
               </div>
               <button
-                onClick={() => setSelectedNote(null)}
+                onClick={handleCloseNote}
                 className="px-4 py-2 text-gray-600 hover:text-gray-900"
               >
                 Close
@@ -614,7 +621,7 @@ export default function NotebookPage() {
               />
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setIsEditingNote(false)}
+                  onClick={handleCloseNote}
                   className="px-4 py-2 text-gray-600 hover:text-gray-900"
                 >
                   Cancel

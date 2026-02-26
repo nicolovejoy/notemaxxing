@@ -67,13 +67,13 @@ export async function GET(
 
   const notesWithPreviews = notesSnap.docs.map((doc) => {
     const n = doc.data()
+    const plainText = ((n.content as string) || '').replace(/<[^>]*>/g, '').substring(0, 150)
     return {
       id: doc.id,
       title: n.title,
       created_at: n.created_at,
       updated_at: n.updated_at,
-      preview:
-        doc.id === noteId ? ((note.content as string) || '').substring(0, 150) : 'Note preview...',
+      preview: plainText || 'Empty note',
     }
   })
 
