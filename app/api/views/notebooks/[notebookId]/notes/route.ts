@@ -75,39 +75,35 @@ export async function GET(
   // Fetch all notes for the notebook (sorting in Firestore, search in memory)
   let notesSnap
   if (sort === 'manual') {
+    // Check if any notes need position backfill by querying without orderBy
+    // (Firestore orderBy excludes docs where the field doesn't exist)
+    const allNotesSnap = await db.collection('notes').where('notebook_id', '==', notebookId).get()
+
+    const needsBackfill = allNotesSnap.docs.some((doc) => {
+      const pos = doc.data().position
+      return pos === undefined || pos === null
+    })
+
+    if (needsBackfill && allNotesSnap.docs.length > 0) {
+      // Sort by updated_at desc for consistent backfill ordering
+      const sorted = allNotesSnap.docs.sort((a, b) => {
+        const aTime = (b.data().updated_at as string) || ''
+        const bTime = (a.data().updated_at as string) || ''
+        return aTime.localeCompare(bTime)
+      })
+
+      const batch = db.batch()
+      sorted.forEach((doc, index) => {
+        batch.update(doc.ref, { position: (index + 1) * 1000 })
+      })
+      await batch.commit()
+    }
+
     notesSnap = await db
       .collection('notes')
       .where('notebook_id', '==', notebookId)
       .orderBy('position', 'asc')
       .get()
-
-    // Lazy backfill: if any note has no position, assign positions by updated_at order
-    const needsBackfill = notesSnap.docs.some((doc) => {
-      const pos = doc.data().position
-      return pos === undefined || pos === null
-    })
-
-    if (needsBackfill && notesSnap.docs.length > 0) {
-      // Re-fetch ordered by updated_at for consistent backfill ordering
-      const backfillSnap = await db
-        .collection('notes')
-        .where('notebook_id', '==', notebookId)
-        .orderBy('updated_at', 'desc')
-        .get()
-
-      const batch = db.batch()
-      backfillSnap.docs.forEach((doc, index) => {
-        batch.update(doc.ref, { position: (index + 1) * 1000 })
-      })
-      await batch.commit()
-
-      // Re-fetch with correct ordering
-      notesSnap = await db
-        .collection('notes')
-        .where('notebook_id', '==', notebookId)
-        .orderBy('position', 'asc')
-        .get()
-    }
   } else {
     let orderField = 'updated_at'
     if (sort === 'created') orderField = 'created_at'

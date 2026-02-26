@@ -57,9 +57,11 @@ export function NoteListItem({
   onDelete,
   dragHandleProps,
 }: NoteListItemProps) {
+  const hasPreview = preview && preview !== 'Empty note'
+
   return (
     <div
-      className={`group flex items-center border-b border-gray-100 bg-white hover:bg-gray-50 transition-colors ${
+      className={`group flex items-start border-b border-gray-100 bg-white hover:bg-gray-50 transition-colors ${
         isSelected ? 'bg-blue-50 hover:bg-blue-50' : ''
       }`}
     >
@@ -67,7 +69,7 @@ export function NoteListItem({
       {showDragHandle && (
         <button
           {...dragHandleProps}
-          className="flex-shrink-0 w-11 h-full flex items-center justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
+          className="flex-shrink-0 w-11 pt-4 flex items-start justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
           tabIndex={-1}
         >
           <GripVertical className="h-5 w-5" />
@@ -77,58 +79,46 @@ export function NoteListItem({
       {/* Main clickable area */}
       <button
         onClick={onClick}
-        className={`flex-1 min-w-0 flex items-center gap-3 py-3 text-left ${showDragHandle ? 'pr-2' : 'px-4'}`}
+        className={`flex-1 min-w-0 py-3 text-left ${showDragHandle ? 'pr-2' : 'px-4'}`}
       >
-        <FileText className="h-4 w-4 text-gray-400 flex-shrink-0 hidden md:block" />
-
-        {/* Mobile: stacked title + preview */}
-        <div className="flex-1 min-w-0 md:hidden">
-          <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2 min-w-0">
+            <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
             <span className="font-medium text-gray-900 truncate">{title || 'Untitled Note'}</span>
-            <span className="text-xs text-gray-400 flex-shrink-0">{formatDate(updatedAt)}</span>
           </div>
-          {preview && preview !== 'Empty note' && (
-            <p className="text-sm text-gray-500 truncate mt-0.5">{preview}</p>
-          )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="text-xs text-gray-400">{formatDate(updatedAt)}</span>
+            {/* Desktop action buttons */}
+            <div className="hidden md:flex items-center gap-1">
+              {onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onEdit()
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-500 transition-opacity"
+                >
+                  <Edit2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete()
+                  }}
+                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-
-        {/* Desktop: single row */}
-        <span className="font-medium text-gray-900 truncate flex-shrink-0 max-w-[200px] hidden md:inline">
-          {title || 'Untitled Note'}
-        </span>
-        <span className="text-sm text-gray-500 truncate flex-1 hidden md:inline">
-          {preview && preview !== 'Empty note' ? preview : ''}
-        </span>
-        <span className="text-xs text-gray-400 flex-shrink-0 hidden md:inline">
-          {formatDate(updatedAt)}
-        </span>
+        {hasPreview && (
+          <p className="text-sm text-gray-500 line-clamp-3 leading-relaxed">{preview}</p>
+        )}
       </button>
-
-      {/* Desktop action buttons */}
-      <div className="flex-shrink-0 flex items-center gap-1 pr-3 hidden md:flex">
-        {onEdit && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onEdit()
-            }}
-            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-blue-500 transition-opacity"
-          >
-            <Edit2 className="h-4 w-4" />
-          </button>
-        )}
-        {onDelete && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
-            }}
-            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 transition-opacity"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        )}
-      </div>
     </div>
   )
 }

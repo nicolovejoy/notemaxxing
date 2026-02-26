@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, FolderOpen, BookOpen, SortAsc, Edit2, Plus } from 'lucide-react'
@@ -89,6 +89,11 @@ export default function NotebookPage() {
   // Track if initial load is done
   const [initialLoadDone, setInitialLoadDone] = useState(false)
 
+  // Reload the note list (without blocking UI)
+  const refreshList = useCallback(() => {
+    loadNoteView(notebookId, { search: debouncedSearch, sort: sortOption })
+  }, [notebookId, debouncedSearch, sortOption, loadNoteView])
+
   // Initial load - only when notebookId changes
   useEffect(() => {
     if (notebookId) {
@@ -119,6 +124,42 @@ export default function NotebookPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch, sortOption, initialLoadDone, notebookId]) // Ignore loadNoteView
 
+  // Fetch just a note's content without replacing the note list in the store
+  const fetchNoteContent = async (noteId: string) => {
+    const response = await apiFetch(`/api/views/notebooks/${notebookId}/notes/${noteId}`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw new Error('Failed to load note')
+    const data = await response.json()
+    return data.currentNote as {
+      id: string
+      title: string
+      content: string
+      created_at: string
+      updated_at: string
+    } | null
+  }
+
+  // Open a note for viewing/editing
+  const handleOpenNote = async (noteId: string) => {
+    setIsLoadingNote(true)
+    try {
+      const fullNote = await fetchNoteContent(noteId)
+      if (fullNote) {
+        setSelectedNote(fullNote)
+        if (canEdit) {
+          setIsEditingNote(true)
+          setEditingNoteTitle(fullNote.title)
+          setEditingNoteContent(fullNote.content || '')
+        } else {
+          setIsEditingNote(false)
+        }
+      }
+    } finally {
+      setIsLoadingNote(false)
+    }
+  }
+
   // Handle note creation
   const handleCreateNote = async () => {
     setIsSaving(true)
@@ -138,17 +179,14 @@ export default function NotebookPage() {
 
       const newNote = await response.json()
 
-      // Reload the view to get updated list with current filters
-      await loadNoteView(notebookId, {
-        search: debouncedSearch,
-        sort: sortOption,
-      })
-
-      // Open the new note for editing
+      // Open the new note for editing immediately
       setSelectedNote(newNote)
       setIsEditingNote(true)
-      setEditingNoteTitle('') // Start with empty title, will auto-generate from content
+      setEditingNoteTitle('')
       setEditingNoteContent('')
+
+      // Refresh list in background
+      refreshList()
     } catch (err) {
       console.error('Error creating note:', err)
     } finally {
@@ -178,12 +216,11 @@ export default function NotebookPage() {
 
       if (!response.ok) throw new Error('Failed to save note')
 
-      // Reload the view to get updated data with current filters
-      await loadNoteView(notebookId, {
-        search: debouncedSearch,
-        sort: sortOption,
-      })
       setIsEditingNote(false)
+      setSelectedNote(null)
+
+      // Refresh list in background
+      refreshList()
     } catch (err) {
       console.error('Error saving note:', err)
     } finally {
@@ -209,21 +246,17 @@ export default function NotebookPage() {
         setIsEditingNote(false)
       }
 
-      // Reload the view with current filters
-      await loadNoteView(notebookId, {
-        search: debouncedSearch,
-        sort: sortOption,
-      })
+      // Refresh list in background
+      refreshList()
     } catch (err) {
       console.error('Error deleting note:', err)
     }
   }
 
-  // Close editor/viewer and refresh the notes list
+  // Close editor/viewer — no API call needed since we didn't replace the list
   const handleCloseNote = () => {
     setSelectedNote(null)
     setIsEditingNote(false)
-    loadNoteView(notebookId, { search: debouncedSearch, sort: sortOption })
   }
 
   // Handle note reorder
@@ -237,7 +270,7 @@ export default function NotebookPage() {
     } catch (err) {
       console.error('Error reordering note:', err)
       // Reload to revert optimistic update on failure
-      await loadNoteView(notebookId, { search: debouncedSearch, sort: sortOption })
+      refreshList()
     }
   }
 
@@ -431,10 +464,7 @@ export default function NotebookPage() {
                               if (noteView && noteView.notebook) {
                                 noteView.notebook.name = newName.trim()
                               }
-                              await loadNoteView(notebookId, {
-                                search: debouncedSearch,
-                                sort: sortOption,
-                              })
+                              refreshList()
                             }
                           } catch (error) {
                             console.error('Error updating notebook:', error)
@@ -469,39 +499,43 @@ export default function NotebookPage() {
                 )}
               </div>
             </div>
-            {/* Shared indicator for notebooks in shared folders */}
-            {notebook && notebook.shared && (
-              <SharedIndicator shared={true} sharedByMe={false} permission={notebook.permission} />
-            )}
+            <div className="flex items-center gap-3">
+              {/* Shared indicator for notebooks in shared folders */}
+              {notebook && notebook.shared && (
+                <SharedIndicator
+                  shared={true}
+                  sharedByMe={false}
+                  permission={notebook.permission}
+                />
+              )}
+              {/* Add Note Button — compact, top-right */}
+              {canEdit && (
+                <button
+                  onClick={handleCreateNote}
+                  disabled={isSaving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Plus className="h-4 w-4" />
+                  New note
+                </button>
+              )}
+            </div>
           </div>
-
-          {/* Add Note Button */}
-          {canEdit && (
-            <button
-              onClick={handleCreateNote}
-              disabled={isSaving}
-              className="w-full mb-4 flex items-center justify-center gap-2 py-3 px-4 bg-white border-2 border-dashed border-gray-300 rounded-lg text-gray-600 font-medium hover:border-gray-400 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Plus className="h-4 w-4" />
-              Add new note
-            </button>
-          )}
 
           {/* Notes List */}
           {loading && previewData ? (
             <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
               {[...Array(previewData.note_count || 3)].map((_, i) => (
-                <div key={i} className="flex items-center gap-3 py-3 px-4">
-                  <Skeleton className="h-4 w-4 flex-shrink-0" />
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 flex-1" />
-                  <Skeleton className="h-3 w-16" />
+                <div key={i} className="py-3 px-4">
+                  <Skeleton className="h-4 w-48 mb-2" />
+                  <Skeleton className="h-3 w-full mb-1" />
+                  <Skeleton className="h-3 w-3/4" />
                 </div>
               ))}
             </div>
           ) : notes.length === 0 && !search ? (
             <div className="text-center py-12 text-gray-500">
-              {canEdit ? 'Create your first note above.' : 'No notes yet.'}
+              {canEdit ? 'No notes yet. Click "New note" to get started.' : 'No notes yet.'}
             </div>
           ) : notes.length === 0 && search ? (
             <div className="text-center py-12 text-gray-500">
@@ -513,40 +547,8 @@ export default function NotebookPage() {
               canDrag={sortOption === 'manual' && canEdit}
               canEdit={canEdit}
               selectedNoteId={selectedNote?.id}
-              onNoteClick={async (note) => {
-                setIsLoadingNote(true)
-                try {
-                  const data = await loadNoteView(notebookId, { noteId: note.id })
-                  const fullNote = data?.currentNote
-                  if (fullNote) {
-                    setSelectedNote(fullNote)
-                    if (canEdit) {
-                      setIsEditingNote(true)
-                      setEditingNoteTitle(fullNote.title)
-                      setEditingNoteContent(fullNote.content || '')
-                    } else {
-                      setIsEditingNote(false)
-                    }
-                  }
-                } finally {
-                  setIsLoadingNote(false)
-                }
-              }}
-              onNoteEdit={async (note) => {
-                setIsLoadingNote(true)
-                try {
-                  const data = await loadNoteView(notebookId, { noteId: note.id })
-                  const fullNote = data?.currentNote
-                  if (fullNote) {
-                    setSelectedNote(fullNote)
-                    setIsEditingNote(true)
-                    setEditingNoteTitle(fullNote.title)
-                    setEditingNoteContent(fullNote.content || '')
-                  }
-                } finally {
-                  setIsLoadingNote(false)
-                }
-              }}
+              onNoteClick={(note) => handleOpenNote(note.id)}
+              onNoteEdit={(note) => handleOpenNote(note.id)}
               onNoteDelete={(noteId) => handleDeleteNote(noteId)}
               onReorder={handleReorder}
             />
@@ -555,12 +557,6 @@ export default function NotebookPage() {
       </div>
 
       {/* Loading overlay while fetching note */}
-      {/* TODO: Consider implementing master-detail view instead of modals
-          - Left panel: Note list (collapsible)
-          - Right panel: Selected note content (inline view/edit)
-          - Benefits: Better context, smoother navigation, no modal jumps
-          - Mobile: Keep modal approach for space constraints
-      */}
       {isLoadingNote && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg shadow-xl p-6 flex items-center gap-3">
