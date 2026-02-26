@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Users, Trash2, Check, Copy, Link } from 'lucide-react'
 import { Modal, Button, IconButton } from './ui'
+import { useQueryClient } from '@tanstack/react-query'
 import { sharingApi } from '@/lib/api/sharing'
 import { auth } from '@/lib/firebase/client'
 import { apiFetch } from '@/lib/firebase/api-fetch'
@@ -20,6 +21,7 @@ interface ShareDialogProps {
 }
 
 export function ShareDialog({ resourceId, resourceType, resourceName, onClose }: ShareDialogProps) {
+  const queryClient = useQueryClient()
   const [email, setEmail] = useState('')
   const [permission, setPermission] = useState<Permission>('write')
   const [loading, setLoading] = useState(false)
@@ -135,6 +137,7 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
     try {
       await sharingApi.revokePermission(permissionId)
       loadShares()
+      queryClient.invalidateQueries({ queryKey: ['folders-view'] })
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to revoke permission')
     }
@@ -319,6 +322,7 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
                           if (response.ok) {
                             // Refresh the list
                             loadShares()
+                            queryClient.invalidateQueries({ queryKey: ['folders-view'] })
                           } else {
                             console.error('Failed to update permission:', result.error)
                           }

@@ -109,7 +109,7 @@ export default function NotebookPage() {
   // Mutations
   const createNote = useCreateNote()
   const updateNote = useUpdateNote()
-  const deleteNote = useDeleteNote()
+  const deleteNote = useDeleteNote(notebookId)
   const renameNotebook = useRenameNotebook(notebookId)
 
   const isSaving = createNote.isPending || updateNote.isPending

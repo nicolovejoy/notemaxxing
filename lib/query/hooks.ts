@@ -331,14 +331,14 @@ export function useUpdateNote() {
   })
 }
 
-export function useDeleteNote() {
+export function useDeleteNote(notebookId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: api.deleteNote,
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ['notebook-view'],
+        queryKey: ['notebook-view', notebookId],
       })
     },
   })

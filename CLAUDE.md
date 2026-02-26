@@ -53,10 +53,9 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 ## Next Steps
 
-1. Fix React Query cache invalidation after accept-invite and create-notebook-in-shared-folder (UI requires manual refresh)
-2. Write `firestore.rules` and deploy for defense-in-depth
-3. Revive admin console (usage analytics, user activity)
-4. AI study topic generator → typemaxxing + quizzmaxxing integration
+1. Deploy `firestore.rules` — run `firebase deploy --only firestore:rules --project piano-house-shared` after review
+2. Revive admin console (usage analytics, user activity)
+3. AI study topic generator → typemaxxing + quizzmaxxing integration
 
 ## Planned Features
 

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin'
+import { ADMIN_EMAILS } from '@/lib/constants'
 
-export const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
+export { ADMIN_EMAILS }
 
 export function isAdminEmail(email: string | null): boolean {
   return !!email && ADMIN_EMAILS.includes(email)

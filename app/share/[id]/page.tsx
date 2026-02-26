@@ -100,6 +100,7 @@ export default function SharePage() {
 
       // Invalidate folders cache so shared folder appears immediately
       queryClient.invalidateQueries({ queryKey: ['folders-view'] })
+      queryClient.invalidateQueries({ queryKey: ['folder-detail'] })
 
       // Redirect to the appropriate page after accepting
       setTimeout(() => {

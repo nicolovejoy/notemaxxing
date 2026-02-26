@@ -8,13 +8,7 @@ import { useState, useEffect } from 'react'
 import type { User as FirebaseUser } from 'firebase/auth'
 import { AdminConsole } from './admin-console'
 import { useQueryClient } from '@tanstack/react-query'
-
-// Admin emails who can see admin console
-const ADMIN_EMAILS = [
-  'nicholas.lovejoy@gmail.com',
-  'mlovejoy@scu.edu',
-  // Add other admin emails as needed
-]
+import { ADMIN_EMAILS } from '@/lib/constants'
 
 export function UserMenu() {
   const [user, setUser] = useState<FirebaseUser | null>(null)
