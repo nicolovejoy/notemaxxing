@@ -73,15 +73,52 @@ export async function GET(
   }
 
   // Fetch all notes for the notebook (sorting in Firestore, search in memory)
-  let orderField = 'updated_at'
-  if (sort === 'created') orderField = 'created_at'
-  else if (sort === 'alphabetical') orderField = 'title'
+  let notesSnap
+  if (sort === 'manual') {
+    notesSnap = await db
+      .collection('notes')
+      .where('notebook_id', '==', notebookId)
+      .orderBy('position', 'asc')
+      .get()
 
-  const notesSnap = await db
-    .collection('notes')
-    .where('notebook_id', '==', notebookId)
-    .orderBy(orderField, sort === 'alphabetical' ? 'asc' : 'desc')
-    .get()
+    // Lazy backfill: if any note has no position, assign positions by updated_at order
+    const needsBackfill = notesSnap.docs.some((doc) => {
+      const pos = doc.data().position
+      return pos === undefined || pos === null
+    })
+
+    if (needsBackfill && notesSnap.docs.length > 0) {
+      // Re-fetch ordered by updated_at for consistent backfill ordering
+      const backfillSnap = await db
+        .collection('notes')
+        .where('notebook_id', '==', notebookId)
+        .orderBy('updated_at', 'desc')
+        .get()
+
+      const batch = db.batch()
+      backfillSnap.docs.forEach((doc, index) => {
+        batch.update(doc.ref, { position: (index + 1) * 1000 })
+      })
+      await batch.commit()
+
+      // Re-fetch with correct ordering
+      notesSnap = await db
+        .collection('notes')
+        .where('notebook_id', '==', notebookId)
+        .orderBy('position', 'asc')
+        .get()
+    }
+  } else {
+    let orderField = 'updated_at'
+    if (sort === 'created') orderField = 'created_at'
+    else if (sort === 'alphabetical') orderField = 'title'
+
+    notesSnap = await db
+      .collection('notes')
+      .where('notebook_id', '==', notebookId)
+      .orderBy(orderField, sort === 'alphabetical' ? 'asc' : 'desc')
+      .get()
+  }
 
   let notes: Array<Record<string, unknown>> = notesSnap.docs.map((doc) => ({
     id: doc.id,
@@ -109,6 +146,7 @@ export async function GET(
       preview: plainText || 'Empty note',
       created_at: note.created_at,
       updated_at: note.updated_at,
+      position: note.position as number | undefined,
     }
   })
 

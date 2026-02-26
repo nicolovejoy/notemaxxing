@@ -3,23 +3,23 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FolderOpen, BookOpen, SortAsc, Edit2 } from 'lucide-react'
+import { ArrowLeft, FolderOpen, BookOpen, SortAsc, Edit2, Plus } from 'lucide-react'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { Dropdown } from '@/components/ui/Dropdown'
 import { InlineEdit } from '@/components/ui/InlineEdit'
-import { NoteCard, AddNoteCard } from '@/components/cards/NoteCard'
 import { StatusMessage } from '@/components/ui/StatusMessage'
 import { SharedIndicator } from '@/components/SharedIndicator'
+import { SortableNoteList } from '@/components/notes/SortableNoteList'
 import { useNoteView, useViewLoading, useViewActions, useViewError } from '@/lib/store/view-store'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { toPlainText, toHTML } from '@/lib/utils/content'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { apiFetch } from '@/lib/firebase/api-fetch'
 
-type SortOption = 'recent' | 'alphabetical' | 'created'
+type SortOption = 'recent' | 'alphabetical' | 'created' | 'manual'
 
 // Helper to generate title from content
 function generateTitleFromContent(content: string): string {
@@ -219,9 +219,25 @@ export default function NotebookPage() {
     }
   }
 
+  // Handle note reorder
+  const handleReorder = async (noteId: string, newPosition: number) => {
+    try {
+      await apiFetch('/api/notes/reorder', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: noteId, new_position: newPosition }),
+      })
+    } catch (err) {
+      console.error('Error reordering note:', err)
+      // Reload to revert optimistic update on failure
+      await loadNoteView(notebookId, { search: debouncedSearch, sort: sortOption })
+    }
+  }
+
   // Get data from store (already filtered and sorted by server)
   const notes = noteView?.notes || []
   const notebook = noteView?.notebook
+  const canEdit = !notebook?.shared || notebook?.permission === 'write'
 
   if (error) {
     return (
@@ -264,10 +280,14 @@ export default function NotebookPage() {
               </div>
               <Skeleton className="h-10 w-24" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Skeleton className="h-48 rounded-lg" />
+            <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
               {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-48 rounded-lg" />
+                <div key={i} className="flex items-center gap-3 py-3 px-4">
+                  <Skeleton className="h-4 w-4 flex-shrink-0" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
               ))}
             </div>
           </main>
@@ -317,6 +337,7 @@ export default function NotebookPage() {
                 { value: 'recent', label: 'Recently Updated' },
                 { value: 'alphabetical', label: 'Alphabetical' },
                 { value: 'created', label: 'Date Created' },
+                { value: 'manual', label: 'Manual Order' },
               ]}
             />
           </div>
@@ -447,88 +468,81 @@ export default function NotebookPage() {
             )}
           </div>
 
-          {/* Notes Grid */}
+          {/* Add Note Button */}
+          {canEdit && (
+            <button
+              onClick={handleCreateNote}
+              disabled={isSaving}
+              className="w-full mb-4 flex items-center justify-center gap-2 py-3 px-4 bg-white border-2 border-dashed border-gray-300 rounded-lg text-gray-600 font-medium hover:border-gray-400 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus className="h-4 w-4" />
+              Add new note
+            </button>
+          )}
+
+          {/* Notes List */}
           {loading && previewData ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <Skeleton className="h-48 rounded-lg" />
+            <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
               {[...Array(previewData.note_count || 3)].map((_, i) => (
-                <Skeleton key={i} className="h-48 rounded-lg" />
+                <div key={i} className="flex items-center gap-3 py-3 px-4">
+                  <Skeleton className="h-4 w-4 flex-shrink-0" />
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
               ))}
             </div>
           ) : notes.length === 0 && !search ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Only show Add Note if user owns notebook or has write permission */}
-              {(!notebook?.shared || notebook?.permission === 'write') && (
-                <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
-              )}
+            <div className="text-center py-12 text-gray-500">
+              {canEdit ? 'Create your first note above.' : 'No notes yet.'}
+            </div>
+          ) : notes.length === 0 && search ? (
+            <div className="text-center py-12 text-gray-500">
+              No notes match &quot;{search}&quot;
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Only show Add Note if user owns notebook or has write permission */}
-              {(!notebook?.shared || notebook?.permission === 'write') && (
-                <AddNoteCard onClick={handleCreateNote} disabled={isSaving} />
-              )}
-              {notes.map((note) => (
-                <NoteCard
-                  key={note.id}
-                  id={note.id}
-                  title={note.title}
-                  content={note.preview}
-                  updatedAt={note.updated_at}
-                  isSelected={selectedNote?.id === note.id}
-                  onClick={async () => {
-                    // For read-only users, just show the note without edit mode
-                    const canEdit = !notebook?.shared || notebook?.permission === 'write'
-
-                    setIsLoadingNote(true)
-                    try {
-                      const data = await loadNoteView(notebookId, { noteId: note.id })
-                      const fullNote = data?.currentNote
-                      if (fullNote) {
-                        setSelectedNote(fullNote)
-                        if (canEdit) {
-                          setIsEditingNote(true)
-                          setEditingNoteTitle(fullNote.title)
-                          setEditingNoteContent(fullNote.content || '')
-                        } else {
-                          // For read-only users, selectedNote will trigger the read-only modal
-                          setIsEditingNote(false)
-                        }
-                      }
-                    } finally {
-                      setIsLoadingNote(false)
+            <SortableNoteList
+              notes={notes}
+              canDrag={sortOption === 'manual' && canEdit}
+              canEdit={canEdit}
+              selectedNoteId={selectedNote?.id}
+              onNoteClick={async (note) => {
+                setIsLoadingNote(true)
+                try {
+                  const data = await loadNoteView(notebookId, { noteId: note.id })
+                  const fullNote = data?.currentNote
+                  if (fullNote) {
+                    setSelectedNote(fullNote)
+                    if (canEdit) {
+                      setIsEditingNote(true)
+                      setEditingNoteTitle(fullNote.title)
+                      setEditingNoteContent(fullNote.content || '')
+                    } else {
+                      setIsEditingNote(false)
                     }
-                  }}
-                  onEdit={
-                    // Only allow edit if user owns notebook or has write permission
-                    !notebook?.shared || notebook?.permission === 'write'
-                      ? async () => {
-                          // Same as onClick - open editor directly
-                          setIsLoadingNote(true)
-                          try {
-                            const data = await loadNoteView(notebookId, { noteId: note.id })
-                            const fullNote = data?.currentNote
-                            if (fullNote) {
-                              setSelectedNote(fullNote)
-                              setIsEditingNote(true)
-                              setEditingNoteTitle(fullNote.title)
-                              setEditingNoteContent(fullNote.content || '')
-                            }
-                          } finally {
-                            setIsLoadingNote(false)
-                          }
-                        }
-                      : undefined
                   }
-                  onDelete={
-                    // Only show delete button if user owns notebook or has write permission
-                    !notebook?.shared || notebook?.permission === 'write'
-                      ? () => handleDeleteNote(note.id)
-                      : undefined
+                } finally {
+                  setIsLoadingNote(false)
+                }
+              }}
+              onNoteEdit={async (note) => {
+                setIsLoadingNote(true)
+                try {
+                  const data = await loadNoteView(notebookId, { noteId: note.id })
+                  const fullNote = data?.currentNote
+                  if (fullNote) {
+                    setSelectedNote(fullNote)
+                    setIsEditingNote(true)
+                    setEditingNoteTitle(fullNote.title)
+                    setEditingNoteContent(fullNote.content || '')
                   }
-                />
-              ))}
-            </div>
+                } finally {
+                  setIsLoadingNote(false)
+                }
+              }}
+              onNoteDelete={(noteId) => handleDeleteNote(noteId)}
+              onReorder={handleReorder}
+            />
           )}
         </main>
       </div>

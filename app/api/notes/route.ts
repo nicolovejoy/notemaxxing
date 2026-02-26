@@ -50,6 +50,22 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  // Assign position: find max position in notebook, add 1000
+  const existingNotes = await db
+    .collection('notes')
+    .where('notebook_id', '==', notebook_id)
+    .orderBy('position', 'desc')
+    .limit(1)
+    .get()
+
+  let position = 1000
+  if (!existingNotes.empty) {
+    const maxPos = existingNotes.docs[0].data().position
+    if (typeof maxPos === 'number') {
+      position = maxPos + 1000
+    }
+  }
+
   const now = new Date().toISOString()
   const data = {
     title: title || 'Untitled Note',
@@ -60,6 +76,7 @@ export async function POST(request: NextRequest) {
     created_by: uid,
     created_at: now,
     updated_at: now,
+    position,
   }
 
   const ref = await db.collection('notes').add(data)
@@ -71,7 +88,7 @@ export async function PATCH(request: NextRequest) {
   if (error) return error
 
   const body = await request.json()
-  const { id, title, content } = body
+  const { id, title, content, position } = body
 
   if (!id) {
     return NextResponse.json({ error: 'Note ID is required' }, { status: 400 })
@@ -94,9 +111,10 @@ export async function PATCH(request: NextRequest) {
     )
   }
 
-  const updates: Record<string, string> = { updated_at: new Date().toISOString() }
+  const updates: Record<string, string | number> = { updated_at: new Date().toISOString() }
   if (title !== undefined) updates.title = title
   if (content !== undefined) updates.content = content
+  if (typeof position === 'number') updates.position = position
 
   await db.collection('notes').doc(id).update(updates)
   return NextResponse.json({ id, ...note, ...updates })

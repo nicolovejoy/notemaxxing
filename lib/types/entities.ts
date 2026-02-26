@@ -36,6 +36,7 @@ export interface Note extends OwnedEntity {
   folder_id: string
   title: string
   content: string
+  position?: number
 }
 
 export interface Quiz extends OwnedEntity {

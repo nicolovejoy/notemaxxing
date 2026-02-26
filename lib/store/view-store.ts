@@ -96,6 +96,7 @@ export interface NoteViewData {
     preview: string
     created_at: string
     updated_at: string
+    position?: number
   }>
   currentNote: {
     id: string
@@ -134,7 +135,7 @@ interface ViewState {
       noteId?: string
       offset?: number
       search?: string
-      sort?: 'recent' | 'alphabetical' | 'created'
+      sort?: 'recent' | 'alphabetical' | 'created' | 'manual'
     }
   ) => Promise<NoteViewData | undefined>
 
@@ -231,7 +232,7 @@ export const useViewStore = create<ViewState>()(
         noteId?: string
         offset?: number
         search?: string
-        sort?: 'recent' | 'alphabetical' | 'created'
+        sort?: 'recent' | 'alphabetical' | 'created' | 'manual'
       }
     ) => {
       const { noteId, offset = 0, search = '', sort = 'recent' } = options || {}
