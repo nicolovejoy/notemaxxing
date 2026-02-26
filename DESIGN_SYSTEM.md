@@ -242,19 +242,26 @@ import { InlineEdit } from '@/components/ui/InlineEdit'
 
 ## Component Locations
 
-All UI components are in `/components/ui/`:
+UI primitives in `/components/ui/`:
 
-- FormField.tsx
-- LoadingButton.tsx
+- FormField.tsx, SelectField.tsx
+- LoadingButton.tsx, Button.tsx, IconButton.tsx
 - StatusMessage.tsx
-- Modal.tsx
-- ModalFooter.tsx
+- Modal.tsx, ModalFooter.tsx
 - Card.tsx
-- IconButton.tsx
-- Button.tsx
 - PageHeader.tsx
 - EmptyState.tsx
 - Dropdown.tsx
 - SearchInput.tsx
 - InlineEdit.tsx
 - Skeleton.tsx
+
+Domain components:
+
+- `/components/cards/NoteListItem.tsx` — single-row note display (title, 3-line preview, date, drag handle)
+- `/components/cards/NoteCard.tsx` — grid card (legacy, unused after list view switch)
+- `/components/notes/SortableNoteList.tsx` — dnd-kit sortable wrapper for note list
+- `/components/cards/NotebookCard.tsx`, `EntityCard.tsx` — folder/notebook grid cards
+- `/components/RichTextEditor.tsx` — TipTap editor
+- `/components/ShareDialog.tsx` — folder sharing modal
+- `/components/SharedIndicator.tsx` — shared badge

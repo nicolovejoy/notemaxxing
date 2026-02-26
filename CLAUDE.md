@@ -37,19 +37,28 @@ Component → API Route → Firebase Admin SDK → Firestore
 3. Run `npm run format` after changes
 4. Must pass `npm run build` before pushing
 
+## State Management
+
+- **Zustand (`view-store`)**: Notebook page — fetches notes list, handles sort/search/pagination
+- **React Query**: Folders/backpack pages — `useFoldersView()`, `useFolderDetailView()`, mutations with cache invalidation
+- **Direct `apiFetch()`**: One-off actions (note save, delete, reorder, share dialog)
+- **`uiStore`**: Dead code — defined but unused by any page
+
 ## Current State
 
 - **Build**: Passing ✅
 - **Auth**: Firebase (Google + email/password) — Supabase fully removed
 - **AI Model**: `claude-sonnet-4-20250514`
 - **Firebase project**: `piano-house-shared` (shared with soiree)
-- **Indexes**: deployed via `firestore.indexes.json` — run `firebase deploy --only firestore:indexes` to rebuild
+- **Indexes**: deployed via `firestore.indexes.json` — run `firebase deploy --only firestore:indexes --project piano-house-shared`
+- **Note reordering**: drag-and-drop via dnd-kit, `position` field with gap-based integers, lazy backfill
 
 ## Next Steps
 
 1. Extract shared API helpers (ADMIN_EMAILS, email validation, permission checking)
 2. Fix React Query cache invalidation after accept-invite and create-notebook-in-shared-folder (UI requires manual refresh)
 3. Write `firestore.rules` and deploy for defense-in-depth
+4. Remove dead `uiStore` code
 
 ## Planned Features
 
