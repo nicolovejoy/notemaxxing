@@ -20,6 +20,9 @@ import {
   Database,
   AlertCircle,
   Zap,
+  ChevronDown,
+  ChevronRight,
+  Ghost,
 } from 'lucide-react'
 
 interface AdminConsoleProps {
@@ -103,6 +106,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [resettingUser, setResettingUser] = useState<string | null>(null)
+  const [showAnonymous, setShowAnonymous] = useState(false)
 
   // Fetch data when tab changes
   useEffect(() => {
@@ -268,7 +272,15 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
             <div>
               {/* Refresh button */}
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-sm font-medium text-gray-700">Total Users: {users.length}</h3>
+                <h3 className="text-sm font-medium text-gray-700">
+                  {users.filter((u) => u.email !== 'No email').length} users
+                  {users.filter((u) => u.email === 'No email').length > 0 && (
+                    <span className="text-gray-400 font-normal">
+                      {' '}
+                      + {users.filter((u) => u.email === 'No email').length} anonymous
+                    </span>
+                  )}
+                </h3>
                 <button
                   onClick={fetchUsers}
                   disabled={loading}
@@ -291,73 +303,136 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {users.map((user) => (
-                    <div
-                      key={user.id}
-                      className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="font-medium text-gray-900">{user.email}</span>
-                            {user.is_admin && (
-                              <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded">
-                                Admin
-                              </span>
-                            )}
+                  {/* Real users */}
+                  {users
+                    .filter((u) => u.email !== 'No email')
+                    .map((user) => (
+                      <div
+                        key={user.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50"
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-gray-400" />
+                              <span className="font-medium text-gray-900">{user.email}</span>
+                              {user.is_admin && (
+                                <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded">
+                                  Admin
+                                </span>
+                              )}
+                            </div>
+                            <div className="mt-1 text-xs text-gray-500">ID: {user.id}</div>
+                            <div className="mt-2 flex gap-4 text-xs text-gray-600">
+                              <span>Created: {formatDate(user.created_at)}</span>
+                              {user.last_sign_in_at && (
+                                <span>Last sign in: {formatDate(user.last_sign_in_at)}</span>
+                              )}
+                            </div>
+                            <div className="mt-3 flex gap-4">
+                              <div className="flex items-center gap-1">
+                                <FolderOpen className="h-3 w-3 text-gray-400" />
+                                <span className="text-xs text-gray-600">
+                                  {user.stats.folders} folders
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <FileText className="h-3 w-3 text-gray-400" />
+                                <span className="text-xs text-gray-600">
+                                  {user.stats.notebooks} notebooks
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <StickyNote className="h-3 w-3 text-gray-400" />
+                                <span className="text-xs text-gray-600">
+                                  {user.stats.notes} notes
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Share2 className="h-3 w-3 text-gray-400" />
+                                <span className="text-xs text-gray-600">
+                                  {user.stats.permissions_granted} shared /{' '}
+                                  {user.stats.permissions_received} received
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="mt-1 text-xs text-gray-500">ID: {user.id}</div>
-                          <div className="mt-2 flex gap-4 text-xs text-gray-600">
-                            <span>Created: {formatDate(user.created_at)}</span>
-                            {user.last_sign_in_at && (
-                              <span>Last sign in: {formatDate(user.last_sign_in_at)}</span>
-                            )}
+                          <div className="ml-4">
+                            <LoadingButton
+                              size="sm"
+                              variant="danger"
+                              icon={Trash2}
+                              loading={resettingUser === user.id}
+                              onClick={() => handleResetUserData(user.id, user.email)}
+                              disabled={user.is_admin}
+                              title={user.is_admin ? "Can't reset admin users" : 'Reset user data'}
+                            >
+                              Reset
+                            </LoadingButton>
                           </div>
-                          <div className="mt-3 flex gap-4">
-                            <div className="flex items-center gap-1">
-                              <FolderOpen className="h-3 w-3 text-gray-400" />
-                              <span className="text-xs text-gray-600">
-                                {user.stats.folders} folders
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <FileText className="h-3 w-3 text-gray-400" />
-                              <span className="text-xs text-gray-600">
-                                {user.stats.notebooks} notebooks
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <StickyNote className="h-3 w-3 text-gray-400" />
-                              <span className="text-xs text-gray-600">
-                                {user.stats.notes} notes
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Share2 className="h-3 w-3 text-gray-400" />
-                              <span className="text-xs text-gray-600">
-                                {user.stats.permissions_granted} shared /{' '}
-                                {user.stats.permissions_received} received
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <LoadingButton
-                            size="sm"
-                            variant="danger"
-                            icon={Trash2}
-                            loading={resettingUser === user.id}
-                            onClick={() => handleResetUserData(user.id, user.email)}
-                            disabled={user.is_admin}
-                            title={user.is_admin ? "Can't reset admin users" : 'Reset user data'}
-                          >
-                            Reset
-                          </LoadingButton>
                         </div>
                       </div>
+                    ))}
+
+                  {/* Anonymous users (collapsible) */}
+                  {users.filter((u) => u.email === 'No email').length > 0 && (
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setShowAnonymous(!showAnonymous)}
+                        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-2"
+                      >
+                        {showAnonymous ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                        <Ghost className="h-4 w-4" />
+                        <span>
+                          {users.filter((u) => u.email === 'No email').length} anonymous accounts
+                        </span>
+                      </button>
+                      {showAnonymous && (
+                        <div className="space-y-2">
+                          {users
+                            .filter((u) => u.email === 'No email')
+                            .map((user) => (
+                              <div
+                                key={user.id}
+                                className="border border-gray-100 rounded-lg p-3 bg-gray-50"
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <div className="text-xs text-gray-500">ID: {user.id}</div>
+                                    <div className="text-xs text-gray-400 mt-1">
+                                      Created: {formatDate(user.created_at)}
+                                      {user.last_sign_in_at &&
+                                        ` | Last sign in: ${formatDate(user.last_sign_in_at)}`}
+                                    </div>
+                                    {(user.stats.folders > 0 ||
+                                      user.stats.notebooks > 0 ||
+                                      user.stats.notes > 0) && (
+                                      <div className="text-xs text-gray-500 mt-1">
+                                        {user.stats.folders}F / {user.stats.notebooks}NB /{' '}
+                                        {user.stats.notes}N
+                                      </div>
+                                    )}
+                                  </div>
+                                  <LoadingButton
+                                    size="sm"
+                                    variant="danger"
+                                    icon={Trash2}
+                                    loading={resettingUser === user.id}
+                                    onClick={() => handleResetUserData(user.id, user.email)}
+                                  >
+                                    Reset
+                                  </LoadingButton>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  )}
                 </div>
               )}
             </div>

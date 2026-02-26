@@ -93,6 +93,14 @@
         { "fieldPath": "position", "order": "ASCENDING" }
       ]
     },
+    {
+      "collectionGroup": "notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "notebook_id", "order": "ASCENDING" },
+        { "fieldPath": "position", "order": "DESCENDING" }
+      ]
+    },
 
     {
       "collectionGroup": "permissions",
