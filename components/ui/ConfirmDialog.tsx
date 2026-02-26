@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Trash2 } from 'lucide-react'
 
 interface ConfirmDialogProps {
@@ -24,16 +24,48 @@ export function ConfirmDialog({
   variant = 'danger',
   loading = false,
 }: ConfirmDialogProps) {
+  const [focusedButton, setFocusedButton] = useState<'cancel' | 'confirm'>('cancel')
+  const cancelRef = useRef<HTMLButtonElement>(null)
+  const confirmRef = useRef<HTMLButtonElement>(null)
+
+  // Reset focus to cancel (safe action) when opening
+  useEffect(() => {
+    if (isOpen) {
+      setFocusedButton('cancel')
+      // Defer focus to next frame so the dialog is rendered
+      requestAnimationFrame(() => cancelRef.current?.focus())
+    }
+  }, [isOpen])
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
-      if (e.key === 'Enter') onConfirm()
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onCancel()
+        return
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (focusedButton === 'confirm') onConfirm()
+        else onCancel()
+        return
+      }
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Tab') {
+        e.preventDefault()
+        setFocusedButton((prev) => {
+          const next = prev === 'cancel' ? 'confirm' : 'cancel'
+          if (next === 'cancel') cancelRef.current?.focus()
+          else confirmRef.current?.focus()
+          return next
+        })
+      }
     }
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
+      document.addEventListener('keydown', handleKeyDown, true)
     }
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onCancel, onConfirm])
+    return () => document.removeEventListener('keydown', handleKeyDown, true)
+  }, [isOpen, onCancel, onConfirm, focusedButton])
 
   if (!isOpen) return null
 
@@ -47,9 +79,9 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-      <div className="fixed inset-0 bg-black bg-opacity-20" onClick={onCancel} />
+      <div className="fixed inset-0" onClick={onCancel} />
       <div
-        className="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 animate-in fade-in zoom-in-95 duration-150"
+        className="relative bg-white rounded-xl shadow-2xl ring-1 ring-black/10 w-full max-w-sm p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-4">
@@ -63,13 +95,17 @@ export function ConfirmDialog({
         </div>
         <div className="flex gap-3 justify-end mt-6">
           <button
+            ref={cancelRef}
             onClick={onCancel}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300"
+            onFocus={() => setFocusedButton('cancel')}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             {cancelLabel}
           </button>
           <button
+            ref={confirmRef}
             onClick={onConfirm}
+            onFocus={() => setFocusedButton('confirm')}
             disabled={loading}
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${confirmBg}`}
           >
