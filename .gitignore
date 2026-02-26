@@ -42,3 +42,9 @@ next-env.d.ts
 
 # build info
 lib/build-info.json
+
+# terraform
+infrastructure/
+
+# supabase
+supabase/.temp/
