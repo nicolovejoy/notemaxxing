@@ -3,7 +3,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FolderOpen, BookOpen, SortAsc, Edit2, Plus } from 'lucide-react'
+import {
+  ArrowLeft,
+  FolderOpen,
+  BookOpen,
+  SortAsc,
+  SortDesc,
+  Edit2,
+  Plus,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Skeleton } from '@/components/ui/Skeleton'
@@ -27,6 +37,11 @@ import { useAuth } from '@/lib/hooks/useAuth'
 import { apiFetch } from '@/lib/firebase/api-fetch'
 
 type SortOption = 'recent' | 'alphabetical' | 'created' | 'manual'
+type SortDirection = 'asc' | 'desc'
+
+function getDefaultDirection(sort: SortOption): SortDirection {
+  return sort === 'alphabetical' ? 'asc' : 'desc'
+}
 
 // Helper to generate title from content
 function generateTitleFromContent(content: string): string {
@@ -72,12 +87,14 @@ export default function NotebookPage() {
 
   const [search, setSearch] = useState('')
   const [sortOption, setSortOption] = useState<SortOption | null>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
   const [sortInitialized, setSortInitialized] = useState(false)
   const [selectedNote, setSelectedNote] = useState<{
     id: string
     title: string
     content?: string
   } | null>(null)
+  const [isNewNote, setIsNewNote] = useState(false)
   const [isEditingNote, setIsEditingNote] = useState(false)
   const [editingNoteContent, setEditingNoteContent] = useState('')
   const [editingNoteTitle, setEditingNoteTitle] = useState('')
@@ -95,12 +112,20 @@ export default function NotebookPage() {
   } = useNotebookView(notebookId, {
     search: debouncedSearch || undefined,
     sort: sortOption || undefined,
+    sortDir:
+      sortOption && sortOption !== 'manual'
+        ? sortDirection !== getDefaultDirection(sortOption)
+          ? sortDirection
+          : undefined
+        : undefined,
   })
 
   // Initialize sort from stored notebook preference
   useEffect(() => {
     if (noteView?.notebook?.sort_order && !sortInitialized) {
-      setSortOption(noteView.notebook.sort_order)
+      const sort = noteView.notebook.sort_order
+      setSortOption(sort)
+      setSortDirection(getDefaultDirection(sort))
       setSortInitialized(true)
     }
   }, [noteView?.notebook?.sort_order, sortInitialized])
@@ -150,46 +175,53 @@ export default function NotebookPage() {
     }
   }
 
-  // Handle note creation
-  const handleCreateNote = useCallback(async () => {
-    try {
-      const newNote = await createNote.mutateAsync({
-        title: '',
-        content: '',
-        notebook_id: notebookId,
-      })
+  // Handle note creation — deferred: opens editor without creating in DB
+  const handleCreateNote = useCallback(() => {
+    setSelectedNote({ id: '__new__', title: '' })
+    setIsNewNote(true)
+    setIsEditingNote(true)
+    setEditingNoteTitle('')
+    setEditingNoteContent('')
+  }, [])
 
-      // Open the new note for editing immediately
-      setSelectedNote(newNote)
-      setIsEditingNote(true)
-      setEditingNoteTitle('')
-      setEditingNoteContent('')
-    } catch (err) {
-      console.error('Error creating note:', err)
-    }
-  }, [createNote, notebookId])
-
-  // Handle note update
+  // Handle note save — creates if new, updates if existing
   const handleSaveNote = useCallback(async () => {
     if (!selectedNote) return
 
     try {
       const finalTitle = editingNoteTitle.trim() || generateTitleFromContent(editingNoteContent)
 
-      await updateNote.mutateAsync({
-        id: selectedNote.id,
-        updates: {
+      if (isNewNote) {
+        await createNote.mutateAsync({
           title: finalTitle,
           content: editingNoteContent,
-        },
-      })
+          notebook_id: notebookId,
+        })
+      } else {
+        await updateNote.mutateAsync({
+          id: selectedNote.id,
+          updates: {
+            title: finalTitle,
+            content: editingNoteContent,
+          },
+        })
+      }
 
       setIsEditingNote(false)
+      setIsNewNote(false)
       setSelectedNote(null)
     } catch (err) {
       console.error('Error saving note:', err)
     }
-  }, [selectedNote, editingNoteTitle, editingNoteContent, updateNote])
+  }, [
+    selectedNote,
+    editingNoteTitle,
+    editingNoteContent,
+    updateNote,
+    createNote,
+    notebookId,
+    isNewNote,
+  ])
 
   // Handle note deletion
   const handleDeleteNote = async (noteId: string) => {
@@ -211,6 +243,7 @@ export default function NotebookPage() {
   const handleCloseNote = () => {
     setSelectedNote(null)
     setIsEditingNote(false)
+    setIsNewNote(false)
   }
 
   // Handle note reorder — keep as direct apiFetch (fire-and-forget, SortableNoteList handles optimism)
@@ -231,6 +264,21 @@ export default function NotebookPage() {
   const notes = noteView?.notes || []
   const notebook = noteView?.notebook
   const canEdit = !notebook?.shared || notebook?.permission === 'write'
+
+  // Keyboard shortcut: "n" to create a new note
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+      if (!canEdit || isEditingNote || isEditingNotebook) return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable)
+        return
+      e.preventDefault()
+      handleCreateNote()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [canEdit, isEditingNote, isEditingNotebook, handleCreateNote])
 
   if (error) {
     return (
@@ -323,23 +371,73 @@ export default function NotebookPage() {
             />
             <Dropdown
               label="Sort"
-              icon={<SortAsc className="h-4 w-4" />}
+              icon={
+                sortDirection === 'asc' ? (
+                  <SortAsc className="h-4 w-4" />
+                ) : (
+                  <SortDesc className="h-4 w-4" />
+                )
+              }
               value={sortOption || 'recent'}
               onChange={(value) => {
                 const newSort = value as SortOption
-                setSortOption(newSort)
+                if (newSort === 'manual') {
+                  setSortOption(newSort)
+                  setSortDirection(getDefaultDirection(newSort))
+                } else if (newSort === sortOption) {
+                  // Toggle direction on re-click
+                  setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                } else {
+                  setSortOption(newSort)
+                  setSortDirection(getDefaultDirection(newSort))
+                }
                 setSortInitialized(true)
                 // Persist sort preference (fire-and-forget)
-                apiFetch('/api/notebooks', {
-                  method: 'PATCH',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ id: notebookId, sort_order: newSort }),
-                }).catch(() => {})
+                if (newSort !== sortOption) {
+                  apiFetch('/api/notebooks', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: notebookId, sort_order: newSort }),
+                  }).catch(() => {})
+                }
               }}
               options={[
-                { value: 'recent', label: 'Recently Updated' },
-                { value: 'alphabetical', label: 'Alphabetical' },
-                { value: 'created', label: 'Date Created' },
+                {
+                  value: 'recent',
+                  label: 'Recently Updated',
+                  icon:
+                    sortOption === 'recent' ? (
+                      sortDirection === 'desc' ? (
+                        <ArrowDown className="h-3 w-3" />
+                      ) : (
+                        <ArrowUp className="h-3 w-3" />
+                      )
+                    ) : undefined,
+                },
+                {
+                  value: 'alphabetical',
+                  label: 'Alphabetical',
+                  icon:
+                    sortOption === 'alphabetical' ? (
+                      sortDirection === 'asc' ? (
+                        <ArrowDown className="h-3 w-3" />
+                      ) : (
+                        <ArrowUp className="h-3 w-3" />
+                      )
+                    ) : undefined,
+                },
+                {
+                  value: 'created',
+                  label: 'Date Created',
+                  icon:
+                    sortOption === 'created' ? (
+                      sortDirection === 'desc' ? (
+                        <ArrowDown className="h-3 w-3" />
+                      ) : (
+                        <ArrowUp className="h-3 w-3" />
+                      )
+                    ) : undefined,
+                },
                 { value: 'manual', label: 'Manual Order' },
               ]}
             />

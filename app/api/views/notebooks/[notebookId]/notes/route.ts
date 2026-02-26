@@ -14,6 +14,7 @@ export async function GET(
   const limit = parseInt(searchParams.get('limit') || '20')
   const search = searchParams.get('search') || ''
   const sortParam = searchParams.get('sort')
+  const sortDirParam = searchParams.get('sortDir') as 'asc' | 'desc' | null
 
   const db = getAdminDb()
 
@@ -110,10 +111,13 @@ export async function GET(
     if (sort === 'created') orderField = 'created_at'
     else if (sort === 'alphabetical') orderField = 'title'
 
+    // Always query with indexed direction, reverse in memory if needed
+    const defaultDir = sort === 'alphabetical' ? 'asc' : 'desc'
+
     notesSnap = await db
       .collection('notes')
       .where('notebook_id', '==', notebookId)
-      .orderBy(orderField, sort === 'alphabetical' ? 'asc' : 'desc')
+      .orderBy(orderField, defaultDir)
       .get()
   }
 
@@ -121,6 +125,14 @@ export async function GET(
     id: doc.id,
     ...doc.data(),
   }))
+
+  // Reverse if non-default direction requested (avoids needing extra composite indexes)
+  if (sort !== 'manual' && sortDirParam) {
+    const defaultDir = sort === 'alphabetical' ? 'asc' : 'desc'
+    if (sortDirParam !== defaultDir) {
+      notes.reverse()
+    }
+  }
 
   // In-memory search filter
   if (search) {

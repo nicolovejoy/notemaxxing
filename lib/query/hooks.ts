@@ -131,6 +131,7 @@ const api = {
     params?: {
       search?: string
       sort?: string
+      sortDir?: string
       limit?: number
       offset?: number
     },
@@ -225,6 +226,7 @@ export function useNotebookView(
   params?: {
     search?: string
     sort?: string
+    sortDir?: string
     limit?: number
     offset?: number
   }
