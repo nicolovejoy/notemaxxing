@@ -158,6 +158,7 @@ export default function NotebookPage() {
   // Open a note for viewing/editing
   const handleOpenNote = async (noteId: string) => {
     setIsLoadingNote(true)
+    setIsNewNote(false) // Always clear — opening an existing note is never "new"
     try {
       const fullNote = await fetchNoteContent(noteId)
       if (fullNote) {
@@ -186,7 +187,7 @@ export default function NotebookPage() {
 
   // Handle note save — creates if new, updates if existing
   const handleSaveNote = useCallback(async () => {
-    if (!selectedNote) return
+    if (!selectedNote || isSaving) return
 
     try {
       const finalTitle = editingNoteTitle.trim() || generateTitleFromContent(editingNoteContent)
@@ -221,6 +222,7 @@ export default function NotebookPage() {
     createNote,
     notebookId,
     isNewNote,
+    isSaving,
   ])
 
   // Handle note deletion
@@ -265,9 +267,17 @@ export default function NotebookPage() {
   const notebook = noteView?.notebook
   const canEdit = !notebook?.shared || notebook?.permission === 'write'
 
-  // Keyboard shortcut: "n" to create a new note
+  // Keyboard shortcuts: "n" to create, Escape to close editor
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to close note editor/viewer
+      if (e.key === 'Escape' && (isEditingNote || selectedNote)) {
+        e.preventDefault()
+        handleCloseNote()
+        return
+      }
+
+      // "n" to create a new note
       if (e.key !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
       if (!canEdit || isEditingNote || isEditingNotebook) return
       const tag = (e.target as HTMLElement).tagName
@@ -278,7 +288,7 @@ export default function NotebookPage() {
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [canEdit, isEditingNote, isEditingNotebook, handleCreateNote])
+  }, [canEdit, isEditingNote, isEditingNotebook, handleCreateNote, selectedNote])
 
   if (error) {
     return (
@@ -370,7 +380,14 @@ export default function NotebookPage() {
               className="w-64"
             />
             <Dropdown
-              label="Sort"
+              label={
+                {
+                  recent: 'Recent',
+                  alphabetical: 'A-Z',
+                  created: 'Created',
+                  manual: 'Manual',
+                }[sortOption || 'recent']
+              }
               icon={
                 sortDirection === 'asc' ? (
                   <SortAsc className="h-4 w-4" />

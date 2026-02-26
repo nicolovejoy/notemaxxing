@@ -149,7 +149,7 @@ export async function GET(
 
   const notesWithPreviews = paginated.map((note) => {
     const plainText = ((note.content as string) || '')
-      .replace(/<[^>]*>/g, '')
+      .replace(/<[^>]*>/g, ' ')
       .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')

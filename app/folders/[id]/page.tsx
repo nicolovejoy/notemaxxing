@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Plus, Share2, FolderOpen, Edit2 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -101,6 +101,22 @@ export default function FolderDetailPage() {
     storeNotebookPreview(notebook)
     router.push(`/notebooks/${notebook.id}?from=folder`)
   }
+
+  // Keyboard shortcut: "n" to create a new notebook
+  const openCreateModal = useCallback(() => setShowCreateModal(true), [])
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+      if (!canWrite || showCreateModal || showShareDialog || isEditingFolder) return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable)
+        return
+      e.preventDefault()
+      openCreateModal()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [canWrite, showCreateModal, showShareDialog, isEditingFolder, openCreateModal])
 
   const filteredNotebooks = search
     ? notebooks.filter((n) => n.name.toLowerCase().includes(search.toLowerCase()))
