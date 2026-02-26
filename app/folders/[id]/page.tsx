@@ -18,6 +18,7 @@ import { SharedIndicator } from '@/components/SharedIndicator'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
 import { useFolderDetailView } from '@/lib/query/hooks'
+import { useQueryClient } from '@tanstack/react-query'
 import { LoadingGrid } from '@/components/common/LoadingGrid'
 import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
 import { apiFetch } from '@/lib/firebase/api-fetch'
@@ -29,6 +30,7 @@ export default function FolderDetailPage() {
   const { user, loading: authLoading } = useAuth()
 
   // Use React Query for data fetching
+  const queryClient = useQueryClient()
   const { data: folderView, isLoading, error, refetch } = useFolderDetailView(folderId)
 
   // Local state for UI
@@ -78,6 +80,10 @@ export default function FolderDetailPage() {
       }
 
       const data = await response.json()
+
+      // Invalidate caches so backpack/folder counts update
+      queryClient.invalidateQueries({ queryKey: ['folders-view'] })
+      queryClient.invalidateQueries({ queryKey: ['folder-detail', folderId] })
 
       // Navigate to the new notebook
       router.push(`/notebooks/${data.id}`)
@@ -190,11 +196,13 @@ export default function FolderDetailPage() {
                         }),
                       })
                       if (response.ok) {
-                        // Optimistically update the UI
-                        if (folderView && folderView.folder) {
-                          folderView.folder.name = newName.trim()
-                        }
-                        refetch()
+                        // Update folder detail cache immutably
+                        queryClient.setQueryData(
+                          ['folder-detail', folderId],
+                          (old: typeof folderView) =>
+                            old ? { ...old, folder: { ...old.folder, name: newName.trim() } } : old
+                        )
+                        queryClient.invalidateQueries({ queryKey: ['folders-view'] })
                       }
                     } catch (error) {
                       console.error('Error updating folder:', error)

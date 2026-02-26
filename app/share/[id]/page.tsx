@@ -8,6 +8,7 @@ import { Button } from '@/components/ui'
 import { Check, AlertCircle } from 'lucide-react'
 import { auth } from '@/lib/firebase/client'
 import { apiFetch } from '@/lib/firebase/api-fetch'
+import { queryClient } from '@/lib/query/query-client'
 
 export default function SharePage() {
   const params = useParams()
@@ -96,6 +97,9 @@ export default function SharePage() {
     try {
       const result = await sharingApi.acceptInvitation(invitationId)
       setSuccess(true)
+
+      // Invalidate folders cache so shared folder appears immediately
+      queryClient.invalidateQueries({ queryKey: ['folders-view'] })
 
       // Redirect to the appropriate page after accepting
       setTimeout(() => {

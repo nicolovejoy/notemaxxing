@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, FolderOpen, BookOpen, SortAsc, Edit2, Plus } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { RichTextEditor } from '@/components/RichTextEditor'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -13,7 +14,13 @@ import { InlineEdit } from '@/components/ui/InlineEdit'
 import { StatusMessage } from '@/components/ui/StatusMessage'
 import { SharedIndicator } from '@/components/SharedIndicator'
 import { SortableNoteList } from '@/components/notes/SortableNoteList'
-import { useNoteView, useViewLoading, useViewActions, useViewError } from '@/lib/store/view-store'
+import {
+  useNotebookView,
+  useCreateNote,
+  useUpdateNote,
+  useDeleteNote,
+  useRenameNotebook,
+} from '@/lib/query/hooks'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { toPlainText, toHTML } from '@/lib/utils/content'
 import { useAuth } from '@/lib/hooks/useAuth'
@@ -44,6 +51,7 @@ export default function NotebookPage() {
   const params = useParams()
   const notebookId = params.id as string
   const { user } = useAuth()
+  const queryClient = useQueryClient()
 
   // Get preview data from sessionStorage for immediate display
   const [previewData, setPreviewData] = useState<{
@@ -57,17 +65,10 @@ export default function NotebookPage() {
       const stored = sessionStorage.getItem(`notebook-preview-${notebookId}`)
       if (stored) {
         setPreviewData(JSON.parse(stored))
-        // Clean up after using
         sessionStorage.removeItem(`notebook-preview-${notebookId}`)
       }
     }
   }, [notebookId])
-
-  // Use ViewStore - following the folders page pattern
-  const noteView = useNoteView()
-  const loading = useViewLoading()
-  const error = useViewError()
-  const { loadNoteView, clearView } = useViewActions()
 
   const [search, setSearch] = useState('')
   const [sortOption, setSortOption] = useState<SortOption>('recent')
@@ -79,52 +80,32 @@ export default function NotebookPage() {
   const [isEditingNote, setIsEditingNote] = useState(false)
   const [editingNoteContent, setEditingNoteContent] = useState('')
   const [editingNoteTitle, setEditingNoteTitle] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
   const [isEditingNotebook, setIsEditingNotebook] = useState(false)
   const [isLoadingNote, setIsLoadingNote] = useState(false)
 
   // Debounce search input to avoid too many API calls
   const debouncedSearch = useDebounce(search, 300)
 
-  // Track if initial load is done
-  const [initialLoadDone, setInitialLoadDone] = useState(false)
+  // React Query — data fetching
+  const {
+    data: noteView,
+    isLoading: loading,
+    error: queryError,
+  } = useNotebookView(notebookId, {
+    search: debouncedSearch || undefined,
+    sort: sortOption,
+  })
+  const error = queryError?.message ?? null
 
-  // Reload the note list (without blocking UI)
-  const refreshList = useCallback(() => {
-    loadNoteView(notebookId, { search: debouncedSearch, sort: sortOption })
-  }, [notebookId, debouncedSearch, sortOption, loadNoteView])
+  // Mutations
+  const createNote = useCreateNote()
+  const updateNote = useUpdateNote()
+  const deleteNote = useDeleteNote()
+  const renameNotebook = useRenameNotebook(notebookId)
 
-  // Initial load - only when notebookId changes
-  useEffect(() => {
-    if (notebookId) {
-      loadNoteView(notebookId, {
-        search: '',
-        sort: 'recent',
-      }).then(() => {
-        setInitialLoadDone(true)
-      })
-    }
+  const isSaving = createNote.isPending || updateNote.isPending
 
-    // Cleanup on unmount
-    return () => {
-      clearView()
-      setInitialLoadDone(false)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notebookId]) // Only depend on notebookId, ignore loadNoteView/clearView
-
-  // Filter changes - only after initial load
-  useEffect(() => {
-    if (initialLoadDone && notebookId) {
-      loadNoteView(notebookId, {
-        search: debouncedSearch,
-        sort: sortOption,
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch, sortOption, initialLoadDone, notebookId]) // Ignore loadNoteView
-
-  // Fetch just a note's content without replacing the note list in the store
+  // Fetch just a note's content without replacing the note list
   const fetchNoteContent = async (noteId: string) => {
     const response = await apiFetch(`/api/views/notebooks/${notebookId}/notes/${noteId}`, {
       credentials: 'include',
@@ -161,105 +142,69 @@ export default function NotebookPage() {
   }
 
   // Handle note creation
-  const handleCreateNote = async () => {
-    setIsSaving(true)
+  const handleCreateNote = useCallback(async () => {
     try {
-      const response = await apiFetch('/api/notes', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: '', // Start with empty title, will be auto-generated
-          content: '',
-          notebook_id: notebookId,
-        }),
+      const newNote = await createNote.mutateAsync({
+        title: '',
+        content: '',
+        notebook_id: notebookId,
       })
-
-      if (!response.ok) throw new Error('Failed to create note')
-
-      const newNote = await response.json()
 
       // Open the new note for editing immediately
       setSelectedNote(newNote)
       setIsEditingNote(true)
       setEditingNoteTitle('')
       setEditingNoteContent('')
-
-      // Refresh list in background
-      refreshList()
     } catch (err) {
       console.error('Error creating note:', err)
-    } finally {
-      setIsSaving(false)
     }
-  }
+  }, [createNote, notebookId])
 
   // Handle note update
-  const handleSaveNote = async () => {
+  const handleSaveNote = useCallback(async () => {
     if (!selectedNote) return
 
-    setIsSaving(true)
     try {
-      // Auto-generate title from content if title is empty
       const finalTitle = editingNoteTitle.trim() || generateTitleFromContent(editingNoteContent)
 
-      const response = await apiFetch('/api/notes', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: selectedNote.id,
+      await updateNote.mutateAsync({
+        id: selectedNote.id,
+        updates: {
           title: finalTitle,
           content: editingNoteContent,
-        }),
+        },
       })
-
-      if (!response.ok) throw new Error('Failed to save note')
 
       setIsEditingNote(false)
       setSelectedNote(null)
-
-      // Refresh list in background
-      refreshList()
     } catch (err) {
       console.error('Error saving note:', err)
-    } finally {
-      setIsSaving(false)
     }
-  }
+  }, [selectedNote, editingNoteTitle, editingNoteContent, updateNote])
 
   // Handle note deletion
   const handleDeleteNote = async (noteId: string) => {
     if (!confirm('Are you sure you want to delete this note?')) return
 
     try {
-      const response = await apiFetch(`/api/notes?id=${noteId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
+      await deleteNote.mutateAsync(noteId)
 
-      if (!response.ok) throw new Error('Failed to delete note')
-
-      // Clear selection if deleted note was selected
       if (selectedNote?.id === noteId) {
         setSelectedNote(null)
         setIsEditingNote(false)
       }
-
-      // Refresh list in background
-      refreshList()
     } catch (err) {
       console.error('Error deleting note:', err)
     }
   }
 
-  // Close editor/viewer — no API call needed since we didn't replace the list
+  // Close editor/viewer
   const handleCloseNote = () => {
     setSelectedNote(null)
     setIsEditingNote(false)
   }
 
-  // Handle note reorder
+  // Handle note reorder — keep as direct apiFetch (fire-and-forget, SortableNoteList handles optimism)
   const handleReorder = async (noteId: string, newPosition: number) => {
     try {
       await apiFetch('/api/notes/reorder', {
@@ -269,12 +214,11 @@ export default function NotebookPage() {
       })
     } catch (err) {
       console.error('Error reordering note:', err)
-      // Reload to revert optimistic update on failure
-      refreshList()
+      queryClient.invalidateQueries({ queryKey: ['notebook-view', notebookId] })
     }
   }
 
-  // Get data from store (already filtered and sorted by server)
+  // Get data from React Query
   const notes = noteView?.notes || []
   const notebook = noteView?.notebook
   const canEdit = !notebook?.shared || notebook?.permission === 'write'
@@ -450,25 +394,7 @@ export default function NotebookPage() {
                       value={notebook?.name || ''}
                       onSave={async (newName) => {
                         if (newName !== notebook?.name) {
-                          try {
-                            const response = await apiFetch('/api/notebooks', {
-                              method: 'PATCH',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({
-                                id: notebookId,
-                                name: newName.trim(),
-                              }),
-                            })
-                            if (response.ok) {
-                              // Optimistically update the UI
-                              if (noteView && noteView.notebook) {
-                                noteView.notebook.name = newName.trim()
-                              }
-                              refreshList()
-                            }
-                          } catch (error) {
-                            console.error('Error updating notebook:', error)
-                          }
+                          renameNotebook.mutate(newName.trim())
                         }
                         setIsEditingNotebook(false)
                       }}
@@ -505,7 +431,7 @@ export default function NotebookPage() {
                 <SharedIndicator
                   shared={true}
                   sharedByMe={false}
-                  permission={notebook.permission}
+                  permission={notebook.permission as 'read' | 'write' | undefined}
                 />
               )}
               {/* Add Note Button — compact, top-right */}

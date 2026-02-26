@@ -37,12 +37,48 @@ interface FolderView {
   }
 }
 
-interface NotebookView {
-  notebook: NotebookWithStats
-  notes: Note[]
-  totalCount: number
-  folderInfo: Folder
-  siblingNotebooks: NotebookWithStats[]
+export interface NotebookView {
+  notebook: {
+    id: string
+    name: string
+    color: string
+    folder_id: string
+    folder_name: string
+    owner_id: string
+    shared?: boolean
+    permission?: 'owner' | 'read' | 'write'
+  }
+  folder: {
+    id: string
+    name: string
+    color: string
+  } | null
+  siblingNotebooks: Array<{
+    id: string
+    name: string
+    color: string
+  }>
+  notes: Array<{
+    id: string
+    title: string
+    preview: string
+    created_at: string
+    updated_at: string
+    position?: number
+  }>
+  currentNote: {
+    id: string
+    title: string
+    content: string
+    created_at: string
+    updated_at: string
+  } | null
+  pagination: {
+    total: number
+    offset: number
+    limit: number
+    hasMore: boolean
+  }
 }
 
 // API Functions (these call your existing endpoints)
@@ -52,7 +88,6 @@ const api = {
     const res = await apiFetch('/api/views/folders')
     if (!res.ok) {
       if (res.status === 401) {
-        // Return empty data for unauthenticated users
         return {
           folders: [],
           orphanedNotebooks: [],
@@ -80,20 +115,12 @@ const api = {
   },
 
   async updateFolder(id: string, updates: Partial<Folder>) {
-    const res = await apiFetch(`/api/folders/${id}`, {
+    const res = await apiFetch('/api/folders', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
+      body: JSON.stringify({ id, ...updates }),
     })
     if (!res.ok) throw new Error('Failed to update folder')
-    return res.json()
-  },
-
-  async deleteFolder(id: string) {
-    const res = await apiFetch(`/api/folders/${id}`, {
-      method: 'DELETE',
-    })
-    if (!res.ok) throw new Error('Failed to delete folder')
     return res.json()
   },
 
@@ -105,7 +132,8 @@ const api = {
       sort?: string
       limit?: number
       offset?: number
-    }
+    },
+    signal?: AbortSignal
   ): Promise<NotebookView> {
     const searchParams = new URLSearchParams()
     if (params) {
@@ -115,7 +143,9 @@ const api = {
         }
       })
     }
-    const res = await apiFetch(`/api/views/notebooks/${notebookId}/notes?${searchParams}`)
+    const res = await apiFetch(`/api/views/notebooks/${notebookId}/notes?${searchParams}`, {
+      signal,
+    })
     if (!res.ok) throw new Error('Failed to fetch notebook')
     return res.json()
   },
@@ -131,10 +161,10 @@ const api = {
   },
 
   async updateNotebook(id: string, updates: Partial<Notebook>) {
-    const res = await apiFetch(`/api/notebooks/${id}`, {
+    const res = await apiFetch('/api/notebooks', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
+      body: JSON.stringify({ id, ...updates }),
     })
     if (!res.ok) throw new Error('Failed to update notebook')
     return res.json()
@@ -152,17 +182,17 @@ const api = {
   },
 
   async updateNote(id: string, updates: Partial<Note>) {
-    const res = await apiFetch(`/api/notes/${id}`, {
+    const res = await apiFetch('/api/notes', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
+      body: JSON.stringify({ id, ...updates }),
     })
     if (!res.ok) throw new Error('Failed to update note')
     return res.json()
   },
 
   async deleteNote(id: string) {
-    const res = await apiFetch(`/api/notes/${id}`, {
+    const res = await apiFetch(`/api/notes?id=${id}`, {
       method: 'DELETE',
     })
     if (!res.ok) throw new Error('Failed to delete note')
@@ -174,31 +204,21 @@ const api = {
 // QUERY HOOKS (for fetching data)
 // ============================================
 
-/**
- * Fetch folders view - NO INFINITE LOOPS POSSIBLE!
- * React Query handles all caching and deduplication
- */
 export function useFoldersView(options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['folders-view'],
     queryFn: api.getFoldersView,
-    // This data changes infrequently, cache for 5 minutes
     staleTime: 5 * 60 * 1000,
-    // Don't retry on 401 (unauthenticated)
     retry: (failureCount, error) => {
       if (error instanceof Error && error.message.includes('401')) {
         return false
       }
       return failureCount < 3
     },
-    // Allow disabling the query
     enabled: options?.enabled !== false,
   })
 }
 
-/**
- * Fetch notebook view with notes
- */
 export function useNotebookView(
   notebookId: string | undefined,
   params?: {
@@ -209,11 +229,10 @@ export function useNotebookView(
   }
 ) {
   return useQuery({
-    // Include params in key so different searches are cached separately
     queryKey: ['notebook-view', notebookId, params],
-    queryFn: () => api.getNotebookView(notebookId!, params),
-    enabled: !!notebookId, // Only fetch if we have an ID
-    staleTime: 1 * 60 * 1000, // 1 minute
+    queryFn: ({ signal }) => api.getNotebookView(notebookId!, params, signal),
+    enabled: !!notebookId,
+    staleTime: 30 * 1000,
   })
 }
 
@@ -221,9 +240,6 @@ export function useNotebookView(
 // MUTATION HOOKS (for creating/updating/deleting)
 // ============================================
 
-/**
- * Create a new folder
- */
 export function useCreateFolder() {
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -231,10 +247,7 @@ export function useCreateFolder() {
   return useMutation({
     mutationFn: api.createFolder,
     onSuccess: (newFolder) => {
-      // Invalidate and refetch folders
       queryClient.invalidateQueries({ queryKey: ['folders-view'] })
-
-      // Navigate to the new folder
       if (newFolder.id) {
         router.push(`/folders/${newFolder.id}`)
       }
@@ -242,9 +255,6 @@ export function useCreateFolder() {
   })
 }
 
-/**
- * Update a folder
- */
 export function useUpdateFolder() {
   const queryClient = useQueryClient()
 
@@ -252,31 +262,11 @@ export function useUpdateFolder() {
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Folder> }) =>
       api.updateFolder(id, updates),
     onSuccess: () => {
-      // Invalidate folders view to refetch
       queryClient.invalidateQueries({ queryKey: ['folders-view'] })
     },
   })
 }
 
-/**
- * Delete a folder
- */
-export function useDeleteFolder() {
-  const queryClient = useQueryClient()
-  const router = useRouter()
-
-  return useMutation({
-    mutationFn: api.deleteFolder,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['folders-view'] })
-      router.push('/backpack')
-    },
-  })
-}
-
-/**
- * Create a new notebook
- */
 export function useCreateNotebook() {
   const queryClient = useQueryClient()
   const router = useRouter()
@@ -284,10 +274,7 @@ export function useCreateNotebook() {
   return useMutation({
     mutationFn: api.createNotebook,
     onSuccess: (newNotebook) => {
-      // Invalidate folders to update counts
       queryClient.invalidateQueries({ queryKey: ['folders-view'] })
-
-      // Navigate to the new notebook
       if (newNotebook.id) {
         router.push(`/notebooks/${newNotebook.id}`)
       }
@@ -295,16 +282,33 @@ export function useCreateNotebook() {
   })
 }
 
-/**
- * Create a new note
- */
+export function useRenameNotebook(notebookId: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (name: string) => api.updateNotebook(notebookId, { name }),
+    onMutate: async (newName) => {
+      await queryClient.cancelQueries({ queryKey: ['notebook-view', notebookId] })
+      queryClient.setQueriesData<NotebookView>(
+        { queryKey: ['notebook-view', notebookId] },
+        (old) => (old ? { ...old, notebook: { ...old.notebook, name: newName } } : old)
+      )
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folders-view'] })
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['notebook-view', notebookId] })
+    },
+  })
+}
+
 export function useCreateNote() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: api.createNote,
     onSuccess: (newNote) => {
-      // Invalidate the notebook view to show the new note
       queryClient.invalidateQueries({
         queryKey: ['notebook-view', newNote.notebook_id],
       })
@@ -312,9 +316,6 @@ export function useCreateNote() {
   })
 }
 
-/**
- * Update a note
- */
 export function useUpdateNote() {
   const queryClient = useQueryClient()
 
@@ -322,7 +323,6 @@ export function useUpdateNote() {
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Note> }) =>
       api.updateNote(id, updates),
     onSuccess: (updatedNote) => {
-      // Invalidate the notebook view
       queryClient.invalidateQueries({
         queryKey: ['notebook-view', updatedNote.notebook_id],
       })
@@ -330,16 +330,12 @@ export function useUpdateNote() {
   })
 }
 
-/**
- * Delete a note
- */
 export function useDeleteNote() {
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: api.deleteNote,
     onSuccess: () => {
-      // Invalidate all notebook views since we don't know which one
       queryClient.invalidateQueries({
         queryKey: ['notebook-view'],
       })
@@ -347,44 +343,6 @@ export function useDeleteNote() {
   })
 }
 
-// ============================================
-// PREFETCHING (for optimizations)
-// ============================================
-
-/**
- * Prefetch folders in the background
- * Use this on the home page for faster navigation
- */
-export function usePrefetchFolders() {
-  const queryClient = useQueryClient()
-
-  return () => {
-    queryClient.prefetchQuery({
-      queryKey: ['folders-view'],
-      queryFn: api.getFoldersView,
-      staleTime: 5 * 60 * 1000,
-    })
-  }
-}
-
-/**
- * Prefetch a notebook before navigation
- */
-export function usePrefetchNotebook() {
-  const queryClient = useQueryClient()
-
-  return (notebookId: string) => {
-    queryClient.prefetchQuery({
-      queryKey: ['notebook-view', notebookId, undefined],
-      queryFn: () => api.getNotebookView(notebookId),
-      staleTime: 1 * 60 * 1000,
-    })
-  }
-}
-
-/**
- * Fetch folder detail view with notebooks and permissions
- */
 export function useFolderDetailView(folderId: string | null) {
   return useQuery({
     queryKey: ['folder-detail', folderId],
@@ -399,6 +357,6 @@ export function useFolderDetailView(folderId: string | null) {
       return response.json()
     },
     enabled: !!folderId,
-    staleTime: 30 * 1000, // Consider data fresh for 30 seconds
+    staleTime: 30 * 1000,
   })
 }
