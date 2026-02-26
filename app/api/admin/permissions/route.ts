@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
+import { getAuthenticatedUser, getAdminDb, requireAdmin } from '@/lib/api/firebase-server-helpers'
 import { getAdminAuth } from '@/lib/firebase/admin'
-
-const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
 
 export async function GET(request: NextRequest) {
   const { email, error } = await getAuthenticatedUser(request)
   if (error) return error
 
-  if (!email || !ADMIN_EMAILS.includes(email)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const adminError = requireAdmin(email)
+  if (adminError) return adminError
 
   const db = getAdminDb()
   const now = new Date().toISOString()

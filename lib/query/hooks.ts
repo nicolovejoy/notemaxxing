@@ -45,6 +45,7 @@ export interface NotebookView {
     folder_id: string
     folder_name: string
     owner_id: string
+    sort_order?: 'recent' | 'alphabetical' | 'created' | 'manual'
     shared?: boolean
     permission?: 'owner' | 'read' | 'write'
   }

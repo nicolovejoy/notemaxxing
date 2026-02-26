@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
+import { getAuthenticatedUser, getAdminDb, isValidEmail } from '@/lib/api/firebase-server-helpers'
 
 export async function POST(request: NextRequest) {
   const { uid, email: callerEmail, error } = await getAuthenticatedUser(request)
@@ -12,8 +12,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(email)) {
+  if (!isValidEmail(email)) {
     return NextResponse.json({ error: 'Invalid email address' }, { status: 400 })
   }
 

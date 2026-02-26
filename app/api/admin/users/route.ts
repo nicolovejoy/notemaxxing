@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
+import {
+  getAuthenticatedUser,
+  getAdminDb,
+  requireAdmin,
+  isAdminEmail,
+} from '@/lib/api/firebase-server-helpers'
 import { getAdminAuth } from '@/lib/firebase/admin'
-
-const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
 
 export async function GET(request: NextRequest) {
   const { email, error } = await getAuthenticatedUser(request)
   if (error) return error
 
-  if (!email || !ADMIN_EMAILS.includes(email)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const adminError = requireAdmin(email)
+  if (adminError) return adminError
 
   const db = getAdminDb()
 
@@ -56,7 +58,7 @@ export async function GET(request: NextRequest) {
     email: u.email || 'No email',
     created_at: u.metadata.creationTime,
     last_sign_in_at: u.metadata.lastSignInTime,
-    is_admin: u.email ? ADMIN_EMAILS.includes(u.email) : false,
+    is_admin: u.email ? isAdminEmail(u.email) : false,
     stats: {
       folders: folderCounts.get(u.uid) || 0,
       notebooks: notebookCounts.get(u.uid) || 0,

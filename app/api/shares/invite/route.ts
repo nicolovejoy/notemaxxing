@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
+import { getAuthenticatedUser, getAdminDb, isValidEmail } from '@/lib/api/firebase-server-helpers'
 
 export async function POST(request: NextRequest) {
   const { uid, error } = await getAuthenticatedUser(request)
@@ -20,8 +20,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid permission level' }, { status: 400 })
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(invitedEmail)) {
+  if (!isValidEmail(invitedEmail)) {
     return NextResponse.json({ error: 'Invalid email format' }, { status: 400 })
   }
 

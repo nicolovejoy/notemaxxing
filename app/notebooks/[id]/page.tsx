@@ -71,7 +71,8 @@ export default function NotebookPage() {
   }, [notebookId])
 
   const [search, setSearch] = useState('')
-  const [sortOption, setSortOption] = useState<SortOption>('recent')
+  const [sortOption, setSortOption] = useState<SortOption | null>(null)
+  const [sortInitialized, setSortInitialized] = useState(false)
   const [selectedNote, setSelectedNote] = useState<{
     id: string
     title: string
@@ -93,8 +94,16 @@ export default function NotebookPage() {
     error: queryError,
   } = useNotebookView(notebookId, {
     search: debouncedSearch || undefined,
-    sort: sortOption,
+    sort: sortOption || undefined,
   })
+
+  // Initialize sort from stored notebook preference
+  useEffect(() => {
+    if (noteView?.notebook?.sort_order && !sortInitialized) {
+      setSortOption(noteView.notebook.sort_order)
+      setSortInitialized(true)
+    }
+  }, [noteView?.notebook?.sort_order, sortInitialized])
   const error = queryError?.message ?? null
 
   // Mutations
@@ -315,8 +324,18 @@ export default function NotebookPage() {
             <Dropdown
               label="Sort"
               icon={<SortAsc className="h-4 w-4" />}
-              value={sortOption}
-              onChange={(value) => setSortOption(value as SortOption)}
+              value={sortOption || 'recent'}
+              onChange={(value) => {
+                const newSort = value as SortOption
+                setSortOption(newSort)
+                setSortInitialized(true)
+                // Persist sort preference (fire-and-forget)
+                apiFetch('/api/notebooks', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: notebookId, sort_order: newSort }),
+                }).catch(() => {})
+              }}
               options={[
                 { value: 'recent', label: 'Recently Updated' },
                 { value: 'alphabetical', label: 'Alphabetical' },

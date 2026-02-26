@@ -26,6 +26,7 @@ export interface Notebook extends OwnedEntity {
   color: string
   archived: boolean
   archived_at: string | null
+  sort_order?: 'recent' | 'alphabetical' | 'created' | 'manual'
   // Sharing properties (optional, added at runtime)
   shared?: boolean
   permission?: 'read' | 'write'

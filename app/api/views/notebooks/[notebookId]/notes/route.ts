@@ -13,7 +13,7 @@ export async function GET(
   const offset = parseInt(searchParams.get('offset') || '0')
   const limit = parseInt(searchParams.get('limit') || '20')
   const search = searchParams.get('search') || ''
-  const sort = searchParams.get('sort') || 'recent'
+  const sortParam = searchParams.get('sort')
 
   const db = getAdminDb()
 
@@ -24,6 +24,7 @@ export async function GET(
   }
 
   const notebook = notebookDoc.data()!
+  const sort = sortParam || (notebook.sort_order as string) || 'recent'
   const isOwner = notebook.owner_id === uid
   let folderPermLevel: string | null = null
 
@@ -168,6 +169,7 @@ export async function GET(
       folder_id: notebook.folder_id,
       folder_name: folderInfo?.name || '',
       owner_id: notebook.owner_id,
+      sort_order: notebook.sort_order || 'recent',
       shared: !isOwner,
       permission: userPermission,
     },

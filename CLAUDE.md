@@ -39,10 +39,8 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 ## State Management
 
-- **Zustand (`view-store`)**: Notebook page — fetches notes list, handles sort/search/pagination
-- **React Query**: Folders/backpack pages — `useFoldersView()`, `useFolderDetailView()`, mutations with cache invalidation
-- **Direct `apiFetch()`**: One-off actions (note save, delete, reorder, share dialog)
-- **`uiStore`**: Dead code — defined but unused by any page
+- **React Query**: All data fetching — `useFoldersView()`, `useFolderDetailView()`, `useNotebookView()`, mutations with cache invalidation
+- **Direct `apiFetch()`**: One-off actions (note save, delete, reorder, sort persist, share dialog)
 
 ## Current State
 
@@ -55,10 +53,10 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 ## Next Steps
 
-1. Extract shared API helpers (ADMIN_EMAILS, email validation, permission checking)
-2. Fix React Query cache invalidation after accept-invite and create-notebook-in-shared-folder (UI requires manual refresh)
-3. Write `firestore.rules` and deploy for defense-in-depth
-4. Remove dead `uiStore` code
+1. Fix React Query cache invalidation after accept-invite and create-notebook-in-shared-folder (UI requires manual refresh)
+2. Write `firestore.rules` and deploy for defense-in-depth
+3. Revive admin console (usage analytics, user activity)
+4. AI study topic generator → typemaxxing + quizzmaxxing integration
 
 ## Planned Features
 

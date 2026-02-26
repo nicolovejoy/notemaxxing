@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
+import { getAuthenticatedUser, getAdminDb, requireAdmin } from '@/lib/api/firebase-server-helpers'
 
-const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'change-this-password'
 
 async function deleteCollection(
@@ -21,9 +20,8 @@ export async function POST(request: NextRequest) {
   const { email, error } = await getAuthenticatedUser(request)
   if (error) return error
 
-  if (!email || !ADMIN_EMAILS.includes(email)) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const adminError = requireAdmin(email)
+  if (adminError) return adminError
 
   const body = await request.json()
   const { targetUserId, adminPassword } = body

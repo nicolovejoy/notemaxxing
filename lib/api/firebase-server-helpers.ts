@@ -1,6 +1,23 @@
 import { NextResponse } from 'next/server'
 import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin'
 
+export const ADMIN_EMAILS = ['nicholas.lovejoy@gmail.com', 'mlovejoy@scu.edu']
+
+export function isAdminEmail(email: string | null): boolean {
+  return !!email && ADMIN_EMAILS.includes(email)
+}
+
+export function requireAdmin(email: string | null): NextResponse | null {
+  if (!isAdminEmail(email)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+  return null
+}
+
+export function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+}
+
 type AuthSuccess = {
   uid: string
   email: string
