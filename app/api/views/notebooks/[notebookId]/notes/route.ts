@@ -135,7 +135,17 @@ export async function GET(
   const paginated = notes.slice(offset, offset + limit)
 
   const notesWithPreviews = paginated.map((note) => {
-    const plainText = ((note.content as string) || '').replace(/<[^>]*>/g, '').substring(0, 150)
+    const plainText = ((note.content as string) || '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 150)
     return {
       id: note.id,
       title: note.title,
