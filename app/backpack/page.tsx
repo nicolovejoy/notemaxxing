@@ -250,7 +250,13 @@ export default function BackpackPage() {
         onClose={() => setShowCreateModal(false)}
         title="Create New Folder"
       >
-        <div className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            handleCreateFolder()
+          }}
+          className="space-y-4"
+        >
           <FormField
             label="Folder Name"
             value={newFolderName}
@@ -266,20 +272,24 @@ export default function BackpackPage() {
               onChange={setNewFolderColor}
             />
           </div>
-        </div>
-        <div className="mt-6 flex gap-3 justify-end">
-          <LoadingButton variant="secondary" onClick={() => setShowCreateModal(false)}>
-            Cancel
-          </LoadingButton>
-          <LoadingButton
-            variant="primary"
-            onClick={handleCreateFolder}
-            loading={createFolderMutation.isPending}
-            disabled={!newFolderName.trim()}
-          >
-            Create Folder
-          </LoadingButton>
-        </div>
+          <div className="flex gap-3 justify-end pt-4">
+            <LoadingButton
+              variant="secondary"
+              onClick={() => setShowCreateModal(false)}
+              type="button"
+            >
+              Cancel
+            </LoadingButton>
+            <LoadingButton
+              variant="primary"
+              type="submit"
+              loading={createFolderMutation.isPending}
+              disabled={!newFolderName.trim()}
+            >
+              Create Folder
+            </LoadingButton>
+          </div>
+        </form>
       </Modal>
 
       {/* Share Dialog for Folder */}

@@ -47,16 +47,13 @@ Component → API Route → Firebase Admin SDK → Firestore
 - **Build**: Passing ✅
 - **Auth**: Firebase (Google + email/password) — Supabase fully removed
 - **AI Model**: `claude-sonnet-4-20250514`
-- **Firebase project**: `piano-house-shared` (shared with soiree)
+- **Firebase project**: `piano-house-shared` (notemaxxing-only, soiree migrated to `soiree-d564a`)
 - **Indexes**: deployed via `firestore.indexes.json` — run `firebase deploy --only firestore:indexes --project piano-house-shared`
 - **Note reordering**: drag-and-drop via dnd-kit, `position` field with gap-based integers, lazy backfill
 
 ## Next Steps
 
-1. Deploy Firestore indexes + rules — `firebase deploy --only firestore:indexes,firestore:rules --project piano-house-shared`
-2. Prefetching/caching strategy — reduce DB round-trips, discuss Redux-like layer alongside React Query
-3. Shared DB separation — `piano-house-shared` is shared with soiree, need collection prefixing or separate project
-4. AI study topic generator → typemaxxing + quizzmaxxing integration
+1. AI study topic generator → typemaxxing + quizzmaxxing integration
 
 ## Planned Features
 
