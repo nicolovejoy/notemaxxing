@@ -2,11 +2,13 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, Check, X } from 'lucide-react'
+import { Check, X, MessageCircle, BookOpen } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { NotebookPicker } from '@/components/study/NotebookPicker'
+import { LoadingMessages } from '@/components/study/LoadingMessages'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { apiFetch } from '@/lib/firebase/api-fetch'
+import { storeStudyChatContext } from '@/lib/utils/study-chat-context'
 import type { StudySource, StudyQuizQuestion, QuizResponse } from '@/lib/types/study'
 
 type Phase = 'select' | 'loading' | 'active' | 'results'
@@ -77,6 +79,12 @@ export default function QuizzmaxxingPage() {
     0
   )
 
+  const navigateToChat = (mode: 'learn_more' | 'discuss') => {
+    if (!source) return
+    storeStudyChatContext({ mode, source, questions, answers })
+    router.push('/study/chat')
+  }
+
   if (authLoading || !user) return null
 
   return (
@@ -97,12 +105,7 @@ export default function QuizzmaxxingPage() {
           </div>
         )}
 
-        {phase === 'loading' && (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <Loader2 className="h-8 w-8 animate-spin mb-3" />
-            <p className="text-sm">Generating quiz...</p>
-          </div>
-        )}
+        {phase === 'loading' && <LoadingMessages mode="quiz" />}
 
         {phase === 'active' &&
           questions[currentIndex] &&
@@ -204,22 +207,77 @@ export default function QuizzmaxxingPage() {
           })()}
 
         {phase === 'results' && (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Quiz Complete</h2>
-            <p className="text-5xl font-bold text-blue-600 mb-2">
-              {score}/{questions.length}
-            </p>
-            <p className="text-sm text-gray-500 mb-8">
-              {score === questions.length
-                ? 'Perfect score!'
-                : score >= questions.length * 0.8
-                  ? 'Great job!'
-                  : score >= questions.length * 0.6
-                    ? 'Good effort!'
-                    : 'Keep studying!'}
-            </p>
+          <div className="py-8">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Quiz Complete</h2>
+              <p className="text-5xl font-bold text-blue-600 mb-2">
+                {score}/{questions.length}
+              </p>
+              <p className="text-sm text-gray-500">
+                {score === questions.length
+                  ? 'Perfect score!'
+                  : score >= questions.length * 0.8
+                    ? 'Great job!'
+                    : score >= questions.length * 0.6
+                      ? 'Good effort!'
+                      : 'Keep studying!'}
+              </p>
+            </div>
 
-            <div className="flex justify-center gap-3">
+            {/* Q&A Summary */}
+            <div className="space-y-3 mb-8">
+              {questions.map((q, i) => {
+                const userAnswer = answers[i]
+                const isCorrect = userAnswer === q.correct_index
+                return (
+                  <div
+                    key={i}
+                    className={`p-4 rounded-lg border ${
+                      isCorrect ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2 mb-2">
+                      {isCorrect ? (
+                        <Check className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
+                      ) : (
+                        <X className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                      )}
+                      <p className="text-sm font-medium text-gray-900">{q.question}</p>
+                    </div>
+                    {!isCorrect && userAnswer !== null && (
+                      <p className="text-sm text-red-600 ml-6 mb-1">
+                        Your answer: {q.options[userAnswer]}
+                      </p>
+                    )}
+                    {!isCorrect && (
+                      <p className="text-sm text-green-700 ml-6 mb-1">
+                        Correct: {q.options[q.correct_index]}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-500 ml-6">{q.explanation}</p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex flex-wrap justify-center gap-3">
+              <button
+                onClick={() => navigateToChat('learn_more')}
+                className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center gap-2"
+              >
+                <BookOpen className="h-4 w-4" />
+                Learn More
+              </button>
+              {score < questions.length && (
+                <button
+                  onClick={() => navigateToChat('discuss')}
+                  className="px-4 py-2 bg-amber-500 text-white text-sm font-medium rounded-lg hover:bg-amber-600 transition-colors inline-flex items-center gap-2"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Discuss
+                </button>
+              )}
               <button
                 onClick={() => {
                   setCurrentIndex(0)

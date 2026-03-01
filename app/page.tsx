@@ -36,7 +36,7 @@ export default function Home() {
     },
     {
       icon: Brain,
-      title: 'Quizzing',
+      title: 'Quizzmaxxing',
       description: 'Create custom quizzes to test your knowledge',
       href: '/quizzing',
       color: 'text-pink-500',

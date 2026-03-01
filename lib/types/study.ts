@@ -25,3 +25,17 @@ export interface QuizResponse {
 export type StudySource =
   | { type: 'notebook'; notebookId: string; notebookName: string }
   | { type: 'topic'; topic: string }
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export type ChatMode = 'learn_more' | 'discuss'
+
+export interface StudyChatContext {
+  mode: ChatMode
+  source: StudySource
+  questions: StudyQuizQuestion[]
+  answers: (number | null)[]
+}

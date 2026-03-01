@@ -2,9 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { NotebookPicker } from '@/components/study/NotebookPicker'
+import { LoadingMessages } from '@/components/study/LoadingMessages'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { apiFetch } from '@/lib/firebase/api-fetch'
 import type { StudySource, TypingResponse } from '@/lib/types/study'
@@ -81,18 +81,27 @@ export default function TypemaxxingPage() {
     [passage, startTime]
   )
 
-  // Compute stats
+  const handleEarlyFinish = () => {
+    if (!typed.length) return
+    setEndTime(Date.now())
+    setPhase('results')
+  }
+
+  // Compute stats — works for both complete and partial passages
   const computeStats = () => {
-    if (!startTime || !endTime || !passage) return { wpm: 0, accuracy: 0 }
-    const minutes = (endTime - startTime) / 60000
-    const wordCount = passage.split(/\s+/).length
-    const wpm = Math.round(wordCount / minutes)
+    if (!startTime || !passage || !typed.length) return { wpm: 0, accuracy: 0, completed: 0 }
+    const end = endTime ?? Date.now()
+    const minutes = (end - startTime) / 60000
+    // WPM based on typed portion
+    const typedWordCount = typed.trim().split(/\s+/).length
+    const wpm = minutes > 0 ? Math.round(typedWordCount / minutes) : 0
     let correct = 0
     for (let i = 0; i < typed.length; i++) {
       if (typed[i] === passage[i]) correct++
     }
-    const accuracy = Math.round((correct / passage.length) * 100)
-    return { wpm, accuracy }
+    const accuracy = Math.round((correct / typed.length) * 100)
+    const completed = Math.round((typed.length / passage.length) * 100)
+    return { wpm, accuracy, completed }
   }
 
   if (authLoading || !user) return null
@@ -115,12 +124,7 @@ export default function TypemaxxingPage() {
           </div>
         )}
 
-        {phase === 'loading' && (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
-            <Loader2 className="h-8 w-8 animate-spin mb-3" />
-            <p className="text-sm">Generating passage...</p>
-          </div>
-        )}
+        {phase === 'loading' && <LoadingMessages mode="typing" />}
 
         {phase === 'typing' && (
           <div>
@@ -167,15 +171,23 @@ export default function TypemaxxingPage() {
               aria-label="Type the passage here"
             />
 
-            <p className="text-xs text-gray-400 text-center">
-              Click the text above if typing stops working
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-400">Click the text above if typing stops working</p>
+              {typed.length > 0 && (
+                <button
+                  onClick={handleEarlyFinish}
+                  className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  Done
+                </button>
+              )}
+            </div>
           </div>
         )}
 
         {phase === 'results' &&
           (() => {
-            const { wpm, accuracy } = computeStats()
+            const { wpm, accuracy, completed } = computeStats()
             return (
               <div className="text-center py-12">
                 <h2 className="text-2xl font-bold text-gray-900 mb-8">Results</h2>
@@ -189,6 +201,12 @@ export default function TypemaxxingPage() {
                     <p className="text-4xl font-bold text-green-600">{accuracy}%</p>
                     <p className="text-sm text-gray-500 mt-1">Accuracy</p>
                   </div>
+                  {completed < 100 && (
+                    <div>
+                      <p className="text-4xl font-bold text-amber-500">{completed}%</p>
+                      <p className="text-sm text-gray-500 mt-1">Completed</p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-center gap-3">
@@ -207,6 +225,12 @@ export default function TypemaxxingPage() {
                     className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
                   >
                     New source
+                  </button>
+                  <button
+                    onClick={() => router.push('/backpack')}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Done
                   </button>
                 </div>
               </div>

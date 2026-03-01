@@ -76,12 +76,12 @@ export const defaultSeedTemplate: SeedTemplate = {
           ],
         },
         {
-          name: 'Quizzing Tutorial',
+          name: 'Quizzmaxxing Tutorial',
           color: 'bg-purple-100',
           notes: [
             {
               title: 'Test Your Knowledge',
-              content: `<h2>Quizzing: Active Recall for Better Learning 🧠</h2>
+              content: `<h2>Quizzmaxxing: Active Recall for Better Learning 🧠</h2>
               <p>Create custom quizzes from your notes to test your understanding!</p>
               
               <h3>Quiz Features:</h3>
