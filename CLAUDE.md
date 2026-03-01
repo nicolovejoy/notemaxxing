@@ -53,10 +53,6 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 ## Next Steps
 
-1. AI study topic generator → typemaxxing + quizzmaxxing integration
-
-## Planned Features
-
-- **Quizzmaxxing** - Quiz-based learning (multiple choice, fill-in-blank)
-- **Typemaxxing** - Typing-based learning (type from memory, WPM tracking)
-- Separate features, both use AI to generate questions from notes
+1. `useEscapeNavigation` hook — Escape walks up breadcrumbs, guards unsaved work
+2. Study features MVP — `docs/study-features-mvp.md`
+3. Sharing hardening — `docs/sharing-hardening.md`
