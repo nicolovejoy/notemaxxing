@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, FolderOpen, BookOpen, Share2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
@@ -41,6 +41,22 @@ export default function BackpackPage() {
   const [newFolderName, setNewFolderName] = useState('')
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
   const [shareFolder, setShareFolder] = useState<Pick<Folder, 'id' | 'name'> | null>(null)
+
+  // Keyboard shortcut: "n" to create a new folder
+  const openCreateModal = useCallback(() => setShowCreateModal(true), [])
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
+      if (showCreateModal || shareFolder) return
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable)
+        return
+      e.preventDefault()
+      openCreateModal()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [showCreateModal, shareFolder, openCreateModal])
 
   // Redirect to login if not authenticated
   useEffect(() => {
