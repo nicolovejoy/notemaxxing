@@ -53,6 +53,7 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 ## Next Steps
 
-1. `useEscapeNavigation` hook — Escape walks up breadcrumbs, guards unsaved work
-2. Study features MVP — `docs/study-features-mvp.md`
-3. Sharing hardening — `docs/sharing-hardening.md`
+1. Delete folders — UI + API endpoint (currently no DELETE endpoint for folders)
+2. `useEscapeNavigation` hook — Escape walks up breadcrumbs, guards unsaved work
+3. Study features MVP — `docs/study-features-mvp.md`
+4. Sharing hardening — `docs/sharing-hardening.md`
