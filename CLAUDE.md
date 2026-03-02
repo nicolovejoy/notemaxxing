@@ -50,6 +50,7 @@ Component → API Route → Firebase Admin SDK → Firestore
 - **Firebase project**: `piano-house-shared` (notemaxxing-only, soiree migrated to `soiree-d564a`)
 - **Indexes**: deployed via `firestore.indexes.json` — run `firebase deploy --only firestore:indexes --project piano-house-shared`
 - **Note reordering**: drag-and-drop via dnd-kit, `position` field with gap-based integers, lazy backfill
+- **Brand**: Navy (#1A3C6B) / cream (#F8F8F0) / slate (#4A6E91), Montserrat headings, Open Sans body, book+arrow logo
 
 ## Next Steps
 
@@ -57,3 +58,4 @@ Component → API Route → Firebase Admin SDK → Firestore
 2. `useEscapeNavigation` hook — Escape walks up breadcrumbs, guards unsaved work
 3. Sharing hardening — `docs/sharing-hardening.md`
 4. Study chat: persist chat history, quiz score tracking over time
+5. Dark mode support using brand tokens
