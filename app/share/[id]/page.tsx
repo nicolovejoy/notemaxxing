@@ -127,7 +127,7 @@ export default function SharePage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-navy mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading invitation...</p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function SharePage() {
 
   if (error && !invitationDetails) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-brand-cream">
         <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-semibold mb-2 text-black">Invalid Invitation</h1>
@@ -162,7 +162,7 @@ export default function SharePage() {
   // Show email mismatch error
   if (emailMismatch && invitationDetails) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-brand-cream">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-semibold mb-4 text-center">Wrong Account</h1>
@@ -197,7 +197,7 @@ export default function SharePage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-brand-cream">
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
         <h1 className="text-2xl font-semibold mb-4">
           You&apos;ve been invited to access a {invitationDetails?.resourceType}
@@ -229,7 +229,7 @@ export default function SharePage() {
 
         {!isAuthenticated ? (
           <div className="space-y-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
+            <div className="p-4 bg-brand-navy/5 rounded-lg">
               <p className="text-sm text-gray-700 mb-2">To accept this invitation, you need to:</p>
               <ol className="list-decimal list-inside text-sm text-gray-700 space-y-1">
                 <li>Create an account or sign in</li>

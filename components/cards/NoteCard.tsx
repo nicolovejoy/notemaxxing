@@ -62,7 +62,7 @@ export function NoteCard({
   return (
     <Card
       onClick={onClick}
-      className={`p-6 h-48 flex flex-col group ${isSelected ? 'ring-2 ring-blue-500' : ''}`}
+      className={`p-6 h-48 flex flex-col group ${isSelected ? 'ring-2 ring-brand-navy' : ''}`}
     >
       <div className="flex items-start justify-between mb-2">
         <FileText className="h-5 w-5 text-gray-400" />
@@ -73,7 +73,7 @@ export function NoteCard({
                 e.stopPropagation()
                 onEdit()
               }}
-              className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-500 transition-opacity"
+              className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-brand-navy transition-opacity"
             >
               <Edit2 className="h-4 w-4" />
             </button>

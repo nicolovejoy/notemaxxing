@@ -120,7 +120,7 @@ export default function BackpackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-brand-cream flex items-center justify-center">
         <StatusMessage
           type="error"
           message={error instanceof Error ? error.message : 'Failed to load folders'}
@@ -130,7 +130,7 @@ export default function BackpackPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-brand-cream">
       <PageHeader
         breadcrumbs={[{ label: 'Backpack' }]}
         rightContent={
@@ -179,7 +179,7 @@ export default function BackpackPage() {
                 <CardBody className="p-0">
                   {/* Folder Header with gradient */}
                   <div
-                    className="p-4 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-white cursor-pointer hover:from-blue-100 transition-all"
+                    className="p-4 border-b border-gray-100 bg-gradient-to-r from-brand-navy/5 to-white cursor-pointer hover:from-brand-navy/10 transition-all"
                     onClick={() => handleFolderClick(folder.id)}
                     onMouseEnter={() => prefetchFolderDetail(queryClient, folder.id)}
                   >

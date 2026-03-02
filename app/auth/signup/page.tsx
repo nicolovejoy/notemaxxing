@@ -32,7 +32,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-brand-cream flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h1 className="text-center text-3xl font-light italic">Notemaxxing</h1>
@@ -53,7 +53,7 @@ export default function SignupPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-brand-navy"
               placeholder="you@example.com"
             />
           </div>
@@ -68,7 +68,7 @@ export default function SignupPage() {
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-brand-navy"
               placeholder="••••••••"
             />
           </div>
@@ -85,7 +85,7 @@ export default function SignupPage() {
 
         <p className="text-center text-sm text-gray-600">
           Already have an account?{' '}
-          <Link href="/auth/login" className="text-blue-600 hover:underline">
+          <Link href="/auth/login" className="text-brand-navy hover:underline">
             Sign in
           </Link>
         </p>

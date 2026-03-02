@@ -43,7 +43,7 @@ export function SelectField({
         className={`
           w-full px-3 py-2 
           border border-gray-300 rounded-lg 
-          focus:ring-2 focus:ring-blue-500 focus:border-transparent 
+          focus:ring-2 focus:ring-brand-navy focus:border-transparent
           text-gray-900 bg-white
           disabled:bg-gray-50 disabled:text-gray-500
           ${error ? 'border-red-500 focus:ring-red-500' : ''}

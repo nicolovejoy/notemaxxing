@@ -156,7 +156,7 @@ export default function StudyChatPage() {
   const breadcrumbLabel = ctx.mode === 'learn_more' ? 'Learn More' : 'Discuss'
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-brand-cream flex flex-col">
       <PageHeader
         breadcrumbs={[{ label: 'Quizzmaxxing', href: '/quizzing' }, { label: breadcrumbLabel }]}
       />
@@ -172,7 +172,7 @@ export default function StudyChatPage() {
               <div
                 className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
                   msg.role === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-md'
+                    ? 'bg-brand-navy text-white rounded-br-md'
                     : 'bg-white border border-gray-200 text-gray-800 rounded-bl-md'
                 }`}
               >
@@ -213,7 +213,7 @@ export default function StudyChatPage() {
             <button
               onClick={sendMessage}
               disabled={streaming || !input.trim()}
-              className="p-1.5 text-blue-600 hover:text-blue-700 disabled:text-gray-300 transition-colors"
+              className="p-1.5 text-brand-navy hover:text-brand-navy-light disabled:text-gray-300 transition-colors"
             >
               <Send className="h-4 w-4" />
             </button>

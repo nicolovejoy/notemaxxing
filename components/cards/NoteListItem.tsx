@@ -62,7 +62,7 @@ export function NoteListItem({
   return (
     <div
       className={`group flex items-start border-b border-gray-100 bg-white hover:bg-gray-50 transition-colors ${
-        isSelected ? 'bg-blue-50 hover:bg-blue-50' : ''
+        isSelected ? 'bg-brand-navy/5 hover:bg-brand-navy/5' : ''
       }`}
     >
       {/* Drag handle */}
@@ -96,7 +96,7 @@ export function NoteListItem({
                     e.stopPropagation()
                     onEdit()
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-blue-500 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-brand-navy transition-opacity"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>

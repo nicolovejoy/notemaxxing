@@ -47,15 +47,15 @@ export function EnhancementPreview({
       <div className="space-y-4">
         {/* Improvements Summary */}
         {improvements.length > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+          <div className="bg-brand-navy/5 border border-brand-slate/30 rounded-lg p-3">
+            <h4 className="font-medium text-brand-navy mb-2 flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
               Improvements Made
             </h4>
-            <ul className="text-sm text-blue-800 space-y-1">
+            <ul className="text-sm text-brand-charcoal space-y-1">
               {improvements.map((improvement, index) => (
                 <li key={index} className="flex items-start gap-2">
-                  <span className="text-blue-600 mt-0.5">•</span>
+                  <span className="text-brand-navy mt-0.5">•</span>
                   <span>{improvement}</span>
                 </li>
               ))}

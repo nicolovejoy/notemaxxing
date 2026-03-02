@@ -1,11 +1,18 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Montserrat, Open_Sans } from 'next/font/google'
+import { Geist_Mono } from 'next/font/google'
 import './globals.css'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Providers } from './providers'
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+const montserrat = Montserrat({
+  variable: '--font-montserrat',
+  subsets: ['latin'],
+  weight: ['600', '700', '800'],
+})
+
+const openSans = Open_Sans({
+  variable: '--font-open-sans',
   subsets: ['latin'],
 })
 
@@ -31,7 +38,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${montserrat.variable} ${openSans.variable} ${geistMono.variable} antialiased`}
+      >
         <ErrorBoundary>
           <Providers>{children}</Providers>
         </ErrorBoundary>

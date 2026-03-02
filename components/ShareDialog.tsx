@@ -197,7 +197,7 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
             </>
           ) : (
             <div className="space-y-4">
-              <div className="p-4 bg-blue-50 rounded-lg">
+              <div className="p-4 bg-brand-navy/5 rounded-lg">
                 <h3 className="text-sm font-medium text-gray-900 mb-2">Invitation for {email}</h3>
                 <p className="text-sm text-gray-600 mb-3">
                   Send this link to {email}. The invitation expires in 7 days.

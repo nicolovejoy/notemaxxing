@@ -228,7 +228,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
             onClick={() => setActiveTab('users')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'users'
-                ? 'border-blue-500 text-blue-600'
+                ? 'border-brand-navy text-brand-navy'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -238,7 +238,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
             onClick={() => setActiveTab('permissions')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'permissions'
-                ? 'border-blue-500 text-blue-600'
+                ? 'border-brand-navy text-brand-navy'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -248,7 +248,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
             onClick={() => setActiveTab('stats')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'stats'
-                ? 'border-blue-500 text-blue-600'
+                ? 'border-brand-navy text-brand-navy'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -258,7 +258,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
             onClick={() => setActiveTab('health')}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'health'
-                ? 'border-blue-500 text-blue-600'
+                ? 'border-brand-navy text-brand-navy'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
@@ -284,7 +284,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                 <button
                   onClick={fetchUsers}
                   disabled={loading}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-2 text-sm text-brand-navy hover:text-brand-navy-light disabled:opacity-50"
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
@@ -455,7 +455,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                 <button
                   onClick={fetchPermissions}
                   disabled={loading}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-2 text-sm text-brand-navy hover:text-brand-navy-light disabled:opacity-50"
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   Refresh
@@ -644,8 +644,8 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                     </div>
                   </div>
 
-                  <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                    <p className="text-sm text-blue-700">
+                  <div className="mt-6 p-4 bg-brand-navy/5 rounded-lg">
+                    <p className="text-sm text-brand-navy">
                       <span className="font-medium">Note:</span> As the platform grows, this tab
                       will provide critical insights into system health, helping maintain
                       reliability and performance at scale.
@@ -662,7 +662,7 @@ export function AdminConsole({ onClose }: AdminConsoleProps) {
                 <button
                   onClick={fetchStats}
                   disabled={loading}
-                  className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                  className="flex items-center gap-2 text-sm text-brand-navy hover:text-brand-navy-light disabled:opacity-50"
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                   Refresh

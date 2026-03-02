@@ -25,7 +25,7 @@ export function NotebookPicker({ onSelect }: NotebookPickerProps) {
           onClick={() => setTab('notebook')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === 'notebook'
-              ? 'border-blue-500 text-blue-600'
+              ? 'border-brand-navy text-brand-navy'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -35,7 +35,7 @@ export function NotebookPicker({ onSelect }: NotebookPickerProps) {
           onClick={() => setTab('topic')}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
             tab === 'topic'
-              ? 'border-blue-500 text-blue-600'
+              ? 'border-brand-navy text-brand-navy'
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -99,7 +99,7 @@ function NotebookTab({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search folders and notebooks..."
-          className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-transparent"
         />
       </div>
 
@@ -146,7 +146,7 @@ function NotebookTab({
                             notebookName: notebook.name,
                           })
                         }
-                        className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-blue-50 text-left transition-colors"
+                        className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-brand-navy/5 text-left transition-colors"
                       >
                         <BookOpen className="h-3.5 w-3.5 text-gray-400" />
                         <span className="text-sm text-gray-600">{notebook.name}</span>
@@ -195,13 +195,13 @@ function TopicTab({
           value={topic}
           onChange={(e) => onTopicChange(e.target.value)}
           placeholder="e.g. Photosynthesis, World War II, React hooks..."
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-transparent"
           autoFocus
         />
         <button
           type="submit"
           disabled={!canSubmit}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-brand-navy text-white text-sm font-medium rounded-lg hover:bg-brand-navy-light disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Go
         </button>

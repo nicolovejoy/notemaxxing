@@ -34,7 +34,7 @@ export function LoadingButton({
 
   const variantClasses = {
     primary:
-      'bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed',
+      'bg-brand-navy text-white hover:bg-brand-navy-light disabled:bg-brand-slate disabled:cursor-not-allowed',
     secondary:
       'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed',
     danger:

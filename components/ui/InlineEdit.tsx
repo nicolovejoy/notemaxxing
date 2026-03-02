@@ -50,7 +50,7 @@ export function InlineEdit({
         onChange={(e) => setEditValue(e.target.value)}
         onKeyDown={handleKeyPress}
         onBlur={handleSave}
-        className={`flex-1 bg-transparent border-b-2 border-blue-500 outline-none focus:border-blue-600 ${inputClassName}`}
+        className={`flex-1 bg-transparent border-b-2 border-brand-navy outline-none focus:border-brand-navy-light ${inputClassName}`}
         autoFocus={autoFocus}
         placeholder={placeholder}
       />

@@ -25,7 +25,7 @@ export default function Home() {
       title: 'Your Backpack',
       description: 'Organize your notes with custom folders and colors',
       href: '/backpack',
-      color: 'text-blue-500',
+      color: 'text-brand-navy',
     },
     {
       icon: Keyboard,
@@ -44,7 +44,7 @@ export default function Home() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-brand-cream">
       {/* Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -52,7 +52,9 @@ export default function Home() {
             <div className="flex items-center gap-3">
               <Logo size={36} />
               <div className="relative group">
-                <h1 className="text-xl font-semibold italic">Notemaxxing</h1>
+                <h1 className="text-xl font-bold text-brand-navy tracking-tight">
+                  notemaxxing.net
+                </h1>
                 <BuildTimestamp />
               </div>
             </div>
@@ -62,9 +64,11 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-blue-50 to-white py-16">
+      <section className="bg-gradient-to-b from-brand-navy/5 to-brand-cream py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">Your Second Brain, Perfected</h2>
+          <h2 className="text-4xl font-bold text-brand-charcoal mb-4">
+            Your Second Brain, Perfected
+          </h2>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Organize your thoughts, enhance your writing, and master your knowledge with AI-powered
             note-taking
@@ -93,7 +97,7 @@ export default function Home() {
       {/* Features Grid */}
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h3 className="text-2xl font-bold text-gray-900 mb-8 text-center">
+          <h3 className="text-2xl font-bold text-brand-charcoal mb-8 text-center">
             Everything You Need to Stay Organized
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -104,7 +108,7 @@ export default function Home() {
                   <Card hover className="h-full">
                     <CardBody>
                       <div className="flex items-start gap-4">
-                        <div className={`p-3 bg-gray-50 rounded-lg ${feature.color}`}>
+                        <div className={`p-3 bg-brand-cream rounded-lg ${feature.color}`}>
                           <Icon className="h-6 w-6" />
                         </div>
                         <div className="flex-1">

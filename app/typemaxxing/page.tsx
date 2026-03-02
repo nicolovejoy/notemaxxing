@@ -107,7 +107,7 @@ export default function TypemaxxingPage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-brand-cream">
       <PageHeader breadcrumbs={[{ label: 'Typemaxxing' }]} />
 
       <main className="max-w-3xl mx-auto px-4 py-8">
@@ -151,7 +151,7 @@ export default function TypemaxxingPage() {
                 }
                 // Current position cursor
                 if (i === typed.length) {
-                  className += ' border-l-2 border-blue-500'
+                  className += ' border-l-2 border-brand-navy'
                 }
                 return (
                   <span key={i} className={className}>
@@ -194,7 +194,7 @@ export default function TypemaxxingPage() {
 
                 <div className="flex justify-center gap-12 mb-10">
                   <div>
-                    <p className="text-4xl font-bold text-blue-600">{wpm}</p>
+                    <p className="text-4xl font-bold text-brand-navy">{wpm}</p>
                     <p className="text-sm text-gray-500 mt-1">WPM</p>
                   </div>
                   <div>
@@ -212,7 +212,7 @@ export default function TypemaxxingPage() {
                 <div className="flex justify-center gap-3">
                   <button
                     onClick={() => source && generate(source)}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-brand-navy text-white text-sm font-medium rounded-lg hover:bg-brand-navy-light transition-colors"
                   >
                     Next passage
                   </button>

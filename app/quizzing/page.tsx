@@ -88,7 +88,7 @@ export default function QuizzmaxxingPage() {
   if (authLoading || !user) return null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-brand-cream">
       <PageHeader breadcrumbs={[{ label: 'Quizzmaxxing' }]} />
 
       <main className="max-w-2xl mx-auto px-4 py-8">
@@ -131,7 +131,7 @@ export default function QuizzmaxxingPage() {
                               ? 'bg-green-400'
                               : 'bg-red-400'
                             : i === currentIndex
-                              ? 'bg-blue-400'
+                              ? 'bg-brand-navy'
                               : 'bg-gray-200'
                         }`}
                       />
@@ -155,7 +155,7 @@ export default function QuizzmaxxingPage() {
                     let classes =
                       'w-full text-left px-4 py-3 rounded-lg border text-sm transition-colors '
                     if (!answered) {
-                      classes += 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                      classes += 'border-gray-200 hover:border-brand-slate hover:bg-brand-navy/5'
                     } else if (i === q.correct_index) {
                       classes += 'border-green-300 bg-green-50 text-green-800'
                     } else if (i === selectedAnswer) {
@@ -196,7 +196,7 @@ export default function QuizzmaxxingPage() {
                     </div>
                     <button
                       onClick={handleNext}
-                      className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      className="w-full px-4 py-2 bg-brand-navy text-white text-sm font-medium rounded-lg hover:bg-brand-navy-light transition-colors"
                     >
                       {currentIndex < questions.length - 1 ? 'Next question' : 'See results'}
                     </button>
@@ -210,7 +210,7 @@ export default function QuizzmaxxingPage() {
           <div className="py-8">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-2">Quiz Complete</h2>
-              <p className="text-5xl font-bold text-blue-600 mb-2">
+              <p className="text-5xl font-bold text-brand-navy mb-2">
                 {score}/{questions.length}
               </p>
               <p className="text-sm text-gray-500">
@@ -291,7 +291,7 @@ export default function QuizzmaxxingPage() {
               </button>
               <button
                 onClick={() => source && generate(source)}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-4 py-2 bg-brand-navy text-white text-sm font-medium rounded-lg hover:bg-brand-navy-light transition-colors"
               >
                 New set
               </button>

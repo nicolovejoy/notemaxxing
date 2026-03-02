@@ -345,7 +345,7 @@ export function RichTextEditor({
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 isEnhancing
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-blue-500 text-white hover:bg-blue-600'
+                  : 'bg-brand-navy text-white hover:bg-brand-navy-light'
               }`}
             >
               <Sparkles className="h-4 w-4" />
@@ -372,7 +372,7 @@ export function RichTextEditor({
               <button
                 onClick={() => handleEnhance(true)}
                 disabled={isEnhancing}
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-500 text-white rounded-md hover:bg-blue-600 shadow-lg transition-all"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium bg-brand-navy text-white rounded-md hover:bg-brand-navy-light shadow-lg transition-all"
               >
                 <Sparkles className="h-3 w-3" />
                 {isEnhancing ? 'Enhancing...' : 'Enhance selection'}
