@@ -51,30 +51,34 @@ export async function POST(request: NextRequest) {
 
   if (!existingSnap.empty) {
     const existingDoc = existingSnap.docs[0]
-    await existingDoc.ref.update({ expires_at: newExpiry })
+    const existingToken = existingDoc.data().token as string
 
-    await db
-      .collection('invitationPreviews')
-      .doc(existingDoc.data().token as string)
-      .set({
-        token: existingDoc.data().token,
-        resource_name: resourceName,
-        resource_type: resourceType,
-        inviter_name: callerEmail || 'A user',
-        expires_at: newExpiry,
-      })
+    // Atomic: update invitation expiry + refresh preview
+    const renewBatch = db.batch()
+    renewBatch.update(existingDoc.ref, { expires_at: newExpiry })
+    renewBatch.set(db.collection('invitationPreviews').doc(existingToken), {
+      token: existingToken,
+      resource_name: resourceName,
+      resource_type: resourceType,
+      inviter_name: callerEmail || 'A user',
+      expires_at: newExpiry,
+    })
+    await renewBatch.commit()
 
     return NextResponse.json({
       success: true,
-      invitationId: existingDoc.data().token,
+      invitationId: existingToken,
       expiresAt: newExpiry,
       existing: true,
     })
   }
 
-  // Create new invitation
+  // Atomic: create invitation + preview in a single batch
   const token = crypto.randomUUID()
-  await db.collection('invitations').add({
+  const batch = db.batch()
+
+  const invRef = db.collection('invitations').doc()
+  batch.set(invRef, {
     token,
     resource_id: resourceId,
     resource_type: resourceType,
@@ -88,16 +92,15 @@ export async function POST(request: NextRequest) {
     transfer_ownership_on_accept: false,
   })
 
-  await db
-    .collection('invitationPreviews')
-    .doc(token)
-    .set({
-      token,
-      resource_name: resourceName,
-      resource_type: resourceType,
-      inviter_name: callerEmail || 'A user',
-      expires_at: newExpiry,
-    })
+  batch.set(db.collection('invitationPreviews').doc(token), {
+    token,
+    resource_name: resourceName,
+    resource_type: resourceType,
+    inviter_name: callerEmail || 'A user',
+    expires_at: newExpiry,
+  })
+
+  await batch.commit()
 
   return NextResponse.json({ success: true, invitationId: token, expiresAt: newExpiry })
 }

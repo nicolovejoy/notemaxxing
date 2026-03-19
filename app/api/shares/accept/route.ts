@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAuthenticatedUser, getAdminDb } from '@/lib/api/firebase-server-helpers'
 
 export async function POST(request: NextRequest) {
-  const { uid, error } = await getAuthenticatedUser(request)
+  const { uid, email, error } = await getAuthenticatedUser(request)
   if (error) return error
 
   const body = await request.json()
@@ -14,19 +14,58 @@ export async function POST(request: NextRequest) {
 
   const db = getAdminDb()
 
-  const invSnap = await db
+  // Check if user already has permission (handles double-accept gracefully)
+  // Query by token first to get the resource_id
+  const invByTokenSnap = await db
     .collection('invitations')
     .where('token', '==', invitationId)
-    .where('accepted_at', '==', null)
     .limit(1)
     .get()
 
-  if (invSnap.empty) {
-    return NextResponse.json({ error: 'Invitation not found or already accepted' }, { status: 404 })
+  if (invByTokenSnap.empty) {
+    return NextResponse.json({ error: 'Invitation not found' }, { status: 404 })
   }
 
-  const invDoc = invSnap.docs[0]
+  const invDoc = invByTokenSnap.docs[0]
   const invitation = invDoc.data()
+
+  // Email enforcement: verify the accepting user's email matches the invitation
+  if (
+    invitation.invitee_email &&
+    email &&
+    invitation.invitee_email.toLowerCase() !== email.toLowerCase()
+  ) {
+    return NextResponse.json(
+      { error: 'This invitation was sent to a different email address' },
+      { status: 403 }
+    )
+  }
+
+  // If already accepted, return success (not 404)
+  if (invitation.accepted_at) {
+    const existingPermSnap = await db
+      .collection('permissions')
+      .where('user_id', '==', uid)
+      .where('resource_id', '==', invitation.resource_id)
+      .limit(1)
+      .get()
+
+    if (!existingPermSnap.empty) {
+      const perm = existingPermSnap.docs[0]
+      return NextResponse.json({
+        success: true,
+        message: 'You already have access to this resource',
+        permission: {
+          id: perm.id,
+          resourceType: perm.data().resource_type,
+          resourceId: perm.data().resource_id,
+          permission: perm.data().permission_level,
+        },
+      })
+    }
+
+    return NextResponse.json({ error: 'Invitation already accepted' }, { status: 409 })
+  }
 
   if (new Date(invitation.expires_at as string) < new Date()) {
     return NextResponse.json({ error: 'This invitation has expired' }, { status: 410 })
@@ -55,9 +94,12 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  // Create permission
+  // Atomic: create permission + mark invitation accepted in a batch
   const now = new Date().toISOString()
-  const permRef = await db.collection('permissions').add({
+  const permRef = db.collection('permissions').doc()
+  const batch = db.batch()
+
+  batch.set(permRef, {
     user_id: uid,
     resource_id: invitation.resource_id,
     resource_type: invitation.resource_type,
@@ -66,7 +108,9 @@ export async function POST(request: NextRequest) {
     granted_at: now,
   })
 
-  await invDoc.ref.update({ accepted_at: now, accepted_by: uid })
+  batch.update(invDoc.ref, { accepted_at: now, accepted_by: uid })
+
+  await batch.commit()
 
   // Handle ownership transfer if requested
   if (invitation.transfer_ownership_on_accept && invitation.resource_type === 'folder') {

@@ -29,7 +29,7 @@ export default function SharePage() {
   } | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
-  const [emailMismatch] = useState(false)
+  const [emailMismatch, setEmailMismatch] = useState(false)
 
   useEffect(() => {
     const checkAuthAndLoadInvitation = async () => {
@@ -117,7 +117,11 @@ export default function SharePage() {
         }
       }, 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to accept invitation')
+      const message = err instanceof Error ? err.message : 'Failed to accept invitation'
+      if (message.includes('different email address')) {
+        setEmailMismatch(true)
+      }
+      setError(message)
     } finally {
       setLoading(false)
     }
