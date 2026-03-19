@@ -69,12 +69,22 @@
   --color-gray-800: #f3f4f6;
   --color-gray-900: #f9fafb;
 
-  /* Notebook pastel remap — light pastels become rich darks */
-  --color-indigo-200: #4338ca;
-  --color-pink-200: #be185d;
-  --color-yellow-200: #b45309;
-  --color-emerald-200: #047857;
-  --color-cyan-200: #0e7490;
+  /* Folder color remap — muted dark tones with subtle tints */
+  --color-red-500: #3f3035;
+  --color-blue-500: #2d3a4d;
+  --color-purple-500: #352e42;
+  --color-green-500: #2e3835;
+  --color-indigo-500: #2e3350;
+  --color-pink-500: #42303f;
+  --color-yellow-500: #3d3828;
+  --color-orange-500: #3d3328;
+
+  /* Notebook color remap — dark with subtle pink/blue hints */
+  --color-indigo-200: #2e3548;
+  --color-pink-200: #402e3d;
+  --color-yellow-200: #38352d;
+  --color-emerald-200: #2a3833;
+  --color-cyan-200: #2a3842;
 }
 
 @theme inline {
