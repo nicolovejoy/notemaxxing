@@ -8,7 +8,7 @@ interface CardProps {
 }
 
 export function Card({ children, className = '', onClick, hover = true }: CardProps) {
-  const baseClasses = 'bg-white rounded-lg border border-gray-200'
+  const baseClasses = 'bg-surface rounded-lg border border-border'
   const hoverClasses = hover ? 'hover:shadow-lg transition-shadow' : ''
   const clickableClasses = onClick ? 'cursor-pointer' : ''
 
@@ -28,7 +28,7 @@ interface CardHeaderProps {
 }
 
 export function CardHeader({ children, className = '' }: CardHeaderProps) {
-  return <div className={`p-4 border-b border-gray-200 ${className}`}>{children}</div>
+  return <div className={`p-4 border-b border-border ${className}`}>{children}</div>
 }
 
 interface CardBodyProps {

@@ -32,7 +32,7 @@ export function EntityCard({
 }: EntityCardProps) {
   const baseClasses = isHeader
     ? `${color || 'bg-gray-200'} text-white rounded-t-lg p-4 h-32 relative overflow-hidden group`
-    : 'bg-white rounded-lg shadow-sm border border-gray-200'
+    : 'bg-surface rounded-lg shadow-sm border border-gray-200'
 
   const content = (
     <>

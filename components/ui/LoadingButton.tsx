@@ -36,10 +36,11 @@ export function LoadingButton({
     primary:
       'bg-brand-navy text-white hover:bg-brand-navy-light disabled:bg-brand-slate disabled:cursor-not-allowed',
     secondary:
-      'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed',
+      'bg-surface-raised text-text-secondary hover:bg-border border border-border disabled:opacity-50 disabled:cursor-not-allowed',
     danger:
       'bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300 disabled:cursor-not-allowed',
-    ghost: 'text-gray-600 hover:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed',
+    ghost:
+      'text-text-tertiary hover:bg-surface-raised disabled:text-text-muted disabled:cursor-not-allowed',
   }
 
   const LoadingSpinner = () => (

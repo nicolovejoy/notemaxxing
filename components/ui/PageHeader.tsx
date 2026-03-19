@@ -20,13 +20,13 @@ export function PageHeader({
   breadcrumbs,
 }: PageHeaderProps) {
   return (
-    <header className={`bg-white border-b border-gray-200 sticky top-0 z-10 ${className}`}>
+    <header className={`bg-surface border-b border-border sticky top-0 z-10 ${className}`}>
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             {!breadcrumbs && (
-              <Link href={backUrl} className="p-2 rounded-md hover:bg-gray-100">
-                <ArrowLeft className="h-5 w-5 text-gray-800" />
+              <Link href={backUrl} className="p-2 rounded-md hover:bg-surface-raised">
+                <ArrowLeft className="h-5 w-5 text-text-primary" />
               </Link>
             )}
             <Link
@@ -46,7 +46,7 @@ export function PageHeader({
           </div>
         </div>
         {breadcrumbs && (
-          <div className="border-t border-gray-100 py-3">
+          <div className="border-t border-border-light py-3">
             <Breadcrumb items={breadcrumbs} />
           </div>
         )}

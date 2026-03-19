@@ -143,7 +143,7 @@ export default function FolderDetailPage() {
   // Show loading state
   if (isLoading || authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <PageHeader backUrl="/backpack" />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <Skeleton className="h-8 w-48 mb-6" />
@@ -156,7 +156,7 @@ export default function FolderDetailPage() {
   // Show error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <PageHeader backUrl="/backpack" />
         <div className="max-w-7xl mx-auto px-4 py-8">
           <EmptyState
@@ -175,7 +175,7 @@ export default function FolderDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <PageHeader
         breadcrumbs={[
           { label: 'Backpack', href: '/backpack' },
@@ -214,7 +214,7 @@ export default function FolderDetailPage() {
         {/* Folder Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <FolderOpen className="h-8 w-8 text-gray-600" />
+            <FolderOpen className="h-8 w-8 text-text-tertiary" />
             {isEditingFolder ? (
               <InlineEdit
                 value={folder?.name || ''}
@@ -255,14 +255,14 @@ export default function FolderDetailPage() {
               <>
                 <button
                   onClick={() => setIsEditingFolder(true)}
-                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-1 text-text-muted hover:text-text-tertiary transition-colors"
                   title="Edit folder name"
                 >
                   <Edit2 className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  className="p-1 text-text-muted hover:text-red-500 transition-colors"
                   title="Delete folder"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -278,7 +278,7 @@ export default function FolderDetailPage() {
               />
             )}
           </div>
-          <p className="text-gray-600">
+          <p className="text-text-tertiary">
             {notebooks.length} notebook{notebooks.length !== 1 ? 's' : ''}
           </p>
         </div>

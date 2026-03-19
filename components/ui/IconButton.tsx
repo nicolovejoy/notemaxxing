@@ -33,7 +33,7 @@ export function IconButton({
   }
 
   const variantClasses = {
-    default: 'hover:bg-gray-100 text-gray-800',
+    default: 'hover:bg-surface-raised text-text-primary',
     danger: 'hover:bg-red-50 text-red-500',
     ghost: 'hover:bg-transparent opacity-0 group-hover:opacity-100',
   }

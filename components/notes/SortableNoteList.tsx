@@ -164,7 +164,7 @@ export function SortableNoteList({
 
   if (!canDrag) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+      <div className="bg-surface rounded-lg border border-gray-200 divide-y divide-gray-100 overflow-hidden">
         {items.map((note) => (
           <NoteListItem
             key={note.id}
@@ -186,7 +186,7 @@ export function SortableNoteList({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       <SortableContext items={items.map((n) => n.id)} strategy={verticalListSortingStrategy}>
-        <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100 overflow-hidden">
+        <div className="bg-surface rounded-lg border border-gray-200 divide-y divide-gray-100 overflow-hidden">
           {items.map((note) => (
             <SortableNoteRow
               key={note.id}

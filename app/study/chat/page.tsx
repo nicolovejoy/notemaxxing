@@ -179,7 +179,7 @@ export default function StudyChatPage() {
                 className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm ${
                   msg.role === 'user'
                     ? 'bg-brand-navy text-white rounded-br-md'
-                    : 'bg-white border border-gray-200 text-gray-800 rounded-bl-md'
+                    : 'bg-surface border border-gray-200 text-gray-800 rounded-bl-md'
                 }`}
               >
                 {msg.role === 'assistant' ? (
@@ -205,7 +205,7 @@ export default function StudyChatPage() {
 
         {/* Input */}
         <div className="sticky bottom-0 bg-gray-50 pt-2 pb-4">
-          <div className="flex items-end gap-2 bg-white border border-gray-200 rounded-2xl px-4 py-2">
+          <div className="flex items-end gap-2 bg-surface border border-gray-200 rounded-2xl px-4 py-2">
             <textarea
               ref={textareaRef}
               value={input}

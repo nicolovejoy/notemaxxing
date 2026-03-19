@@ -46,7 +46,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-brand-cream">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200">
+      <header className="bg-surface border-b border-border">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
@@ -69,7 +69,7 @@ export default function Home() {
           <h2 className="text-4xl font-bold text-brand-charcoal mb-4">
             Your Second Brain, Perfected
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-text-tertiary mb-8 max-w-2xl mx-auto">
             Organize your thoughts, enhance your writing, and master your knowledge with AI-powered
             note-taking
           </p>
@@ -113,9 +113,9 @@ export default function Home() {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-semibold text-lg mb-1">{feature.title}</h4>
-                          <p className="text-gray-600 text-sm">{feature.description}</p>
+                          <p className="text-text-tertiary text-sm">{feature.description}</p>
                         </div>
-                        <ArrowRight className="h-5 w-5 text-gray-400" />
+                        <ArrowRight className="h-5 w-5 text-text-muted" />
                       </div>
                     </CardBody>
                   </Card>
@@ -127,8 +127,8 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600">
+      <footer className="bg-surface border-t border-border py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-text-tertiary">
           <p>Built with Next.js, TypeScript, and Tailwind CSS</p>
           <p className="mt-2">© 2024 Notemaxxing. All rights reserved.</p>
         </div>

@@ -34,7 +34,7 @@ export function EntityGrid<T>({
     return (
       <div className={gridClasses}>
         {Array.from({ length: skeletonCount }).map((_, index) => (
-          <div key={index} className="bg-white rounded-lg border border-gray-200 p-6 h-48">
+          <div key={index} className="bg-surface rounded-lg border border-gray-200 p-6 h-48">
             <Skeleton height={20} className="mb-2" />
             <Skeleton height={16} width="60%" className="mb-4" />
             <Skeleton height={40} />

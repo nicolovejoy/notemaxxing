@@ -61,7 +61,7 @@ export function NoteListItem({
 
   return (
     <div
-      className={`group flex items-start border-b border-gray-100 bg-white hover:bg-gray-50 transition-colors ${
+      className={`group flex items-start border-b border-border-light bg-surface hover:bg-surface-raised transition-colors ${
         isSelected ? 'bg-brand-navy/5 hover:bg-brand-navy/5' : ''
       }`}
     >
@@ -69,7 +69,7 @@ export function NoteListItem({
       {showDragHandle && (
         <button
           {...dragHandleProps}
-          className="flex-shrink-0 w-11 pt-4 flex items-start justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing touch-none"
+          className="flex-shrink-0 w-11 pt-4 flex items-start justify-center text-text-muted hover:text-text-tertiary cursor-grab active:cursor-grabbing touch-none"
           tabIndex={-1}
         >
           <GripVertical className="h-5 w-5" />
@@ -83,11 +83,13 @@ export function NoteListItem({
       >
         <div className="flex items-center justify-between gap-2 mb-1">
           <div className="flex items-center gap-2 min-w-0">
-            <FileText className="h-4 w-4 text-gray-400 flex-shrink-0" />
-            <span className="font-medium text-gray-900 truncate">{title || 'Untitled Note'}</span>
+            <FileText className="h-4 w-4 text-text-muted flex-shrink-0" />
+            <span className="font-medium text-text-primary truncate">
+              {title || 'Untitled Note'}
+            </span>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-gray-400">{formatDate(updatedAt)}</span>
+            <span className="text-xs text-text-muted">{formatDate(updatedAt)}</span>
             {/* Desktop action buttons */}
             <div className="hidden md:flex items-center gap-1">
               {onEdit && (
@@ -96,7 +98,7 @@ export function NoteListItem({
                     e.stopPropagation()
                     onEdit()
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-brand-navy transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 p-1 text-text-muted hover:text-brand-navy transition-opacity"
                 >
                   <Edit2 className="h-3.5 w-3.5" />
                 </button>
@@ -107,7 +109,7 @@ export function NoteListItem({
                     e.stopPropagation()
                     onDelete()
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 p-1 text-text-muted hover:text-red-500 transition-opacity"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -116,7 +118,7 @@ export function NoteListItem({
           </div>
         </div>
         {hasPreview && (
-          <p className="text-sm text-gray-500 line-clamp-3 leading-relaxed">{preview}</p>
+          <p className="text-sm text-text-tertiary line-clamp-3 leading-relaxed">{preview}</p>
         )}
       </button>
     </div>

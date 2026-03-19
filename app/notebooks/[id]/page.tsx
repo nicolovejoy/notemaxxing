@@ -347,7 +347,7 @@ export default function NotebookPage() {
         <PageHeader />
         <div className="flex h-[calc(100vh-64px)]">
           {/* Sidebar skeleton */}
-          <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
+          <aside className="w-64 bg-surface border-r border-border overflow-y-auto">
             <div className="p-4">
               <Skeleton className="h-4 w-20 mb-4" />
               <div className="flex items-center gap-3 mb-6">
@@ -374,7 +374,7 @@ export default function NotebookPage() {
               </div>
               <Skeleton className="h-10 w-24" />
             </div>
-            <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+            <div className="bg-surface rounded-lg border border-border divide-y divide-border-light">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="flex items-center gap-3 py-3 px-4">
                   <Skeleton className="h-4 w-4 flex-shrink-0" />
@@ -394,8 +394,8 @@ export default function NotebookPage() {
     return (
       <div className="min-h-screen bg-brand-cream flex items-center justify-center">
         <div className="text-center">
-          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Notebook not found</h2>
+          <BookOpen className="h-12 w-12 text-text-muted mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-text-primary mb-2">Notebook not found</h2>
           <Link href="/backpack" className="text-brand-navy hover:underline">
             Return to backpack
           </Link>
@@ -508,12 +508,12 @@ export default function NotebookPage() {
       <div className="flex h-[calc(100vh-64px)]">
         {/* Sidebar */}
         {noteView?.folder && (
-          <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto">
+          <aside className="w-64 bg-surface border-r border-border overflow-y-auto">
             <div className="p-4">
               {/* Folder Header */}
               <Link
                 href="/backpack"
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 mb-4"
+                className="flex items-center gap-2 text-sm text-text-tertiary hover:text-text-primary mb-4"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span>Backpack</span>
@@ -524,8 +524,8 @@ export default function NotebookPage() {
                   <FolderOpen className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-gray-900">{noteView.folder.name}</h2>
-                  <p className="text-xs text-gray-500">
+                  <h2 className="font-semibold text-text-primary">{noteView.folder.name}</h2>
+                  <p className="text-xs text-text-tertiary">
                     {noteView.siblingNotebooks.length} notebooks
                   </p>
                 </div>
@@ -538,8 +538,10 @@ export default function NotebookPage() {
                     key={nb.id}
                     href={`/notebooks/${nb.id}`}
                     onMouseEnter={() => prefetchNotebookView(queryClient, nb.id)}
-                    className={`flex items-center gap-2 p-2 rounded-lg hover:bg-gray-50 transition-colors ${
-                      nb.id === notebookId ? 'bg-brand-navy/5 text-brand-navy' : 'text-gray-700'
+                    className={`flex items-center gap-2 p-2 rounded-lg hover:bg-surface-raised transition-colors ${
+                      nb.id === notebookId
+                        ? 'bg-brand-navy/5 text-brand-navy'
+                        : 'text-text-secondary'
                     }`}
                   >
                     <div
@@ -581,14 +583,14 @@ export default function NotebookPage() {
                       className="flex-1"
                     />
                   ) : (
-                    <h1 className="text-2xl font-semibold text-gray-900">
+                    <h1 className="text-2xl font-semibold text-text-primary">
                       {previewData?.name || notebook?.name || 'Loading...'}
                     </h1>
                   )}
                   {user && notebook && notebook.owner_id === user.uid && !isEditingNotebook && (
                     <button
                       onClick={() => setIsEditingNotebook(true)}
-                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                      className="p-1 text-text-muted hover:text-text-tertiary transition-colors"
                       title="Edit notebook name"
                     >
                       <Edit2 className="h-4 w-4" />
@@ -596,7 +598,7 @@ export default function NotebookPage() {
                   )}
                 </div>
                 {notebook?.folder_name && !noteView?.folder && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                  <div className="flex items-center gap-2 text-sm text-text-tertiary mt-1">
                     <FolderOpen className="h-4 w-4" />
                     <span>{notebook.folder_name}</span>
                   </div>
@@ -628,7 +630,7 @@ export default function NotebookPage() {
 
           {/* Notes List */}
           {loading && previewData ? (
-            <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+            <div className="bg-surface rounded-lg border border-border divide-y divide-border-light">
               {[...Array(previewData.note_count || 3)].map((_, i) => (
                 <div key={i} className="py-3 px-4">
                   <Skeleton className="h-4 w-48 mb-2" />
@@ -638,11 +640,11 @@ export default function NotebookPage() {
               ))}
             </div>
           ) : notes.length === 0 && !search ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-text-tertiary">
               {canEdit ? 'No notes yet. Click "New note" to get started.' : 'No notes yet.'}
             </div>
           ) : notes.length === 0 && search ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-text-tertiary">
               No notes match &quot;{search}&quot;
             </div>
           ) : (
@@ -663,9 +665,9 @@ export default function NotebookPage() {
       {/* Loading overlay while fetching note */}
       {isLoadingNote && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl p-6 flex items-center gap-3">
+          <div className="bg-surface rounded-lg shadow-xl p-6 flex items-center gap-3">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-navy"></div>
-            <span className="text-gray-700">Loading note...</span>
+            <span className="text-text-secondary">Loading note...</span>
           </div>
         </div>
       )}
@@ -673,17 +675,17 @@ export default function NotebookPage() {
       {/* Read-only Note Viewer Modal */}
       {selectedNote && !isEditingNote && notebook?.shared && notebook?.permission === 'read' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+          <div className="bg-surface rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div className="p-4 border-b flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-semibold">{selectedNote.title}</h2>
-                <span className="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">
+                <span className="px-2 py-1 text-xs font-medium text-text-tertiary bg-surface-inset rounded-full">
                   Read only
                 </span>
               </div>
               <button
                 onClick={handleCloseNote}
-                className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                className="px-4 py-2 text-text-tertiary hover:text-text-primary"
               >
                 Close
               </button>
@@ -710,7 +712,7 @@ export default function NotebookPage() {
             }
           }}
         >
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+          <div className="bg-surface rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
             <div className="p-4 border-b flex items-center justify-between">
               <input
                 type="text"
@@ -722,7 +724,7 @@ export default function NotebookPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleCloseNote}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                  className="px-4 py-2 text-text-tertiary hover:text-text-primary"
                 >
                   Cancel
                 </button>

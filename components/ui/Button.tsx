@@ -32,9 +32,10 @@ export function Button({
 
   const variantClasses = {
     primary: 'bg-brand-navy text-white hover:bg-brand-navy-light disabled:bg-brand-slate',
-    secondary: 'bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:bg-gray-100',
+    secondary:
+      'bg-surface-raised text-text-secondary hover:bg-border border border-border disabled:opacity-50',
     danger: 'bg-red-500 text-white hover:bg-red-600 disabled:bg-red-300',
-    ghost: 'text-gray-600 hover:bg-gray-100 disabled:text-gray-400',
+    ghost: 'text-text-tertiary hover:bg-surface-raised disabled:text-text-muted',
   }
 
   return (

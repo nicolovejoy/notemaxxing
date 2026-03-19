@@ -213,7 +213,7 @@ export function ShareDialog({ resourceId, resourceType, resourceName, onClose }:
                         type="text"
                         value={invitationLink}
                         readOnly
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-surface"
                       />
                       <Button
                         onClick={handleCopyLink}

@@ -9,6 +9,60 @@
   --brand-cream: #f8f8f0;
   --brand-slate: #4a6e91;
   --brand-charcoal: #333333;
+
+  /* Semantic surface tokens */
+  --surface: #ffffff;
+  --surface-raised: #f9fafb;
+  --surface-inset: #f3f4f6;
+
+  /* Semantic text tokens */
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+
+  /* Semantic border tokens */
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+
+  /* Shimmer */
+  --shimmer-from: #e5e7eb;
+  --shimmer-to: #f3f4f6;
+}
+
+.dark {
+  --background: #111520;
+  --foreground: #e5e7eb;
+  --brand-cream: #111520;
+
+  --surface: #1a1f2e;
+  --surface-raised: #242938;
+  --surface-inset: #151926;
+
+  --text-primary: #f3f4f6;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+  --text-muted: #6b7280;
+
+  --border-color: #2d3348;
+  --border-light: #1f2536;
+
+  --shimmer-from: #242938;
+  --shimmer-to: #1a1f2e;
+
+  /* Gray scale remap — inverts for dark mode so unmigrated
+     gray-* classes resolve to appropriate dark values.
+     Aligned with semantic tokens above for consistency. */
+  --color-gray-50: #1a1f2e;
+  --color-gray-100: #242938;
+  --color-gray-200: #2d3348;
+  --color-gray-300: #4d5570;
+  --color-gray-400: #6b7280;
+  --color-gray-500: #9ca3af;
+  --color-gray-600: #d1d5db;
+  --color-gray-700: #e5e7eb;
+  --color-gray-800: #f3f4f6;
+  --color-gray-900: #f9fafb;
 }
 
 @theme inline {
@@ -20,6 +74,15 @@
   --color-brand-cream: var(--brand-cream);
   --color-brand-slate: var(--brand-slate);
   --color-brand-charcoal: var(--brand-charcoal);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-inset: var(--surface-inset);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border-color);
+  --color-border-light: var(--border-light);
   --font-sans: var(--font-open-sans);
   --font-heading: var(--font-montserrat);
   --font-mono: var(--font-geist-mono);
@@ -52,9 +115,9 @@ h6 {
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    rgb(229 231 235) 25%,
-    rgb(243 244 246) 50%,
-    rgb(229 231 235) 75%
+    var(--shimmer-from) 25%,
+    var(--shimmer-to) 50%,
+    var(--shimmer-from) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;

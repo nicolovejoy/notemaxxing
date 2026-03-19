@@ -7,7 +7,7 @@ interface ModalFooterProps {
 
 export function ModalFooter({ children, className = '' }: ModalFooterProps) {
   return (
-    <div className={`flex justify-end gap-3 pt-4 mt-6 border-t border-gray-200 ${className}`}>
+    <div className={`flex justify-end gap-3 pt-4 mt-6 border-t border-border ${className}`}>
       {children}
     </div>
   )

@@ -81,7 +81,7 @@ export function ConfirmDialog({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="fixed inset-0" onClick={onCancel} />
       <div
-        className="relative bg-white rounded-xl shadow-2xl ring-1 ring-black/10 w-full max-w-sm p-6"
+        className="relative bg-surface rounded-xl shadow-2xl ring-1 ring-border w-full max-w-sm p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start gap-4">
@@ -89,8 +89,8 @@ export function ConfirmDialog({
             <Icon className={`h-5 w-5 ${iconColor}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-            <p className="mt-1 text-sm text-gray-600">{message}</p>
+            <h3 className="text-base font-semibold text-text-primary">{title}</h3>
+            <p className="mt-1 text-sm text-text-tertiary">{message}</p>
           </div>
         </div>
         <div className="flex gap-3 justify-end mt-6">
@@ -98,7 +98,7 @@ export function ConfirmDialog({
             ref={cancelRef}
             onClick={onCancel}
             onFocus={() => setFocusedButton('cancel')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-navy"
+            className="px-4 py-2 text-sm font-medium text-text-secondary bg-surface border border-border rounded-lg hover:bg-surface-raised focus:outline-none focus:ring-2 focus:ring-brand-navy"
           >
             {cancelLabel}
           </button>

@@ -51,7 +51,7 @@ export function Dropdown({
     <div ref={dropdownRef} className={`relative ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 ${buttonClassName}`}
+        className={`flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-text-secondary hover:bg-surface-raised ${buttonClassName}`}
       >
         {icon}
         {label}
@@ -59,14 +59,14 @@ export function Dropdown({
       </button>
       {isOpen && (
         <div
-          className={`absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10 ${menuClassName}`}
+          className={`absolute right-0 mt-2 w-56 bg-surface rounded-lg shadow-lg border border-border py-1 z-10 ${menuClassName}`}
         >
           {options.map((option) => (
             <button
               key={option.value}
               onClick={() => handleSelect(option.value)}
-              className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${
-                value === option.value ? 'bg-gray-50 font-medium' : ''
+              className={`w-full text-left px-4 py-2 text-sm text-text-secondary hover:bg-surface-raised flex items-center gap-2 ${
+                value === option.value ? 'bg-surface-raised font-medium' : ''
               }`}
             >
               {option.icon}

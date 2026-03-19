@@ -9,6 +9,7 @@ import type { User as FirebaseUser } from 'firebase/auth'
 import { AdminConsole } from './admin-console'
 import { useQueryClient } from '@tanstack/react-query'
 import { ADMIN_EMAILS } from '@/lib/constants'
+import { ThemeToggle } from './ui/ThemeToggle'
 
 export function UserMenu() {
   const [user, setUser] = useState<FirebaseUser | null>(null)
@@ -39,16 +40,16 @@ export function UserMenu() {
     <div className="relative">
       <button
         onClick={() => setShowDropdown(!showDropdown)}
-        className="p-2 rounded-md hover:bg-gray-100"
+        className="p-2 rounded-md hover:bg-surface-raised"
       >
-        <User className="h-5 w-5 text-gray-800" />
+        <User className="h-5 w-5 text-text-primary" />
       </button>
 
       {showDropdown && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
-          <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-            <div className="px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
+          <div className="absolute right-0 mt-2 w-56 bg-surface rounded-lg shadow-lg border border-border py-1 z-20">
+            <div className="px-4 py-2 text-sm text-text-secondary border-b border-border">
               {user.email}
             </div>
             {isAdmin && (
@@ -57,19 +58,24 @@ export function UserMenu() {
                   setShowAdminConsole(true)
                   setShowDropdown(false)
                 }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                className="w-full text-left px-4 py-2 text-sm text-text-secondary hover:bg-surface-raised flex items-center gap-2"
               >
                 <Shield className="h-4 w-4" />
                 Admin Console
               </button>
             )}
-            <button
-              onClick={handleSignOut}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
+            <div className="border-t border-border">
+              <ThemeToggle />
+            </div>
+            <div className="border-t border-border">
+              <button
+                onClick={handleSignOut}
+                className="w-full text-left px-4 py-2 text-sm text-text-secondary hover:bg-surface-raised flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            </div>
           </div>
         </>
       )}

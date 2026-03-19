@@ -13,7 +13,7 @@ export function Skeleton({
   height,
   animation = 'pulse',
 }: SkeletonProps) {
-  const baseClasses = 'bg-gray-200'
+  const baseClasses = 'bg-surface-raised'
 
   const animationClasses = {
     pulse: 'animate-pulse',

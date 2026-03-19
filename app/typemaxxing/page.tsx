@@ -147,7 +147,7 @@ export default function TypemaxxingPage() {
 
             {/* Passage display */}
             <div
-              className="font-mono text-lg leading-relaxed bg-white p-6 rounded-lg border border-gray-200 mb-4 cursor-text select-none"
+              className="font-mono text-lg leading-relaxed bg-surface p-6 rounded-lg border border-gray-200 mb-4 cursor-text select-none"
               onClick={() => textareaRef.current?.focus()}
             >
               {passage.split('').map((char, i) => {

@@ -66,15 +66,15 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h1 className="text-center text-3xl font-light italic">Notemaxxing</h1>
-          <h2 className="mt-6 text-center text-2xl font-semibold text-gray-900">Welcome</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">Sign in to continue</p>
+          <h2 className="mt-6 text-center text-2xl font-semibold text-text-primary">Welcome</h2>
+          <p className="mt-2 text-center text-sm text-text-tertiary">Sign in to continue</p>
         </div>
 
         {error && <StatusMessage type="error" message={error} />}
 
         <form onSubmit={handleEmailSignIn} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="email" className="block text-sm font-medium text-text-secondary mb-1">
               Email
             </label>
             <input
@@ -83,12 +83,15 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-brand-navy"
+              className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-brand-navy"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-text-secondary mb-1"
+            >
               Password
             </label>
             <input
@@ -97,7 +100,7 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-brand-navy"
+              className="w-full px-3 py-2 border border-border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-navy focus:border-brand-navy"
               placeholder="••••••••"
             />
           </div>
@@ -114,10 +117,10 @@ export default function LoginPage() {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300" />
+            <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-brand-cream text-gray-500">or</span>
+            <span className="px-2 bg-brand-cream text-text-tertiary">or</span>
           </div>
         </div>
 
@@ -132,7 +135,7 @@ export default function LoginPage() {
           Sign in with Google
         </LoadingButton>
 
-        <p className="text-center text-sm text-gray-600">
+        <p className="text-center text-sm text-text-tertiary">
           No account?{' '}
           <Link href="/auth/signup" className="text-brand-navy hover:underline">
             Sign up

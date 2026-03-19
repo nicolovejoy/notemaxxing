@@ -110,7 +110,7 @@ export function AddNoteCard({ onClick, disabled }: AddNoteCardProps) {
     <button
       onClick={onClick}
       disabled={disabled}
-      className="bg-white rounded-lg border-2 border-dashed border-gray-300 p-6 hover:border-gray-400 hover:shadow-md transition-all h-48 flex flex-col items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
+      className="bg-surface rounded-lg border-2 border-dashed border-gray-300 p-6 hover:border-gray-400 hover:shadow-md transition-all h-48 flex flex-col items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <FileText className="h-8 w-8 text-gray-400 group-hover:text-gray-600 mb-2" />
       <span className="text-gray-600 font-medium">Add new note</span>

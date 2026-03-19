@@ -141,9 +141,9 @@ export default function SharePage() {
   if (error && !invitationDetails) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-cream">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-center max-w-md">
+        <div className="bg-surface p-8 rounded-lg shadow-lg text-center max-w-md">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-semibold mb-2 text-black">Invalid Invitation</h1>
+          <h1 className="text-2xl font-semibold mb-2 text-text-primary">Invalid Invitation</h1>
           <p className="text-gray-700 mb-4">{error}</p>
           <Button onClick={() => router.push('/')}>Go to Homepage</Button>
         </div>
@@ -167,7 +167,7 @@ export default function SharePage() {
   if (emailMismatch && invitationDetails) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-brand-cream">
-        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+        <div className="bg-surface p-8 rounded-lg shadow-lg max-w-md w-full">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h1 className="text-2xl font-semibold mb-4 text-center">Wrong Account</h1>
 
@@ -202,7 +202,7 @@ export default function SharePage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-brand-cream">
-      <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+      <div className="bg-surface p-8 rounded-lg shadow-lg max-w-md w-full">
         <h1 className="text-2xl font-semibold mb-4">
           You&apos;ve been invited to access a {invitationDetails?.resourceType}
         </h1>

@@ -188,7 +188,7 @@ export default function BackpackPage() {
                 <CardBody className="p-0">
                   {/* Folder Header with gradient */}
                   <div
-                    className="p-4 border-b border-gray-100 bg-gradient-to-r from-brand-navy/5 to-white cursor-pointer hover:from-brand-navy/10 transition-all"
+                    className="p-4 border-b border-border-light bg-gradient-to-r from-brand-navy/5 to-surface cursor-pointer hover:from-brand-navy/10 transition-all"
                     onClick={() => handleFolderClick(folder.id)}
                     onMouseEnter={() => prefetchFolderDetail(queryClient, folder.id)}
                   >
@@ -220,15 +220,15 @@ export default function BackpackPage() {
                             e.stopPropagation()
                             setDeleteFolderId(folder.id)
                           }}
-                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
+                          className="opacity-0 group-hover:opacity-100 p-1 text-text-muted hover:text-red-500 transition-all"
                           title="Delete folder"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       )}
                     </div>
-                    <h3 className="font-semibold text-gray-900">{folder.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <h3 className="font-semibold text-text-primary">{folder.name}</h3>
+                    <p className="text-xs text-text-tertiary mt-1">
                       {folder.notebook_count} notebooks · {folder.note_count} notes
                       {folder.archived_count > 0 && ` · ${folder.archived_count} archived`}
                     </p>
@@ -248,14 +248,14 @@ export default function BackpackPage() {
                               })
                             }
                             onMouseEnter={() => prefetchNotebookView(queryClient, notebook.id)}
-                            className="w-full px-3 py-2 rounded hover:bg-gray-50 transition-colors text-left"
+                            className="w-full px-3 py-2 rounded hover:bg-surface-raised transition-colors text-left"
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <BookOpen className="h-3 w-3 text-gray-400" />
-                                <span className="text-sm text-gray-700">{notebook.name}</span>
+                                <BookOpen className="h-3 w-3 text-text-muted" />
+                                <span className="text-sm text-text-secondary">{notebook.name}</span>
                               </div>
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-text-muted">
                                 {notebook.note_count} notes
                               </span>
                             </div>
@@ -264,9 +264,9 @@ export default function BackpackPage() {
                         {folder.notebooks.length > NOTEBOOKS_PREVIEW_COUNT && (
                           <button
                             onClick={() => handleFolderClick(folder.id)}
-                            className="w-full px-3 py-2 rounded hover:bg-gray-50 transition-colors text-left"
+                            className="w-full px-3 py-2 rounded hover:bg-surface-raised transition-colors text-left"
                           >
-                            <span className="text-xs text-gray-600 font-medium">
+                            <span className="text-xs text-text-tertiary font-medium">
                               +{folder.notebooks.length - NOTEBOOKS_PREVIEW_COUNT} more notebooks
                             </span>
                           </button>
@@ -302,7 +302,9 @@ export default function BackpackPage() {
             autoFocus
           />
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Folder Color</label>
+            <label className="block text-sm font-medium text-text-secondary mb-2">
+              Folder Color
+            </label>
             <ColorPicker
               colors={FOLDER_COLORS}
               selected={newFolderColor}
