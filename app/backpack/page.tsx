@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, FolderOpen, BookOpen, Share2 } from 'lucide-react'
+import { Plus, FolderOpen, BookOpen, Share2, Trash2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Modal } from '@/components/ui/Modal'
 import { ColorPicker } from '@/components/forms/ColorPicker'
@@ -17,10 +17,11 @@ import { SharedIndicator } from '@/components/SharedIndicator'
 import { ShareDialog } from '@/components/ShareDialog'
 import { FOLDER_COLORS, DEFAULT_FOLDER_COLOR } from '@/lib/constants'
 import { useQueryClient } from '@tanstack/react-query'
-import { useFoldersView, useCreateFolder } from '@/lib/query/hooks'
+import { useFoldersView, useCreateFolder, useDeleteFolder } from '@/lib/query/hooks'
 import { prefetchFolderDetail, prefetchNotebookView } from '@/lib/query/prefetch'
 import { useAuth } from '@/lib/hooks/useAuth'
 import type { Folder } from '@/lib/types/entities'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { StatsBar } from '@/components/common/StatsBar'
 import { LoadingGrid } from '@/components/common/LoadingGrid'
 import { storeNotebookPreview, type NotebookPreview } from '@/lib/utils/notebook-navigation'
@@ -35,19 +36,21 @@ export default function BackpackPage() {
   // React Query - Data is cached from home page! No duplicate fetches!
   const { data: foldersView, isLoading: loading, error } = useFoldersView()
   const createFolderMutation = useCreateFolder()
+  const deleteFolderMutation = useDeleteFolder()
 
   const [search, setSearch] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
   const [shareFolder, setShareFolder] = useState<Pick<Folder, 'id' | 'name'> | null>(null)
+  const [deleteFolderId, setDeleteFolderId] = useState<string | null>(null)
 
   // Keyboard shortcut: "n" to create a new folder
   const openCreateModal = useCallback(() => setShowCreateModal(true), [])
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
-      if (showCreateModal || shareFolder) return
+      if (showCreateModal || shareFolder || deleteFolderId) return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable)
         return
@@ -56,7 +59,7 @@ export default function BackpackPage() {
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [showCreateModal, shareFolder, openCreateModal])
+  }, [showCreateModal, shareFolder, deleteFolderId, openCreateModal])
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -175,7 +178,7 @@ export default function BackpackPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredFolders.map((folder) => (
-              <Card key={folder.id} className="overflow-hidden">
+              <Card key={folder.id} className="overflow-hidden group">
                 <CardBody className="p-0">
                   {/* Folder Header with gradient */}
                   <div
@@ -204,6 +207,18 @@ export default function BackpackPage() {
                           shared={true}
                           permission={folder.permission === 'owner' ? undefined : folder.permission}
                         />
+                      )}
+                      {!folder.sharedWithMe && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDeleteFolderId(folder.id)
+                          }}
+                          className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-all"
+                          title="Delete folder"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       )}
                     </div>
                     <h3 className="font-semibold text-gray-900">{folder.name}</h3>
@@ -317,6 +332,24 @@ export default function BackpackPage() {
           onClose={() => setShareFolder(null)}
         />
       )}
+
+      {/* Delete Folder Confirmation */}
+      <ConfirmDialog
+        isOpen={!!deleteFolderId}
+        onConfirm={() => {
+          if (deleteFolderId) {
+            deleteFolderMutation.mutate(deleteFolderId, {
+              onSettled: () => setDeleteFolderId(null),
+            })
+          }
+        }}
+        onCancel={() => setDeleteFolderId(null)}
+        title="Delete Folder"
+        message="This will archive this folder and all its notebooks and notes. You can restore it later."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteFolderMutation.isPending}
+      />
     </div>
   )
 }

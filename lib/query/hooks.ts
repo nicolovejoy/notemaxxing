@@ -200,6 +200,12 @@ export const api = {
     return res.json()
   },
 
+  async deleteFolder(id: string) {
+    const res = await apiFetch(`/api/folders?id=${id}`, { method: 'DELETE' })
+    if (!res.ok) throw new Error('Failed to delete folder')
+    return res.json()
+  },
+
   async deleteNote(id: string) {
     const res = await apiFetch(`/api/notes?id=${id}`, {
       method: 'DELETE',
@@ -281,6 +287,17 @@ export function useUpdateFolder() {
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Folder> }) =>
       api.updateFolder(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['folders-view'] })
+    },
+  })
+}
+
+export function useDeleteFolder() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: api.deleteFolder,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['folders-view'] })
     },

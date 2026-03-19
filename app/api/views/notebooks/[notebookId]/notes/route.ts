@@ -57,6 +57,9 @@ export async function GET(
       .collection('folders')
       .doc(notebook.folder_id as string)
       .get()
+    if (folderDoc.exists && folderDoc.data()!.deleted_at) {
+      return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
+    }
     if (folderDoc.exists) {
       const f = folderDoc.data()!
       folderInfo = { id: folderDoc.id, name: f.name as string, color: f.color as string }

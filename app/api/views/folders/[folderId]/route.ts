@@ -17,6 +17,9 @@ export async function GET(
   }
 
   const folder = folderDoc.data()!
+  if (folder.deleted_at) {
+    return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
+  }
   const isOwner = folder.owner_id === uid
   let userPermission: 'owner' | 'read' | 'write' = 'owner'
 

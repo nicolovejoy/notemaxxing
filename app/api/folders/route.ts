@@ -58,3 +58,30 @@ export async function PATCH(request: NextRequest) {
   await db.collection('folders').doc(id).update(updates)
   return NextResponse.json({ id, ...folder, ...updates })
 }
+
+export async function DELETE(request: NextRequest) {
+  const { uid, error } = await getAuthenticatedUser(request)
+  if (error) return error
+
+  const id = request.nextUrl.searchParams.get('id')
+  if (!id) {
+    return NextResponse.json({ error: 'Folder ID is required' }, { status: 400 })
+  }
+
+  const db = getAdminDb()
+  const folderDoc = await db.collection('folders').doc(id).get()
+
+  if (!folderDoc.exists) {
+    return NextResponse.json({ error: 'Folder not found' }, { status: 404 })
+  }
+
+  const folder = folderDoc.data()!
+  if (folder.owner_id !== uid) {
+    return NextResponse.json({ error: 'Permission denied' }, { status: 403 })
+  }
+
+  // Soft delete: set deleted_at timestamp
+  await db.collection('folders').doc(id).update({ deleted_at: new Date().toISOString() })
+
+  return NextResponse.json({ success: true })
+}

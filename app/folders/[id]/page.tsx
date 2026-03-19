@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, Share2, FolderOpen, Edit2 } from 'lucide-react'
+import { Plus, Share2, FolderOpen, Edit2, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/SearchInput'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -17,7 +17,8 @@ import { NotebookCard } from '@/components/cards/NotebookCard'
 import { SharedIndicator } from '@/components/SharedIndicator'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
-import { useFolderDetailView } from '@/lib/query/hooks'
+import { useFolderDetailView, useDeleteFolder } from '@/lib/query/hooks'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { prefetchNotebookView } from '@/lib/query/prefetch'
 import { useQueryClient } from '@tanstack/react-query'
 import { LoadingGrid } from '@/components/common/LoadingGrid'
@@ -42,6 +43,8 @@ export default function FolderDetailPage() {
   const [newNotebookColor, setNewNotebookColor] = useState<string>(DEFAULT_NOTEBOOK_COLOR)
   const [creating, setCreating] = useState(false)
   const [isEditingFolder, setIsEditingFolder] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const deleteFolderMutation = useDeleteFolder()
 
   // Extract data from view
   const folder = folderView?.folder
@@ -108,7 +111,8 @@ export default function FolderDetailPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key !== 'n' || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return
-      if (!canWrite || showCreateModal || showShareDialog || isEditingFolder) return
+      if (!canWrite || showCreateModal || showShareDialog || isEditingFolder || showDeleteConfirm)
+        return
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable)
         return
@@ -117,7 +121,14 @@ export default function FolderDetailPage() {
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [canWrite, showCreateModal, showShareDialog, isEditingFolder, openCreateModal])
+  }, [
+    canWrite,
+    showCreateModal,
+    showShareDialog,
+    isEditingFolder,
+    showDeleteConfirm,
+    openCreateModal,
+  ])
 
   const filteredNotebooks = search
     ? notebooks.filter((n) => n.name.toLowerCase().includes(search.toLowerCase()))
@@ -235,13 +246,22 @@ export default function FolderDetailPage() {
               <h1 className="text-3xl font-bold">{folder?.name || 'Folder'}</h1>
             )}
             {isOwner && folder && !isEditingFolder && (
-              <button
-                onClick={() => setIsEditingFolder(true)}
-                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                title="Edit folder name"
-              >
-                <Edit2 className="h-4 w-4" />
-              </button>
+              <>
+                <button
+                  onClick={() => setIsEditingFolder(true)}
+                  className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Edit folder name"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  title="Delete folder"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
             )}
             {(folder?.shared || folder?.sharedByOwner) && (
               <SharedIndicator
@@ -352,6 +372,25 @@ export default function FolderDetailPage() {
           }}
         />
       )}
+
+      {/* Delete Folder Confirmation */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onConfirm={() => {
+          deleteFolderMutation.mutate(folderId, {
+            onSuccess: () => {
+              router.push('/backpack')
+            },
+            onSettled: () => setShowDeleteConfirm(false),
+          })
+        }}
+        onCancel={() => setShowDeleteConfirm(false)}
+        title="Delete Folder"
+        message="This will archive this folder and all its notebooks and notes. You can restore it later."
+        confirmLabel="Delete"
+        variant="danger"
+        loading={deleteFolderMutation.isPending}
+      />
     </div>
   )
 }

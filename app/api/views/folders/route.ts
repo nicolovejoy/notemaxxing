@@ -9,7 +9,9 @@ export async function GET(request: Request) {
 
   // Owned folders
   const ownedSnap = await db.collection('folders').where('owner_id', '==', uid).get()
-  const ownedFolders = ownedSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  const ownedFolders = ownedSnap.docs
+    .filter((doc) => !doc.data().deleted_at)
+    .map((doc) => ({ id: doc.id, ...doc.data() }))
   const ownedFolderIds = new Set(ownedFolders.map((f) => f.id))
 
   // Folder-level permissions shared with this user
@@ -33,7 +35,7 @@ export async function GET(request: Request) {
   const sharedFolders: Array<Record<string, unknown>> = []
   for (const fid of sharedFolderIds) {
     const doc = await db.collection('folders').doc(fid).get()
-    if (doc.exists) sharedFolders.push({ id: doc.id, ...doc.data() })
+    if (doc.exists && !doc.data()!.deleted_at) sharedFolders.push({ id: doc.id, ...doc.data() })
   }
 
   // Which owned folders are shared by this user with others
