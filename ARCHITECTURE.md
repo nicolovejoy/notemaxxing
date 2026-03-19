@@ -109,4 +109,4 @@ Notes support manual drag-and-drop reordering via `position` field:
 
 - Fields use `snake_case`; doc ID becomes the `id` field
 - Timestamps stored as ISO strings
-- Indexes defined in `firestore.indexes.json` — deploy with `firebase deploy --only firestore:indexes --project piano-house-shared`
+- Indexes defined in `firestore.indexes.json` — deploy with `firebase deploy --only firestore:indexes --project notemaxxing`

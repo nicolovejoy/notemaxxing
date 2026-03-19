@@ -47,9 +47,9 @@ npm run lint         # ESLint
 ## Deployment
 
 - Production: notemaxxing.net (Vercel, auto-deploys on push to main)
-- Firebase project: `piano-house-shared`
+- Firebase project: `notemaxxing`
 - CI: GitHub Actions runs `npm run build` on PRs to main
-- Firestore indexes: `firebase deploy --only firestore:indexes --project piano-house-shared`
+- Firestore indexes: `firebase deploy --only firestore:indexes --project notemaxxing`
 
 ## Roadmap
 

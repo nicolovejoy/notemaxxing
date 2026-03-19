@@ -9,7 +9,7 @@
 Indexes are defined in `/firestore.indexes.json` (project root). Deploy with:
 
 ```bash
-firebase deploy --only firestore:indexes --project piano-house-shared
+firebase deploy --only firestore:indexes --project notemaxxing
 ```
 
 ## Legacy

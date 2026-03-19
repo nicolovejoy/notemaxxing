@@ -47,8 +47,8 @@ Component → API Route → Firebase Admin SDK → Firestore
 - **Build**: Passing ✅
 - **Auth**: Firebase (Google + email/password) — Supabase fully removed
 - **AI Model**: `claude-sonnet-4-20250514`
-- **Firebase project**: `piano-house-shared` (notemaxxing-only, soiree migrated to `soiree-d564a`)
-- **Indexes**: deployed via `firestore.indexes.json` — run `firebase deploy --only firestore:indexes --project piano-house-shared`
+- **Firebase project**: `notemaxxing` (nam5 multi-region US)
+- **Indexes**: deployed via `firestore.indexes.json` — run `firebase deploy --only firestore:indexes --project notemaxxing`
 - **Note reordering**: drag-and-drop via dnd-kit, `position` field with gap-based integers, lazy backfill
 - **Brand**: Navy (#1A3C6B) / cream (#F8F8F0) / slate (#4A6E91), Montserrat headings, Open Sans body, book+arrow logo
 
