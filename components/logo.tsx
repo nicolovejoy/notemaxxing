@@ -8,9 +8,9 @@ export function Logo({ size = 32 }: { size?: number }) {
       aria-label="Notemaxxing logo"
     >
       {/* Book body */}
-      <rect x="4" y="4" width="18" height="24" rx="2" fill="#1A3C6B" />
+      <rect x="4" y="4" width="18" height="24" rx="2" fill="var(--brand-navy)" />
       {/* Book spine highlight */}
-      <rect x="4" y="4" width="3" height="24" rx="1" fill="#132D50" />
+      <rect x="4" y="4" width="3" height="24" rx="1" fill="var(--brand-navy-dark)" />
       {/* Page lines */}
       <line
         x1="10"
@@ -45,14 +45,14 @@ export function Logo({ size = 32 }: { size?: number }) {
         y1="24"
         x2="28"
         y2="6"
-        stroke="#4A6E91"
+        stroke="var(--brand-slate)"
         strokeWidth="2.5"
         strokeLinecap="round"
       />
       <polyline
         points="23,5 28,6 27,11"
         fill="none"
-        stroke="#4A6E91"
+        stroke="var(--brand-slate)"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"

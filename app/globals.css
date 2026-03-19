@@ -33,7 +33,12 @@
 .dark {
   --background: #111520;
   --foreground: #e5e7eb;
+  --brand-navy: #4a80c8;
+  --brand-navy-light: #5b90d8;
+  --brand-navy-dark: #3a70b8;
   --brand-cream: #111520;
+  --brand-slate: #8ba4c4;
+  --brand-charcoal: #e5e7eb;
 
   --surface: #1a1f2e;
   --surface-raised: #242938;
@@ -63,6 +68,13 @@
   --color-gray-700: #e5e7eb;
   --color-gray-800: #f3f4f6;
   --color-gray-900: #f9fafb;
+
+  /* Notebook pastel remap — light pastels become rich darks */
+  --color-indigo-200: #4338ca;
+  --color-pink-200: #be185d;
+  --color-yellow-200: #b45309;
+  --color-emerald-200: #047857;
+  --color-cyan-200: #0e7490;
 }
 
 @theme inline {
