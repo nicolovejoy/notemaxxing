@@ -20,6 +20,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useFoldersView, useCreateFolder, useDeleteFolder } from '@/lib/query/hooks'
 import { prefetchFolderDetail, prefetchNotebookView } from '@/lib/query/prefetch'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useEscapeNavigation } from '@/lib/hooks/useEscapeNavigation'
 import type { Folder } from '@/lib/types/entities'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { StatsBar } from '@/components/common/StatsBar'
@@ -44,6 +45,11 @@ export default function BackpackPage() {
   const [newFolderColor, setNewFolderColor] = useState<string>(DEFAULT_FOLDER_COLOR)
   const [shareFolder, setShareFolder] = useState<Pick<Folder, 'id' | 'name'> | null>(null)
   const [deleteFolderId, setDeleteFolderId] = useState<string | null>(null)
+
+  useEscapeNavigation({
+    parentUrl: null,
+    disabled: !!(showCreateModal || shareFolder || deleteFolderId),
+  })
 
   // Keyboard shortcut: "n" to create a new folder
   const openCreateModal = useCallback(() => setShowCreateModal(true), [])

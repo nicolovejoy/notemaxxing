@@ -16,6 +16,7 @@ import { ShareDialog } from '@/components/ShareDialog'
 import { NotebookCard } from '@/components/cards/NotebookCard'
 import { SharedIndicator } from '@/components/SharedIndicator'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useEscapeNavigation } from '@/lib/hooks/useEscapeNavigation'
 import { DEFAULT_NOTEBOOK_COLOR, NOTEBOOK_COLORS } from '@/lib/constants'
 import { useFolderDetailView, useDeleteFolder } from '@/lib/query/hooks'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -45,6 +46,11 @@ export default function FolderDetailPage() {
   const [isEditingFolder, setIsEditingFolder] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const deleteFolderMutation = useDeleteFolder()
+
+  useEscapeNavigation({
+    parentUrl: '/backpack',
+    disabled: !!(showCreateModal || showShareDialog || isEditingFolder || showDeleteConfirm),
+  })
 
   // Extract data from view
   const folder = folderView?.folder

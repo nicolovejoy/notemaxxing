@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { NotebookPicker } from '@/components/study/NotebookPicker'
 import { LoadingMessages } from '@/components/study/LoadingMessages'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useEscapeNavigation } from '@/lib/hooks/useEscapeNavigation'
 import { apiFetch } from '@/lib/firebase/api-fetch'
 import type { StudySource, TypingResponse } from '@/lib/types/study'
 
@@ -22,6 +23,11 @@ export default function TypemaxxingPage() {
   const [startTime, setStartTime] = useState<number | null>(null)
   const [endTime, setEndTime] = useState<number | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEscapeNavigation({
+    parentUrl: '/backpack',
+    disabled: phase === 'loading' || phase === 'typing',
+  })
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/auth/login')

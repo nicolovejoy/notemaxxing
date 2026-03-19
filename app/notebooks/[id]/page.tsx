@@ -36,6 +36,7 @@ import { prefetchNotebookView } from '@/lib/query/prefetch'
 import { useDebounce } from '@/lib/hooks/useDebounce'
 import { toPlainText, toHTML } from '@/lib/utils/content'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useEscapeNavigation } from '@/lib/hooks/useEscapeNavigation'
 import { apiFetch } from '@/lib/firebase/api-fetch'
 
 type SortOption = 'recent' | 'alphabetical' | 'created' | 'manual'
@@ -136,6 +137,18 @@ export default function NotebookPage() {
     }
   }, [noteView?.notebook?.sort_order, sortInitialized])
   const error = queryError?.message ?? null
+
+  useEscapeNavigation({
+    parentUrl: noteView?.folder ? `/folders/${noteView.folder.id}` : '/backpack',
+    disabled: !!(
+      isEditingNote ||
+      selectedNote ||
+      isEditingNotebook ||
+      showDiscardConfirm ||
+      confirmDeleteId ||
+      isLoadingNote
+    ),
+  })
 
   // Mutations
   const createNote = useCreateNote()

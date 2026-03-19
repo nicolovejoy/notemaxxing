@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { NotebookPicker } from '@/components/study/NotebookPicker'
 import { LoadingMessages } from '@/components/study/LoadingMessages'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useEscapeNavigation } from '@/lib/hooks/useEscapeNavigation'
 import { apiFetch } from '@/lib/firebase/api-fetch'
 import { storeStudyChatContext } from '@/lib/utils/study-chat-context'
 import type { StudySource, StudyQuizQuestion, QuizResponse } from '@/lib/types/study'
@@ -23,6 +24,11 @@ export default function QuizzmaxxingPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [answers, setAnswers] = useState<(number | null)[]>([])
   const [error, setError] = useState('')
+
+  useEscapeNavigation({
+    parentUrl: '/backpack',
+    disabled: phase === 'loading' || phase === 'active',
+  })
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/auth/login')

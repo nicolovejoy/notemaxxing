@@ -6,6 +6,7 @@ import { Send, Loader2 } from 'lucide-react'
 import { marked } from 'marked'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { useAuth } from '@/lib/hooks/useAuth'
+import { useEscapeNavigation } from '@/lib/hooks/useEscapeNavigation'
 import { apiFetch } from '@/lib/firebase/api-fetch'
 import { getStudyChatContext, clearStudyChatContext } from '@/lib/utils/study-chat-context'
 import type { ChatMessage, StudyChatContext } from '@/lib/types/study'
@@ -32,6 +33,11 @@ export default function StudyChatPage() {
   const [error, setError] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  useEscapeNavigation({
+    parentUrl: '/backpack',
+    disabled: streaming,
+  })
 
   useEffect(() => {
     if (!authLoading && !user) {
