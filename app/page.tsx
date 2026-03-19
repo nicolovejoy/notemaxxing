@@ -19,6 +19,8 @@ export default function Home() {
     enabled: !!user,
   })
 
+  const folders = foldersView?.folders || []
+
   const features = [
     {
       icon: FolderOpen,
@@ -103,6 +105,7 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature) => {
               const Icon = feature.icon
+              const isBackpack = feature.href === '/backpack'
               return (
                 <Link key={feature.title} href={feature.href}>
                   <Card hover className="h-full">
@@ -114,6 +117,26 @@ export default function Home() {
                         <div className="flex-1">
                           <h4 className="font-semibold text-lg mb-1">{feature.title}</h4>
                           <p className="text-text-tertiary text-sm">{feature.description}</p>
+                          {isBackpack && user && folders.length > 0 && (
+                            <div className="mt-3 space-y-1">
+                              {folders.slice(0, 3).map((folder) => (
+                                <Link
+                                  key={folder.id}
+                                  href={`/folders/${folder.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex items-center gap-2 text-sm text-text-secondary hover:text-brand-navy transition-colors"
+                                >
+                                  <div className={`w-2 h-2 rounded-full ${folder.color}`} />
+                                  {folder.name}
+                                </Link>
+                              ))}
+                              {folders.length > 3 && (
+                                <p className="text-xs text-text-muted pl-4">
+                                  +{folders.length - 3} more
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <ArrowRight className="h-5 w-5 text-text-muted" />
                       </div>
