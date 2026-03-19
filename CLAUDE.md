@@ -54,8 +54,7 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 ## Next Steps
 
-1. Delete folders — UI + API endpoint (currently no DELETE endpoint for folders)
-2. `useEscapeNavigation` hook — Escape walks up breadcrumbs, guards unsaved work
+1. Dark mode visual QA — test all pages in dark mode, fix contrast/color issues
+2. Study chat: persist chat history, quiz score tracking over time
 3. Sharing hardening — `docs/sharing-hardening.md`
-4. Study chat: persist chat history, quiz score tracking over time
-5. Dark mode support using brand tokens
+4. Landing page: make Notebooks/Notes stats clickable too (like Folders → /backpack)
