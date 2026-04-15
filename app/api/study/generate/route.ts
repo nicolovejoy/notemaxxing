@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
     if (mode === 'typing') {
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         system:
           'You are a typing practice text generator. Create coherent, flowing text that incorporates vocabulary and concepts from the provided material. Return ONLY the practice text without any explanations or meta-commentary.',
         messages: [
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Quiz mode
       const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         system:
           'You are a quiz generator. Generate multiple-choice questions based on the provided material. Return ONLY valid JSON, no markdown fences or extra text.',
         messages: [

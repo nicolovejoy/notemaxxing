@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     const systemPrompt = buildSystemPrompt(mode, questions, answers, sourceName)
 
     const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       system: systemPrompt,
       messages: messages.map((m) => ({ role: m.role, content: m.content })),
       max_tokens: 1000,

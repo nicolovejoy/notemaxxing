@@ -33,7 +33,7 @@
 - Typing output: `{ text: string, wordCount: number }`
 - Quiz output: `{ questions: [{ question, options: [4], correct_index, explanation }] }`
 - Rate limit: 20 sessions/day/user (matches existing)
-- Model: `claude-sonnet-4-20250514`
+- Model: `claude-sonnet-4-6`
 
 ## Also In This Release
 

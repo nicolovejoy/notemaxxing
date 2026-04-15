@@ -46,7 +46,7 @@ Component → API Route → Firebase Admin SDK → Firestore
 
 - **Build**: Passing ✅
 - **Auth**: Firebase (Google + email/password) — Supabase fully removed
-- **AI Model**: `claude-sonnet-4-20250514`
+- **AI Model**: `claude-sonnet-4-6`
 - **Firebase project**: `notemaxxing` (nam5 multi-region US)
 - **Indexes**: deployed via `firestore.indexes.json` — run `firebase deploy --only firestore:indexes --project notemaxxing`
 - **Note reordering**: drag-and-drop via dnd-kit, `position` field with gap-based integers, lazy backfill
