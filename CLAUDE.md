@@ -52,9 +52,11 @@ Component → API Route → Firebase Admin SDK → Firestore
 - **Note reordering**: drag-and-drop via dnd-kit, `position` field with gap-based integers, lazy backfill
 - **Brand**: Navy (#1A3C6B) / cream (#F8F8F0) / slate (#4A6E91), Montserrat headings, Open Sans body, book+arrow logo
 
+## Status: MOTHBALLED (2026-05-19)
+
+Site is taken down. Landing page shows red [OUT OF SERVICE] banner. `middleware.ts` redirects all non-root routes → `/` (except `_next/*`, `/api/import` preserved for prompt-lab). To revive: delete `middleware.ts` and revert `app/page.tsx` to commit `0937d44`.
+
 ## Next Steps
 
-1. Dark mode visual QA — test all pages in dark mode, fix contrast/color issues
-2. Study chat: persist chat history, quiz score tracking over time
-3. Sharing hardening — `docs/sharing-hardening.md`
-4. Landing page: make Notebooks/Notes stats clickable too (like Folders → /backpack)
+1. Decide whether to fully retire or revive
+2. If reviving: dark mode visual QA, study chat persistence, sharing hardening (`docs/sharing-hardening.md`)
