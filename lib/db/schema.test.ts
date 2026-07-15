@@ -1,6 +1,6 @@
 import { beforeEach, afterEach, describe, expect, it } from 'vitest'
 import { makeTestDb, type TestDb } from './testing'
-import { concepts, conceptState, contentItems, contentItemConcepts } from './schema'
+import { concepts, conceptState, contentItems, contentItemConcepts, learners } from './schema'
 
 let db: TestDb
 let close: () => Promise<void>
@@ -12,6 +12,11 @@ beforeEach(async () => {
 afterEach(async () => {
   await close()
 })
+
+async function seedLearner(email = 'max@example.com') {
+  const [row] = await db.insert(learners).values({ email, name: 'Max' }).returning()
+  return row
+}
 
 describe('schema', () => {
   it('applies the real migrations and round-trips a concept', async () => {
@@ -26,8 +31,12 @@ describe('schema', () => {
   })
 
   it('defaults concept_state to the neutral 0.5 engagement prior, not 0', async () => {
+    const learner = await seedLearner()
     const [c] = await db.insert(concepts).values({ slug: 's', name: 'S' }).returning()
-    const [state] = await db.insert(conceptState).values({ conceptId: c.id }).returning()
+    const [state] = await db
+      .insert(conceptState)
+      .values({ learnerId: learner.id, conceptId: c.id })
+      .returning()
 
     // 0 would make a never-shown concept indistinguishable from an ignored one.
     expect(state.engagementScore).toBe(0.5)
@@ -50,9 +59,12 @@ describe('schema', () => {
   })
 
   it('rejects an engagement score outside 0..1', async () => {
+    const learner = await seedLearner()
     const [c] = await db.insert(concepts).values({ slug: 's', name: 'S' }).returning()
     await expect(
-      db.insert(conceptState).values({ conceptId: c.id, engagementScore: 1.5 })
+      db
+        .insert(conceptState)
+        .values({ learnerId: learner.id, conceptId: c.id, engagementScore: 1.5 })
     ).rejects.toThrow()
   })
 
@@ -88,9 +100,45 @@ describe('schema', () => {
     expect(rows).toHaveLength(2)
   })
 
-  it('enforces one concept_state row per concept', async () => {
+  it('enforces one concept_state row per (learner, concept), but allows the same concept across learners', async () => {
+    const max = await seedLearner('max@example.com')
+    const nico = await seedLearner('nico@example.com')
     const [c] = await db.insert(concepts).values({ slug: 's', name: 'S' }).returning()
-    await db.insert(conceptState).values({ conceptId: c.id })
-    await expect(db.insert(conceptState).values({ conceptId: c.id })).rejects.toThrow()
+
+    await db.insert(conceptState).values({ learnerId: max.id, conceptId: c.id })
+    // Same concept, different learner — allowed. Max being fluent says nothing
+    // about whether Nico is.
+    await expect(
+      db.insert(conceptState).values({ learnerId: nico.id, conceptId: c.id })
+    ).resolves.not.toThrow()
+    // Same (learner, concept) twice — rejected.
+    await expect(
+      db.insert(conceptState).values({ learnerId: max.id, conceptId: c.id })
+    ).rejects.toThrow()
+  })
+
+  it('enforces unique learner email', async () => {
+    await db.insert(learners).values({ email: 'max@example.com', name: 'Max' })
+    await expect(
+      db.insert(learners).values({ email: 'max@example.com', name: 'Max Again' })
+    ).rejects.toThrow()
+  })
+
+  it('rejects send_hour_local outside 0..23', async () => {
+    await expect(
+      db.insert(learners).values({ email: 'a@example.com', name: 'A', sendHourLocal: 24 })
+    ).rejects.toThrow()
+    await expect(
+      db.insert(learners).values({ email: 'b@example.com', name: 'B', sendHourLocal: -1 })
+    ).rejects.toThrow()
+  })
+
+  it('accepts send_hour_local at the boundaries', async () => {
+    await expect(
+      db.insert(learners).values({ email: 'a@example.com', name: 'A', sendHourLocal: 0 })
+    ).resolves.not.toThrow()
+    await expect(
+      db.insert(learners).values({ email: 'b@example.com', name: 'B', sendHourLocal: 23 })
+    ).resolves.not.toThrow()
   })
 })

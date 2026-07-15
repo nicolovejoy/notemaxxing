@@ -13,6 +13,7 @@ import {
   contentItemConcepts,
   contentItems,
   deliveries,
+  learners,
 } from './schema'
 import type { ConceptCandidate, ContentCandidate, RecentDelivery, SelectionInput } from '../learning/types'
 
@@ -25,13 +26,19 @@ const RECENT_DELIVERY_DAYS = 7
 const DEFAULT_ENGAGEMENT = 0.5
 
 /**
- * Assembles everything selectNextItem needs in one place.
+ * Assembles everything selectNextItem needs for ONE learner.
  *
  * Deliberately a LEFT JOIN onto concept_state: a freshly imported concept has
  * no state row yet, and it still has to show up as a coverage candidate or new
- * material could never be introduced at all.
+ * material could never be introduced at all. The join predicate carries the
+ * learner_id — putting it in a WHERE instead would turn the LEFT JOIN back into
+ * an inner one and silently hide every concept this learner hasn't started.
  */
-export async function loadSelectionInput(db: Db, now: Date): Promise<SelectionInput> {
+export async function loadSelectionInput(
+  db: Db,
+  learnerId: string,
+  now: Date
+): Promise<SelectionInput> {
   const conceptRows = await db
     .select({
       conceptId: concepts.id,
@@ -41,7 +48,10 @@ export async function loadSelectionInput(db: Db, now: Date): Promise<SelectionIn
       flaggedAt: conceptState.flaggedAt,
     })
     .from(concepts)
-    .leftJoin(conceptState, eq(conceptState.conceptId, concepts.id))
+    .leftJoin(
+      conceptState,
+      and(eq(conceptState.conceptId, concepts.id), eq(conceptState.learnerId, learnerId))
+    )
     .where(eq(concepts.isActive, true))
 
   const candidates: ConceptCandidate[] = conceptRows.map((r) => ({
@@ -53,7 +63,7 @@ export async function loadSelectionInput(db: Db, now: Date): Promise<SelectionIn
   }))
 
   const content = await loadContentCandidates(db)
-  const recentDeliveries = await loadRecentDeliveries(db, now)
+  const recentDeliveries = await loadRecentDeliveries(db, learnerId, now)
 
   return { now, concepts: candidates, content, recentDeliveries }
 }
@@ -88,10 +98,15 @@ async function loadContentCandidates(db: Db): Promise<ContentCandidate[]> {
 }
 
 /**
- * Only SENT deliveries count. A scheduled-but-never-sent row means Max never
- * saw it, so it can't make anything stale.
+ * Only SENT deliveries count, and only this learner's. A scheduled-but-never-sent
+ * row means they never saw it, so it can't make anything stale — and what Max
+ * was shown must not make anything stale for Nico.
  */
-async function loadRecentDeliveries(db: Db, now: Date): Promise<RecentDelivery[]> {
+async function loadRecentDeliveries(
+  db: Db,
+  learnerId: string,
+  now: Date
+): Promise<RecentDelivery[]> {
   const cutoff = new Date(now.getTime() - RECENT_DELIVERY_DAYS * DAY_MS)
 
   const rows = await db
@@ -101,7 +116,13 @@ async function loadRecentDeliveries(db: Db, now: Date): Promise<RecentDelivery[]
       sentAt: deliveries.sentAt,
     })
     .from(deliveries)
-    .where(and(eq(deliveries.status, 'sent'), gte(deliveries.sentAt, cutoff)))
+    .where(
+      and(
+        eq(deliveries.learnerId, learnerId),
+        eq(deliveries.status, 'sent'),
+        gte(deliveries.sentAt, cutoff)
+      )
+    )
 
   if (rows.length === 0) return []
 
@@ -162,22 +183,51 @@ export async function clearConfig(db: Db, key: string): Promise<void> {
   await db.delete(appConfig).where(eq(appConfig.key, key))
 }
 
-/** A pause suppresses sending entirely — finals week, travel. */
-export async function isPaused(db: Db, now: Date): Promise<boolean> {
-  const until = await getConfig<string | null>(db, 'paused_until')
-  if (!until) return false
-  return new Date(until).getTime() > now.getTime()
+// --- learners ---
+
+/** Everyone the cron should consider today. */
+export async function activeLearners(db: Db) {
+  return db.select().from(learners).where(eq(learners.isActive, true))
+}
+
+export async function getLearnerByEmail(db: Db, email: string) {
+  const [row] = await db
+    .select()
+    .from(learners)
+    .where(eq(learners.email, normalizeEmail(email)))
+    .limit(1)
+  return row ?? null
+}
+
+/** Emails are ALWAYS stored lowercased + trimmed. Enforced here, not by the DB. */
+export function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+/** A pause suppresses sending for that learner only — finals week, travel. */
+export async function isPaused(db: Db, learnerId: string, now: Date): Promise<boolean> {
+  const [row] = await db
+    .select({ pausedUntil: learners.pausedUntil })
+    .from(learners)
+    .where(eq(learners.id, learnerId))
+    .limit(1)
+  if (!row?.pausedUntil) return false
+  return row.pausedUntil.getTime() > now.getTime()
 }
 
 /**
  * Cheap pre-check before the cron does any work. The real guard against a
- * double send is deliveries.delivery_date being UNIQUE.
+ * double send is the UNIQUE index on (learner_id, delivery_date).
  */
-export async function hasDeliveryFor(db: Db, localDay: string): Promise<boolean> {
+export async function hasDeliveryFor(
+  db: Db,
+  learnerId: string,
+  localDay: string
+): Promise<boolean> {
   const [row] = await db
     .select({ id: deliveries.id })
     .from(deliveries)
-    .where(eq(deliveries.deliveryDate, localDay))
+    .where(and(eq(deliveries.learnerId, learnerId), eq(deliveries.deliveryDate, localDay)))
     .limit(1)
   return row !== undefined
 }

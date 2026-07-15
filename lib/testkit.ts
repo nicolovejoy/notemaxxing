@@ -12,6 +12,7 @@ import {
   contentItems,
   deliveries,
   engagementEvents,
+  learners,
   responses,
 } from './db/schema'
 
@@ -35,6 +36,17 @@ export function daysFromNow(n: number, from: Date = NOW): Date {
   return new Date(from.getTime() + n * DAY_MS)
 }
 
+export async function seedLearner(
+  db: Db,
+  over: Partial<typeof learners.$inferInsert> = {}
+) {
+  const [row] = await db
+    .insert(learners)
+    .values({ email: 'max@example.com', name: 'Max', ...over })
+    .returning()
+  return row
+}
+
 export async function seedConcept(
   db: Db,
   slug: string,
@@ -49,12 +61,13 @@ export async function seedConcept(
 
 export async function seedConceptState(
   db: Db,
+  learnerId: string,
   conceptId: string,
   over: Partial<typeof conceptState.$inferInsert> = {}
 ) {
   const [row] = await db
     .insert(conceptState)
-    .values({ conceptId, ...over })
+    .values({ learnerId, conceptId, ...over })
     .returning()
   return row
 }
@@ -84,12 +97,14 @@ export async function seedItem(
 
 export async function seedDelivery(
   db: Db,
+  learnerId: string,
   contentItemId: string,
   over: Partial<typeof deliveries.$inferInsert> = {}
 ) {
   const [row] = await db
     .insert(deliveries)
     .values({
+      learnerId,
       contentItemId,
       deliveryDate: '2026-07-15',
       scheduledSendAt: NOW,
@@ -100,10 +115,15 @@ export async function seedDelivery(
   return row
 }
 
-/** A concept that has been introduced and is due `dueInDays` from NOW. */
-export async function seedDueConcept(db: Db, slug: string, dueInDays: number) {
+/** A concept this learner has been introduced to, due `dueInDays` from NOW. */
+export async function seedDueConcept(
+  db: Db,
+  learnerId: string,
+  slug: string,
+  dueInDays: number
+) {
   const c = await seedConcept(db, slug)
-  await seedConceptState(db, c.id, {
+  await seedConceptState(db, learnerId, c.id, {
     dueAt: daysFromNow(dueInDays),
     introducedAt: daysFromNow(-30),
     lastSeenAt: daysFromNow(-30),
@@ -138,5 +158,6 @@ export {
   contentItems,
   deliveries,
   engagementEvents,
+  learners,
   responses,
 }

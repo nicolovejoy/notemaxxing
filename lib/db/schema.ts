@@ -1,10 +1,15 @@
 /**
  * Daily Learning Companion — Postgres schema (Neon in prod, PGlite in tests).
  *
- * Single-learner by design: there is no `users` table. Max is the only learner;
- * identity for the daily loop comes from the signed link, not a session. Adding
- * a learner_id FK to every table now would be speculative — revisit only if a
- * second learner actually appears.
+ * Two learners (Max and Nico) share ONE content bank but have entirely separate
+ * mastery state. Only `concept_state` and `deliveries` carry a learner_id —
+ * everything else (responses, outcomes, engagement, chat) hangs off a delivery
+ * and inherits its learner through that FK. Don't add redundant learner_id
+ * columns downstream; they'd be a denormalization waiting to disagree.
+ *
+ * There is still no session/password anywhere: identity for the daily loop comes
+ * from the signed link in the email, which names the delivery, which names the
+ * learner.
  */
 import { sql } from 'drizzle-orm'
 import {
@@ -25,7 +30,35 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core'
 
-/** A single learnable idea, e.g. "SSRIs — mechanism of action". */
+/**
+ * A person receiving the daily prompt. Expected N is 2.
+ *
+ * Scheduling settings live here rather than in app_config because they're
+ * genuinely per-person: Max and Nico can be in different timezones and want
+ * mail at different hours, and either can pause without affecting the other.
+ */
+export const learners = pgTable(
+  'learners',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    /** ALWAYS stored lowercased + trimmed — enforced in code, never by the DB. */
+    email: text('email').notNull().unique(),
+    name: text('name').notNull(),
+    /** IANA zone. The cron runs on UTC and gates on this — see lib/learning/send-window.ts. */
+    timezone: text('timezone').notNull().default('America/Los_Angeles'),
+    sendHourLocal: smallint('send_hour_local').notNull().default(7),
+    /** Suppresses sending until this instant. Finals week, travel. */
+    pausedUntil: timestamp('paused_until', { withTimezone: true }),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('learners_send_hour_check', sql`${t.sendHourLocal} BETWEEN 0 AND 23`),
+    index('learners_active').on(t.isActive),
+  ]
+)
+
+/** A single learnable idea, e.g. "SSRIs — mechanism of action". Shared by all learners. */
 export const concepts = pgTable(
   'concepts',
   {
@@ -98,14 +131,20 @@ export const contentItemConcepts = pgTable(
 )
 
 /**
- * Everything the selector needs about a concept, in one row: SM-2 scheduling
- * state, engagement, and the skip/flag counters.
+ * Everything the selector needs about a concept FOR ONE LEARNER, in one row:
+ * SM-2 scheduling state, engagement, and the skip/flag counters.
+ *
+ * Keyed on (learner_id, concept_id) — Max being fluent in action potentials
+ * says nothing about whether Nico is.
  */
 export const conceptState = pgTable(
   'concept_state',
   {
+    learnerId: uuid('learner_id')
+      .notNull()
+      .references(() => learners.id, { onDelete: 'cascade' }),
     conceptId: uuid('concept_id')
-      .primaryKey()
+      .notNull()
       .references(() => concepts.id, { onDelete: 'cascade' }),
     // --- SM-2 ---
     easeFactor: real('ease_factor').notNull().default(2.5),
@@ -126,26 +165,33 @@ export const conceptState = pgTable(
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
+    primaryKey({ columns: [t.learnerId, t.conceptId] }),
     check('concept_state_engagement_check', sql`${t.engagementScore} BETWEEN 0 AND 1`),
-    index('concept_state_due').on(t.dueAt),
+    index('concept_state_due').on(t.learnerId, t.dueAt),
     index('concept_state_flagged')
-      .on(t.flaggedAt)
+      .on(t.learnerId, t.flaggedAt)
       .where(sql`${t.flaggedAt} IS NOT NULL`),
   ]
 )
 
 /**
- * One row per calendar day: what got sent.
+ * One row per learner per calendar day: what got sent.
  *
- * `deliveryDate` is UNIQUE — that's the idempotency anchor. Vercel Cron can
- * double-fire, so the insert is ON CONFLICT DO NOTHING before Resend is called.
+ * (learner_id, delivery_date) is UNIQUE — that's the idempotency anchor. Vercel
+ * Cron can double-fire, so the insert is ON CONFLICT DO NOTHING before Resend
+ * is called. It's a composite now, not delivery_date alone: Max and Nico both
+ * get mail on the same day, and a bare date UNIQUE would let whoever's cron
+ * fired first silently starve the other.
  */
 export const deliveries = pgTable(
   'deliveries',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    /** Max's local calendar day, not UTC. */
-    deliveryDate: date('delivery_date').notNull().unique(),
+    learnerId: uuid('learner_id')
+      .notNull()
+      .references(() => learners.id, { onDelete: 'cascade' }),
+    /** The learner's LOCAL calendar day, not UTC. */
+    deliveryDate: date('delivery_date').notNull(),
     contentItemId: uuid('content_item_id')
       .notNull()
       .references(() => contentItems.id),
@@ -163,7 +209,10 @@ export const deliveries = pgTable(
       'deliveries_status_check',
       sql`${t.status} IN ('scheduled', 'sent', 'failed', 'skipped')`
     ),
+    // The real guard against a double send.
+    uniqueIndex('deliveries_learner_date').on(t.learnerId, t.deliveryDate),
     index('deliveries_content_item').on(t.contentItemId),
+    index('deliveries_learner_sent').on(t.learnerId, t.sentAt),
   ]
 )
 
@@ -284,8 +333,10 @@ export const chatMessages = pgTable(
   ]
 )
 
-/** Tiny key-value table for the few things that shouldn't be hardcoded:
- *  learner_timezone, send_hour_local, paused_until. */
+/**
+ * Global config only. Per-learner scheduling (timezone, send hour, pause) lives
+ * on `learners` — it's per-person, not per-app.
+ */
 export const appConfig = pgTable('app_config', {
   key: text('key').primaryKey(),
   value: jsonb('value').notNull(),
