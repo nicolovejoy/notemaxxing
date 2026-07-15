@@ -91,8 +91,10 @@ injected. Pattern lifted from `~/src/garm`.
 ### Infrastructure (live)
 
 - **Neon**: `neon-charcoal-ocean`, us-west-2. `DATABASE_URL` +
-  `DATABASE_URL_UNPOOLED` in all three Vercel envs. ⚠️ **Migration `0001`
-  (learners) is NOT yet applied to Neon** — run `npm run db:migrate`.
+  `DATABASE_URL_UNPOOLED` in all three Vercel envs. Migrations `0000`+`0001`
+  applied; 12 tables live. Both learners seeded (7:00 America/Los_Angeles).
+  Note `drizzle-kit migrate` prints nothing on success — verify against
+  `drizzle.__drizzle_migrations`, don't trust the silence.
 - **Resend**: `send.notemaxxing.net` verified via DKIM (Resend's Cloudflare
   auto-config). DNS is on Cloudflare. DMARC is `p=reject` — strict, so a bad SPF
   won't degrade gracefully. No MX record, so **bounce/complaint feedback doesn't
@@ -128,19 +130,22 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Next Steps
 
-1. **Apply migration 0001 to Neon** (`npm run db:migrate`) and seed the two
-   learners. Then push the branch / open a PR.
-2. **Finish M2** — content import endpoint (API-key auth with a **constant-time**
+1. **Author the first concept bank** — nothing works without it. The selector
+   correctly concludes `empty_bank` and sends nothing. Generate neuroscience
+   concepts + quiz items on Claude.ai, then import. This is the real blocker,
+   not code.
+2. **Push the branch / open a PR.**
+3. **Finish M2** — content import endpoint (API-key auth with a **constant-time**
    compare; the old `/api/import` used `===`). Plus the write side:
    `recordResponse` applying `smUpdate` + `updateEngagement` +
    `computeSkipStreakDelta` to `concept_state`.
-3. **M3** — Resend + cron. Email template as a pure render function; `SendFn`
+4. **M3** — Resend + cron. Email template as a pure render function; `SendFn`
    seam (garm calls Resend with plain `fetch`, no SDK — copy that). Idempotent
    insert on `(learner_id, delivery_date)` before sending; Vercel cron
    double-fires. Cron every 15 min, gated by `shouldSendNow` per learner.
-4. **M4** — `/learn/r/[token]` answer page + scoring.
-5. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
-6. **M6** — dashboard (magic link, same HMAC primitive) + landing page.
+5. **M4** — `/learn/r/[token]` answer page + scoring.
+6. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
+7. **M6** — dashboard (magic link, same HMAC primitive) + landing page.
 
 ### Known / deferred
 
