@@ -81,9 +81,16 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Current State
 
-- **Build**: passing. **Tests**: 166 passing, ~15s. Branch:
-  `feat/daily-learning-companion` (7 commits, **not yet pushed**).
-- **Done**: M0 (test harness + schema + CI), M1 (pure core), M2 (query layer).
+- **Build**: passing. **Tests**: 222 passing, ~20s. Branch:
+  `feat/daily-learning-companion`, pushed.
+  PR: https://github.com/nicolovejoy/notemaxxing/pull/new/feat/daily-learning-companion
+- **Done**: M0 (test harness + schema + CI), M1 (pure core), M2 (query layer),
+  M3 (email render + Resend seam + cron route).
+- **⚠️ Max is `is_active=false`** — deliberately, until Nico has smoke-tested the
+  loop on himself. Re-activate when ready to actually share it with him.
+- **Test content bank seeded**: 3 neuroscience concepts + 3 quiz items
+  (`imported_batch_id = 'smoke-test-2026-07-15'`). Placeholder — the real bank is
+  still Nico's to author.
 - **Stack**: Next 15.5.20, Drizzle 0.45.2, PGlite 0.5.4, Vitest 4.1.10, zod 4.
 - **Brand**: Navy (#1A3C6B) / cream (#F8F8F0) / slate (#4A6E91), Montserrat
   headings, Open Sans body, book+arrow logo. Tokens in `app/globals.css`.
@@ -104,9 +111,15 @@ injected. Pattern lifted from `~/src/garm`.
 - **Learners**: Max Lovejoy <lovejoymaximillion@gmail.com>, Nico
   <nlovejoy@me.com>. Both are customers — Nico plays along too, and gamifying
   the pair is a someday idea.
-- **Still needed**: `LEARN_TOKEN_SECRET`, `CRON_SECRET`, `RESEND_API_KEY`,
-  `ANTHROPIC_API_KEY` in Vercel (see `.env.tpl`). Anthropic key already exists in
-  1Password as "Anthropic - notemaxxing API key".
+- **Still needed in Vercel**: `LEARN_TOKEN_SECRET`, `CRON_SECRET`,
+  `RESEND_API_KEY` (see `.env.tpl`). `ANTHROPIC_API_KEY` isn't needed until M5 and
+  already exists in 1Password as "Anthropic - notemaxxing API key".
+  `NEXT_PUBLIC_SITE_URL` already exists (350d old — verify it's notemaxxing.net).
+- **Vercel plan is Pro** — confirmed via `ibuild4you`'s `*/5` cron, which Hobby
+  would reject. This matters: Hobby caps cron at once-per-day, and on a
+  once-daily cron the per-learner local-hour gate would match in summer and
+  **silently never match in winter**. If the plan ever downgrades, drop the hour
+  gate and rely on `hasDeliveryFor` alone.
 
 ### Locked decisions
 
@@ -130,22 +143,20 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Next Steps
 
-1. **Author the first concept bank** — nothing works without it. The selector
-   correctly concludes `empty_bank` and sends nothing. Generate neuroscience
-   concepts + quiz items on Claude.ai, then import. This is the real blocker,
-   not code.
-2. **Push the branch / open a PR.**
-3. **Finish M2** — content import endpoint (API-key auth with a **constant-time**
-   compare; the old `/api/import` used `===`). Plus the write side:
-   `recordResponse` applying `smUpdate` + `updateEngagement` +
-   `computeSkipStreakDelta` to `concept_state`.
-4. **M3** — Resend + cron. Email template as a pure render function; `SendFn`
-   seam (garm calls Resend with plain `fetch`, no SDK — copy that). Idempotent
-   insert on `(learner_id, delivery_date)` before sending; Vercel cron
-   double-fires. Cron every 15 min, gated by `shouldSendNow` per learner.
-5. **M4** — `/learn/r/[token]` answer page + scoring.
-6. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
-7. **M6** — dashboard (magic link, same HMAC primitive) + landing page.
+1. **Smoke-test the send on Nico** (in progress). Set the three env vars, then
+   `vercel env pull .env.local --yes && npm run dev`, and in a second terminal:
+   `curl -s -H "Authorization: Bearer $CRON_SECRET" "http://localhost:3000/api/cron/daily?force=1"`.
+   Pass = one outcome with `status: 'sent'` and an email at nlovejoy@me.com.
+   Expect the button to 404 — `/learn/r/[token]` is M4.
+2. **M4** — `/learn/r/[token]` answer page + `POST /api/learn/respond`. Verify
+   the token, render the MCQ, record the response, apply `smUpdate` +
+   `updateEngagement` + `computeSkipStreakDelta` to `concept_state`. This closes
+   the loop and makes the emailed link real.
+3. **Author the real concept bank** and build the import endpoint (API-key auth
+   with a **constant-time** compare; the old `/api/import` used `===`). Then
+   re-activate Max.
+4. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
+5. **M6** — dashboard (magic link, same HMAC primitive) + landing page.
 
 ### Known / deferred
 
