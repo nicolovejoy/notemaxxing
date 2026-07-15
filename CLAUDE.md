@@ -81,12 +81,30 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Current State
 
-- **Build**: passing. **Tests**: 129 passing, ~4s.
-- **Done**: M0 (test harness + schema + CI), M1 (pure core).
+- **Build**: passing. **Tests**: 166 passing, ~15s. Branch:
+  `feat/daily-learning-companion` (7 commits, **not yet pushed**).
+- **Done**: M0 (test harness + schema + CI), M1 (pure core), M2 (query layer).
 - **Stack**: Next 15.5.20, Drizzle 0.45.2, PGlite 0.5.4, Vitest 4.1.10, zod 4.
 - **Brand**: Navy (#1A3C6B) / cream (#F8F8F0) / slate (#4A6E91), Montserrat
   headings, Open Sans body, book+arrow logo. Tokens in `app/globals.css`.
-- **Not yet provisioned**: Neon project, Resend sending domain, env vars.
+
+### Infrastructure (live)
+
+- **Neon**: `neon-charcoal-ocean`, us-west-2. `DATABASE_URL` +
+  `DATABASE_URL_UNPOOLED` in all three Vercel envs. ⚠️ **Migration `0001`
+  (learners) is NOT yet applied to Neon** — run `npm run db:migrate`.
+- **Resend**: `send.notemaxxing.net` verified via DKIM (Resend's Cloudflare
+  auto-config). DNS is on Cloudflare. DMARC is `p=reject` — strict, so a bad SPF
+  won't degrade gracefully. No MX record, so **bounce/complaint feedback doesn't
+  route back** — a dead address fails silently. Revisit if mail goes missing.
+- **Resend account**: one paid account ($20/mo) shared across projects, same as
+  garm. Reputation is per-domain, so no isolation problem.
+- **Learners**: Max Lovejoy <lovejoymaximillion@gmail.com>, Nico
+  <nlovejoy@me.com>. Both are customers — Nico plays along too, and gamifying
+  the pair is a someday idea.
+- **Still needed**: `LEARN_TOKEN_SECRET`, `CRON_SECRET`, `RESEND_API_KEY`,
+  `ANTHROPIC_API_KEY` in Vercel (see `.env.tpl`). Anthropic key already exists in
+  1Password as "Anthropic - notemaxxing API key".
 
 ### Locked decisions
 
@@ -110,24 +128,45 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Next Steps
 
-1. **M2** — Drizzle query layer + content import endpoint (API-key auth, but use
-   a constant-time compare; the old `/api/import` used `===`).
-2. **M3** — Resend + cron. Email template as a pure render function; `SendFn`
-   seam. Idempotent insert on `deliveries.delivery_date` before sending — Vercel
-   cron double-fires.
-3. **M4** — `/learn/r/[token]` answer page + scoring.
-4. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
-5. **M6** — dashboard + landing page.
+1. **Apply migration 0001 to Neon** (`npm run db:migrate`) and seed the two
+   learners. Then push the branch / open a PR.
+2. **Finish M2** — content import endpoint (API-key auth with a **constant-time**
+   compare; the old `/api/import` used `===`). Plus the write side:
+   `recordResponse` applying `smUpdate` + `updateEngagement` +
+   `computeSkipStreakDelta` to `concept_state`.
+3. **M3** — Resend + cron. Email template as a pure render function; `SendFn`
+   seam (garm calls Resend with plain `fetch`, no SDK — copy that). Idempotent
+   insert on `(learner_id, delivery_date)` before sending; Vercel cron
+   double-fires. Cron every 15 min, gated by `shouldSendNow` per learner.
+4. **M4** — `/learn/r/[token]` answer page + scoring.
+5. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
+6. **M6** — dashboard (magic link, same HMAC primitive) + landing page.
 
 ### Known / deferred
 
+- **Analytics**: use the ecosystem standard — first-party beacon
+  (`<Script src="https://prompt-labs.org/beacon.js" strategy="afterInteractive"/>`
+  in the root layout) → Turso. `@vercel/analytics` is still wired in
+  `app/layout.tsx` from a 2026-07-05 commit; prompt-lab has an open decision
+  about dropping it where the beacon covers a site. Nico: "use our standard
+  approach, but that can wait."
+- **Content bank doesn't exist yet.** Nico authors it via Claude.ai and imports.
+  Max is in on it and can request topics. Nothing works without it.
+- `OPENAI_API_KEY` in Vercel is dead (notemaxxing moved to Claude in `9dd2e6f`)
+  but the KEY may be shared — `split-recording-dev` reads
+  `op://dev-secrets/openAI-recountly-secret-key`. Remove the var; **don't revoke
+  the key** without checking the OpenAI console.
+- Firebase admin key `55ad6e5e…` revoked 2026-07-15. The GCP project
+  `notemaxxing` and Max's old notes still exist, untouched — decision deferred.
+  Dead Vercel vars (5× Firebase, IMPORT\_\*, OPENAI, ENABLE_AI) still need removing.
 - `next lint` is deprecated and goes away in Next 16 — migrate to the ESLint CLI.
 - Remaining audit noise: 3 moderate, all one `postcss` cascade.
-- `@vercel/analytics` was added 2026-07-05, after the mothball. Still wired in
-  `app/layout.tsx` — unresolved whether it stays (cf. the "measurement
-  minimalism" bulletin).
 - Garm's own cron→Resend pipeline was unverified as of 2026-07-14. We build the
   same path at M3; if it breaks the same way, that's a shared cause.
+- **drizzle-kit generates broken migrations** for PK changes: it emits
+  `ADD CONSTRAINT ... PRIMARY KEY` before the `ADD COLUMN` it references and
+  comments out the old PK drop. Hand-edit and let the PGlite tests validate it
+  before it reaches Neon (that's what caught `0001`).
 
 <!-- SHARED-CONVENTIONS:BEGIN v=d5e16e653242 — auto-managed, do not edit here; source: prompt-lab/workflow/claude-md-shared.md (edit + re-sync) -->
 
