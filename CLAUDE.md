@@ -167,6 +167,13 @@ injected. Pattern lifted from `~/src/garm`.
 - **Garm** (`~/src/garm`) was evaluated and deliberately not consumed: it's
   authorization, we need authentication, and two users need neither. Its stack
   was copied instead. Revisit at M6 if the dashboard grows.
+- **Engagement before friction.** Don't ask Max to confirm his course, textbook,
+  or schedule before the daily loop has hooked him — the first email is the
+  engagement, and a questionnaire in front of it is the same friction the
+  no-login rule exists to avoid. Author on assumption instead: the content keys
+  to concepts, never to chapter numbers, so a wrong guess about his textbook or
+  which block he's in costs nothing (CHEM 31/32/33 are all required for his
+  major). Revisit once he's answering regularly.
 - **Content lives in git, not behind an endpoint.** The old plan (rebuild
   `/api/import` with API-key auth) was dropped: a public endpoint + key + rotation
   is a lot of surface for a one-person authoring workflow against a DB you already
@@ -186,8 +193,9 @@ injected. Pattern lifted from `~/src/garm`.
    intensive (Session 5, Jul 6–24; CHEM 33 follows Jul 27–Aug 14). Content
    follows his coursework, not his major. All legacy neuro sample data +
    smoke-test deliveries were deleted from dev the same day. **Needs a
-   chemistry review before prod.** Next batch as he hits CHEM 33:
-   `ochem-carbonyls` (aldol, Claisen, EAS, amines, carbohydrates).
+   chemistry review before prod.** Next batch, assume he hits CHEM 33 on
+   Jul 27: `ochem-carbonyls` (aldol, Claisen, EAS, amines, carbohydrates) —
+   author it on assumption, don't ask him (see "Engagement before friction").
 2. **Ship to prod, then flip Max on.** In order: apply migration `0002` to `main`
    (`.env.local` at prod, `npm run db:migrate`), **then clear prod's legacy
    content** (see hazard below), import the real bank to prod, push the branch +
