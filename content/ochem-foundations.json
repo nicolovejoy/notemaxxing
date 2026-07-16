@@ -173,14 +173,9 @@
       "concepts": [{ "slug": "carbocation-stability", "primary": true }],
       "body": {
         "prompt": "Which carbocation is the most stable?",
-        "options": [
-          "Benzyl cation (PhCH2+)",
-          "tert-Butyl cation",
-          "Isopropyl cation",
-          "Ethyl cation"
-        ],
+        "options": ["tert-Butyl cation", "Isopropyl cation", "Ethyl cation", "Methyl cation"],
         "correct_index": 0,
-        "explanation": "Resonance beats hyperconjugation. The benzyl cation spreads its positive charge across the aromatic ring through resonance, which stabilizes it more than the tert-butyl cation's three hyperconjugating methyl groups can. General order: benzyl and allyl are roughly comparable to or better than tertiary, then 3 degrees > 2 degrees > 1 degrees > methyl."
+        "explanation": "Alkyl groups stabilize an adjacent positive charge two ways: hyperconjugation, where electron density from neighboring C-H sigma bonds leaks into the empty p orbital, and simple inductive donation. More alkyl substituents means more of both, giving 3 degrees > 2 degrees > 1 degrees > methyl. Resonance is the other route to stability — allylic and benzylic cations delocalize the charge into a pi system, which puts a primary benzylic cation roughly on par with a secondary one."
       }
     },
     {
@@ -658,7 +653,7 @@
           "They are present in equal amounts"
         ],
         "correct_index": 0,
-        "explanation": "The keto form wins overwhelmingly — acetone's enol content is on the order of 0.0001 percent — because a C=O bond is substantially stronger than a C=C. The exceptions are worth knowing: 1,3-dicarbonyls have appreciable enol because the enol is conjugated and internally hydrogen bonded, and phenol is essentially all enol because its keto tautomer would sacrifice aromaticity."
+        "explanation": "The keto form wins overwhelmingly — acetone's enol content sits well below a millionth of a percent — because a C=O bond is substantially stronger than a C=C. The exceptions are worth knowing: 1,3-dicarbonyls have appreciable enol because the enol is conjugated and internally hydrogen bonded, and phenol is essentially all enol because its keto tautomer would sacrifice aromaticity."
       }
     },
     {
