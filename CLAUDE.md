@@ -82,8 +82,8 @@ injected. Pattern lifted from `~/src/garm`.
 ## Current State
 
 - **Build**: passing. **Tests**: 271 passing, ~35s. Branch:
-  `feat/daily-learning-companion`, last commit `a05df58` (local, not pushed).
-  PR: https://github.com/nicolovejoy/notemaxxing/pull/new/feat/daily-learning-companion
+  `feat/daily-learning-companion`, pushed. Last commit `b59cf87`.
+  **PR #13 open** → main: https://github.com/nicolovejoy/notemaxxing/pull/13
 - **Done**: M0 (harness+schema+CI), M1 (pure core), M2 (query layer),
   M3 (email+Resend+cron), **smoke test** (first real email delivered to Nico via
   Resend 2026-07-15), **M4** (answer page + respond handler), **content import**
@@ -128,16 +128,18 @@ injected. Pattern lifted from `~/src/garm`.
 - **Learners**: Max Lovejoy <lovejoymaximillion@gmail.com>, Nico
   <nlovejoy@me.com>. Both are customers — Nico plays along too, and gamifying
   the pair is a someday idea.
-- **Vercel env set**: `LEARN_TOKEN_SECRET`, `CRON_SECRET`, `RESEND_API_KEY` now
-  in Production + Development (2026-07-16). **Preview is still missing all three**
-  — the `vercel env add ... --force` loop hit the interactive `? Git branch?`
-  prompt and the piped value was eaten. Add them to Preview one at a time
-  (answer the branch prompt = empty) before relying on a preview deploy.
-  1Password items (`dev-secrets`): `notemaxxing-token-secret`,
-  `notemaxxing-cron-secret`, `resend-notemaxxing`. `ANTHROPIC_API_KEY` not needed
-  until M5 ("Anthropic - notemaxxing API key" in 1Password). `NEXT_PUBLIC_SITE_URL`
-  = notemaxxing.net, but **prod still runs the pre-repurpose notes app** (unknown
-  paths 302 to home, not 404) until this branch deploys.
+- **Vercel env set**: `LEARN_TOKEN_SECRET`, `CRON_SECRET`, `RESEND_API_KEY` now in
+  **all three** envs — Production + Development (2026-07-16), Preview (added with
+  `vercel env add ... --value` so the branch prompt no longer eats the value; press
+  Enter at `? Git branch?` = all preview branches). 1Password items
+  (`dev-secrets`): `notemaxxing-token-secret`, `notemaxxing-cron-secret`,
+  `resend-notemaxxing`. `ANTHROPIC_API_KEY` not needed until M5 ("Anthropic -
+  notemaxxing API key" in 1Password). `NEXT_PUBLIC_SITE_URL` = notemaxxing.net, but
+  **prod still runs the pre-repurpose notes app** (unknown paths 302 to home, not 404) until this branch deploys.
+- **⚠️ Preview `DATABASE_URL` still points at prod `main`** (Neon integration
+  default). A preview deploy that touches the DB writes to production. Decision
+  deferred: point Preview at the `dev` branch (quick, matches local), or enable
+  Neon per-preview auto-branching (cleaner, a toggle in the integration).
 - **Vercel plan is Pro** — confirmed via `ibuild4you`'s `*/5` cron, which Hobby
   would reject. This matters: Hobby caps cron at once-per-day, and on a
   once-daily cron the per-learner local-hour gate would match in summer and
