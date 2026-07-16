@@ -200,38 +200,53 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Next Steps
 
-1. ~~**Author the real content bank**~~ — **done 2026-07-16**.
-   `content/ochem-foundations.json`: 39 quiz items, 15 concepts, batch
-   `ochem-foundations`, imported to the Neon **dev** branch. **The bank is
-   organic chemistry, not neuro** — Max is mid-CHEM 32 in SCU's summer
-   intensive (Session 5, Jul 6–24; CHEM 33 follows Jul 27–Aug 14). Content
-   follows his coursework, not his major. All legacy neuro sample data +
-   smoke-test deliveries were deleted from dev the same day. **Needs a
-   chemistry review before prod.** Next batch, assume he hits CHEM 33 on
-   Jul 27: `ochem-carbonyls` (aldol, Claisen, EAS, amines, carbohydrates) —
-   author it on assumption, don't ask him (see "Engagement before friction").
-2. **Ship to prod, then flip Max on.** In order: apply migration `0002` to `main`
-   (`.env.local` at prod, `npm run db:migrate`), **then clear prod's legacy
-   content** (see hazard below), import the real bank to prod, push the branch +
-   deploy (this replaces the old notes app so the emailed button resolves), add
-   the three env vars to Vercel **Preview**, then set Max `is_active=true`.
-   - **⚠️ The 0002 orphan hazard.** `0002` adds `content_items.external_id`, so
-     every pre-existing prod row gets `external_id = NULL`. Those rows stay
-     `is_active=true`, can still be selected and emailed to Max, and are
-     **invisible to every future import** — which matches on `external_id`, so a
-     re-import creates a duplicate row beside the orphan instead of updating it.
-     Observed exactly this on dev: "The rising phase" existed twice, once as a
-     NULL orphan and once properly keyed. Postgres `UNIQUE` permits multiple
-     NULLs, so the constraint does not catch it. Delete prod's legacy content
-     after migrating, before importing. Note `deliveries.content_item_id` is
-     `ON DELETE NO ACTION`, so any delivery referencing an orphan must go first.
-3. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
-   `ANTHROPIC_API_KEY` needed here.
-4. **M6** — dashboard (magic link, same HMAC primitive) + landing page. Decide
-   shadcn/ui here.
+1. **Watch the first real sends** (Fri 2026-07-17). Nico 7am, Max 10am PDT. The
+   cron has never run against real content with an active learner — Nico's send
+   is the dress rehearsal three hours ahead of Max's. Check: mail arrives, the
+   `/learn/r/<token>` link renders the question, an answer records a `response`
+   and moves `concept_state`. Failure here is invisible — Resend has no MX, so
+   bounces don't route back.
+2. **⚠️ Point Preview away from prod** — do this before the next PR merges. The
+   Neon integration still gives Preview the prod `DATABASE_URL`, and prod is no
+   longer a sandbox: it holds the real bank and a live learner, so a preview
+   deploy that touches the DB can corrupt Max's mastery state or burn a
+   delivery. Either point Preview at the `dev` branch or enable Neon per-preview
+   auto-branching (a toggle in the integration).
+3. **Author `ochem-carbonyls`** as Max hits CHEM 33 (assume Jul 27 — don't ask
+   him, see "Engagement before friction"). Aldol, Claisen, EAS, amines,
+   carbohydrates, amino acids. Use `content/ochem-foundations.json` as the
+   template; `npm run import -- <file>` against dev first. Fact-check the answer
+   keys with a subagent before importing to prod — the first pass caught a real
+   error a non-chemist could not have.
+4. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
+   `ANTHROPIC_API_KEY` needed here. Note the bank is **quiz-only** on purpose:
+   an `adventure` item would be selected and emailed, then dead-end on a page
+   that cannot run the chat.
+5. **M6** — dashboard (magic link, same HMAC primitive) + landing page. Decide
+   shadcn/ui here. This is also where "what did Max actually get?" gets
+   answered — there is no cc on the daily mail by design (`SendFn` has no cc
+   field; Nico is a separate learner, not an observer).
 
 ### Known / deferred
 
+- **Adding a UNIQUE column to a populated table makes silent orphans.** `0002`
+  added `content_items.external_id`; every existing row got NULL. Those rows stay
+  active and emailable but are **invisible to an import that matches on
+  `external_id`** — so a re-import creates a duplicate beside the orphan instead
+  of updating it. Postgres `UNIQUE` permits multiple NULLs, so the constraint
+  catches nothing, and `GROUP BY external_id HAVING count(*) > 1` buckets all the
+  NULLs together and looks like one duplicate. Seen on dev ("The rising phase"
+  twice). Handled at the 2026-07-16 prod cutover by clearing **before**
+  migrating. Same trap next time a UNIQUE column lands on live rows: clear or
+  backfill first.
+- **Dead Firebase config still tracked**: `.firebaserc`, `firebase.json`,
+  `firestore.indexes.json`, `firestore.rules`. Left deliberately — the GCP
+  project holding Max's old notes still exists (decision deferred), and these are
+  what you'd need to export them. Delete once that's settled.
+- **Stale branches**: `feat/daily-learning-companion` and `content/ochem-bank`
+  are both squash-merged (git shows them unmerged — different SHAs).
+  `infra/database-as-code` has one unpushed commit from Aug 2025 fixing a
+  notes-app bug in code that no longer exists. All three are safe to delete.
 - **Analytics**: use the ecosystem standard — first-party beacon
   (`<Script src="https://prompt-labs.org/beacon.js" strategy="afterInteractive"/>`
   in the root layout) → Turso. `@vercel/analytics` is still wired in
