@@ -81,18 +81,24 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Current State
 
-- **Build**: passing. **Tests**: 271 passing, ~35s. Branch:
-  `feat/daily-learning-companion`, pushed. Last commit `b59cf87`.
-  **PR #13 open** → main: https://github.com/nicolovejoy/notemaxxing/pull/13
+- **🎉 LIVE as of 2026-07-16.** PR #13 squash-merged (`5e3890c`); prod is the
+  Daily Learning Companion, not the old notes app (verified: bad token renders
+  the DeadLink page, unknown paths 404, `/api/cron/daily` 401s without the
+  secret). **Max is `is_active=true`, send hour 10 local** — first real question
+  lands Fri 2026-07-17 ~10:00–10:15 PDT. Nico active at hour 7.
+- **Build**: passing. **Tests**: 271 passing, ~30s. Branch: `content/ochem-bank`
+  → PR open against main (the bank + docs; PR #13 merged before it was pushed,
+  so main briefly lagged).
 - **Done**: M0 (harness+schema+CI), M1 (pure core), M2 (query layer),
   M3 (email+Resend+cron), **smoke test** (first real email delivered to Nico via
   Resend 2026-07-15), **M4** (answer page + respond handler), **content import**
-  (git JSON → zod → idempotent upsert).
-- **⚠️ Max is `is_active=false`** — still. Flip only after the real content bank
-  is authored + imported to prod. Re-activate deliberately.
-- **⚠️ Migration `0002` (content_items.external_id) is on the Neon `dev` branch
-  ONLY, not prod (`main`).** So is the sample content. Apply to prod deliberately
-  before Max: `npm run db:migrate` with `.env.local` pointed at prod, then import.
+  (git JSON → zod → idempotent upsert), **content bank + prod cutover**
+  (2026-07-16).
+- **Prod DB state**: migrations `0000`–`0002` applied to `main`. 39 active
+  content_items (all `ochem/`-prefixed, batch `ochem-foundations`), 15 concepts,
+  all `chem/organic`. Zero NULL `external_id`. Legacy neuro sample + the one
+  smoke-test delivery/response were deleted at cutover. Cleared **before**
+  migrating `0002`, so the orphan state never existed.
 - **M4 shape**: `/learn/r/[token]` (page.tsx + quiz-form.tsx) + `POST
 /api/learn/respond` → `lib/handlers/respond.ts`. Idempotent on
   `responses.delivery_id` UNIQUE; response time server-derived from the
@@ -102,7 +108,9 @@ injected. Pattern lifted from `~/src/garm`.
 - **Content pipeline**: author batches as `content/*.json`, `npm run import --
 <file>`. Validated by `lib/content/schema.ts` (zod), upserted by
   `lib/handlers/import-content.ts`. Idempotent via `external_id`. No endpoint, no
-  API key — a script the author runs. `content/neuro-sample.json` is the template.
+  API key — a script the author runs. `content/ochem-foundations.json` is the
+  template. `batch_id` is a **stable handle**, not a label — `deactivateMissing`
+  finds prior items by it, so never date it or bump it across a revision.
 - **Stack**: Next 15.5.20, Drizzle 0.45.2, PGlite 0.5.4, Vitest 4.1.10, zod 4, tsx.
 - **Brand**: Navy (#1A3C6B) / cream (#F8F8F0) / slate (#4A6E91), Montserrat
   headings, Open Sans body, book+arrow logo. Tokens in `app/globals.css`.
@@ -116,9 +124,13 @@ injected. Pattern lifted from `~/src/garm`.
   (learner_id) is not environment isolation** — before this, all local testing
   hit prod. Local `.env.local` now points at `dev` (repoint via the scratchpad
   `point-local-at-dev.js` pattern, or `neonctl connection-string dev --pooled`).
-  Migrations `0000`+`0001` on both branches; **`0002` on `dev` only**.
+  Migrations `0000`–`0002` on **both** branches as of 2026-07-16.
   `drizzle-kit migrate` prints nothing on success — verify against
-  `drizzle.__drizzle_migrations`, don't trust the silence.
+  `drizzle.__drizzle_migrations`, don't trust the silence. Endpoints:
+  `main` = `ep-wild-river-at89syk6`, `dev` = `ep-bold-cake-atru59l4` (the
+  endpoint id does not contain the branch name — check it, don't eyeball it).
+  To target a branch for one command, pass `DATABASE_URL` inline: an inline var
+  wins, because dotenv does not override what is already set.
 - **Resend**: `send.notemaxxing.net` verified via DKIM (Resend's Cloudflare
   auto-config). DNS is on Cloudflare. DMARC is `p=reject` — strict, so a bad SPF
   won't degrade gracefully. No MX record, so **bounce/complaint feedback doesn't
@@ -134,12 +146,16 @@ injected. Pattern lifted from `~/src/garm`.
   Enter at `? Git branch?` = all preview branches). 1Password items
   (`dev-secrets`): `notemaxxing-token-secret`, `notemaxxing-cron-secret`,
   `resend-notemaxxing`. `ANTHROPIC_API_KEY` not needed until M5 ("Anthropic -
-  notemaxxing API key" in 1Password). `NEXT_PUBLIC_SITE_URL` = notemaxxing.net, but
-  **prod still runs the pre-repurpose notes app** (unknown paths 302 to home, not 404) until this branch deploys.
-- **⚠️ Preview `DATABASE_URL` still points at prod `main`** (Neon integration
-  default). A preview deploy that touches the DB writes to production. Decision
-  deferred: point Preview at the `dev` branch (quick, matches local), or enable
-  Neon per-preview auto-branching (cleaner, a toggle in the integration).
+  notemaxxing API key" in 1Password). `NEXT_PUBLIC_SITE_URL` = notemaxxing.net,
+  which as of 2026-07-16 **serves the Daily Learning Companion** — the old notes
+  app is gone from prod.
+- **⚠️⚠️ Preview `DATABASE_URL` still points at prod `main`** (Neon integration
+  default). A preview deploy that touches the DB writes to production. **This got
+  sharper on 2026-07-16**: prod is no longer a sandbox with throwaway rows — it
+  holds the real bank and a live learner, so a preview deploy can now corrupt
+  Max's actual mastery state or burn a delivery. Fix before the next PR: point
+  Preview at the `dev` branch (quick, matches local), or enable Neon per-preview
+  auto-branching (cleaner, a toggle in the integration).
 - **Vercel plan is Pro** — confirmed via `ibuild4you`'s `*/5` cron, which Hobby
   would reject. This matters: Hobby caps cron at once-per-day, and on a
   once-daily cron the per-learner local-hour gate would match in summer and
@@ -165,6 +181,13 @@ injected. Pattern lifted from `~/src/garm`.
 - **Garm** (`~/src/garm`) was evaluated and deliberately not consumed: it's
   authorization, we need authentication, and two users need neither. Its stack
   was copied instead. Revisit at M6 if the dashboard grows.
+- **Engagement before friction.** Don't ask Max to confirm his course, textbook,
+  or schedule before the daily loop has hooked him — the first email is the
+  engagement, and a questionnaire in front of it is the same friction the
+  no-login rule exists to avoid. Author on assumption instead: the content keys
+  to concepts, never to chapter numbers, so a wrong guess about his textbook or
+  which block he's in costs nothing (CHEM 31/32/33 are all required for his
+  major). Revisit once he's answering regularly.
 - **Content lives in git, not behind an endpoint.** The old plan (rebuild
   `/api/import` with API-key auth) was dropped: a public endpoint + key + rotation
   is a lot of surface for a one-person authoring workflow against a DB you already
@@ -177,15 +200,31 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Next Steps
 
-1. **Author the real content bank** (next session, with fable). Use
-   `content/neuro-sample.json` as the format template — hand it to Claude.ai,
-   author a real batch, drop it in `content/`. `npm run import -- <file>` against
-   the dev branch to validate + preview.
+1. ~~**Author the real content bank**~~ — **done 2026-07-16**.
+   `content/ochem-foundations.json`: 39 quiz items, 15 concepts, batch
+   `ochem-foundations`, imported to the Neon **dev** branch. **The bank is
+   organic chemistry, not neuro** — Max is mid-CHEM 32 in SCU's summer
+   intensive (Session 5, Jul 6–24; CHEM 33 follows Jul 27–Aug 14). Content
+   follows his coursework, not his major. All legacy neuro sample data +
+   smoke-test deliveries were deleted from dev the same day. **Needs a
+   chemistry review before prod.** Next batch, assume he hits CHEM 33 on
+   Jul 27: `ochem-carbonyls` (aldol, Claisen, EAS, amines, carbohydrates) —
+   author it on assumption, don't ask him (see "Engagement before friction").
 2. **Ship to prod, then flip Max on.** In order: apply migration `0002` to `main`
-   (`.env.local` at prod, `npm run db:migrate`), import the real bank to prod,
-   push the branch + deploy (this replaces the old notes app so the emailed button
-   resolves), add the three env vars to Vercel **Preview**, then set Max
-   `is_active=true`.
+   (`.env.local` at prod, `npm run db:migrate`), **then clear prod's legacy
+   content** (see hazard below), import the real bank to prod, push the branch +
+   deploy (this replaces the old notes app so the emailed button resolves), add
+   the three env vars to Vercel **Preview**, then set Max `is_active=true`.
+   - **⚠️ The 0002 orphan hazard.** `0002` adds `content_items.external_id`, so
+     every pre-existing prod row gets `external_id = NULL`. Those rows stay
+     `is_active=true`, can still be selected and emailed to Max, and are
+     **invisible to every future import** — which matches on `external_id`, so a
+     re-import creates a duplicate row beside the orphan instead of updating it.
+     Observed exactly this on dev: "The rising phase" existed twice, once as a
+     NULL orphan and once properly keyed. Postgres `UNIQUE` permits multiple
+     NULLs, so the constraint does not catch it. Delete prod's legacy content
+     after migrating, before importing. Note `deliveries.content_item_id` is
+     `ON DELETE NO ACTION`, so any delivery referencing an orphan must go first.
 3. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
    `ANTHROPIC_API_KEY` needed here.
 4. **M6** — dashboard (magic link, same HMAC primitive) + landing page. Decide

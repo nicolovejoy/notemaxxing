@@ -1,0 +1,781 @@
+{
+  "batch_id": "ochem-foundations",
+  "concepts": [
+    {
+      "slug": "sn2-mechanism",
+      "name": "SN2 mechanism",
+      "domain": "chem/organic",
+      "description": "Concerted backside attack by a nucleophile, inverting configuration at the electrophilic carbon.",
+      "intro_priority": 0
+    },
+    {
+      "slug": "sn1-mechanism",
+      "name": "SN1 mechanism",
+      "domain": "chem/organic",
+      "description": "Stepwise substitution through a carbocation intermediate, scrambling stereochemistry.",
+      "intro_priority": 1
+    },
+    {
+      "slug": "carbocation-stability",
+      "name": "Carbocation stability",
+      "domain": "chem/organic",
+      "description": "Why 3 degrees beats 2 degrees beats 1 degrees, and why cations rearrange to get there.",
+      "intro_priority": 2
+    },
+    {
+      "slug": "e2-mechanism",
+      "name": "E2 elimination",
+      "domain": "chem/organic",
+      "description": "Concerted elimination requiring the proton and leaving group anti-periplanar.",
+      "intro_priority": 3
+    },
+    {
+      "slug": "stereochemistry-cip",
+      "name": "Stereochemistry and R/S",
+      "domain": "chem/organic",
+      "description": "Chirality, enantiomers, and assigning configuration by Cahn-Ingold-Prelog priority.",
+      "intro_priority": 4
+    },
+    {
+      "slug": "ir-spectroscopy",
+      "name": "IR spectroscopy",
+      "domain": "chem/organic",
+      "description": "Reading functional groups off characteristic infrared absorption bands.",
+      "intro_priority": 5
+    },
+    {
+      "slug": "nmr-spectroscopy",
+      "name": "NMR spectroscopy",
+      "domain": "chem/organic",
+      "description": "Chemical shift, integration, and splitting as a map of proton environments.",
+      "intro_priority": 6
+    },
+    {
+      "slug": "mass-spectrometry",
+      "name": "Mass spectrometry",
+      "domain": "chem/organic",
+      "description": "Molecular ion, isotope patterns, and fragmentation as structural evidence.",
+      "intro_priority": 7
+    },
+    {
+      "slug": "alcohol-reactions",
+      "name": "Alcohol reactions",
+      "domain": "chem/organic",
+      "description": "Oxidation, acidity, and converting the hydroxyl into a workable leaving group.",
+      "intro_priority": 8
+    },
+    {
+      "slug": "grignard-reagents",
+      "name": "Grignard reagents",
+      "domain": "chem/organic",
+      "description": "Carbon nucleophiles from alkyl halides and magnesium, used to forge C-C bonds.",
+      "intro_priority": 9
+    },
+    {
+      "slug": "ethers-epoxides",
+      "name": "Ethers and epoxides",
+      "domain": "chem/organic",
+      "description": "Williamson synthesis, and why strained three-membered rings open under both acid and base.",
+      "intro_priority": 10
+    },
+    {
+      "slug": "carbonyl-addition",
+      "name": "Nucleophilic addition to carbonyls",
+      "domain": "chem/organic",
+      "description": "The core reactivity of aldehydes and ketones: nucleophile attacks the electrophilic carbon.",
+      "intro_priority": 11
+    },
+    {
+      "slug": "carbonyl-alpha-chemistry",
+      "name": "Alpha-carbon chemistry",
+      "domain": "chem/organic",
+      "description": "Enol and enolate formation from the acidic proton next to a carbonyl.",
+      "intro_priority": 12
+    },
+    {
+      "slug": "alkyne-chemistry",
+      "name": "Alkyne chemistry",
+      "domain": "chem/organic",
+      "description": "Terminal alkyne acidity from sp hybridization, and regiochemistry of triple-bond addition.",
+      "intro_priority": 13
+    },
+    {
+      "slug": "separation-purification",
+      "name": "Separation and purification",
+      "domain": "chem/organic",
+      "description": "Extraction, distillation, chromatography, recrystallization: the lab half of organic.",
+      "intro_priority": 14
+    }
+  ],
+  "items": [
+    {
+      "external_id": "ochem/sn2-inversion",
+      "kind": "quiz",
+      "title": "What SN2 does to a stereocenter",
+      "difficulty": 2,
+      "concepts": [{ "slug": "sn2-mechanism", "primary": true }, { "slug": "stereochemistry-cip" }],
+      "body": {
+        "prompt": "(S)-2-bromobutane reacts with sodium azide in DMSO via SN2. What is the stereochemical outcome at C2?",
+        "options": [
+          "Inversion of configuration",
+          "Retention of configuration",
+          "A racemic mixture",
+          "Loss of the stereocenter entirely"
+        ],
+        "correct_index": 0,
+        "explanation": "The nucleophile attacks 180 degrees opposite the leaving group, so the other three bonds flip through like an umbrella in the wind. Configuration inverts every time. Note that inversion is about spatial arrangement, not the R/S letter: the letter may or may not change depending on how the incoming group ranks in CIP priority."
+      }
+    },
+    {
+      "external_id": "ochem/sn2-substrate-order",
+      "kind": "quiz",
+      "title": "Which substrate SN2 likes",
+      "difficulty": 2,
+      "concepts": [{ "slug": "sn2-mechanism", "primary": true }],
+      "body": {
+        "prompt": "Rank these alkyl bromides from fastest to slowest in an SN2 reaction with a strong nucleophile.",
+        "options": [
+          "methyl > primary > secondary > tertiary",
+          "tertiary > secondary > primary > methyl",
+          "secondary > tertiary > primary > methyl",
+          "primary > methyl > tertiary > secondary"
+        ],
+        "correct_index": 0,
+        "explanation": "SN2 is killed by steric bulk, because the nucleophile has to reach the backside of the carbon. Every added substituent blocks that approach. Tertiary substrates are effectively inert to SN2 — this is the exact opposite of the SN1 ordering, which is why substrate class is your first clue when picking a mechanism."
+      }
+    },
+    {
+      "external_id": "ochem/sn1-rate-determining-step",
+      "kind": "quiz",
+      "title": "What sets the SN1 rate",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "sn1-mechanism", "primary": true },
+        { "slug": "carbocation-stability" }
+      ],
+      "body": {
+        "prompt": "For a typical SN1 reaction, the rate law is rate = k[substrate]. Why does the nucleophile's concentration not appear?",
+        "options": [
+          "The nucleophile enters after the rate-determining ionization step",
+          "The nucleophile is always present in vast excess",
+          "The nucleophile acts only as a catalyst",
+          "The nucleophile attacks simultaneously with leaving-group departure"
+        ],
+        "correct_index": 0,
+        "explanation": "The slow step is the substrate ionizing to form the carbocation, and only the substrate is involved in it. Whatever happens after the bottleneck cannot change the overall rate, so the nucleophile is kinetically invisible. Option 4 describes SN2, where both partners are in the single concerted step and the rate is second order."
+      }
+    },
+    {
+      "external_id": "ochem/carbocation-stability-ranking",
+      "kind": "quiz",
+      "title": "Ranking carbocations",
+      "difficulty": 2,
+      "concepts": [{ "slug": "carbocation-stability", "primary": true }],
+      "body": {
+        "prompt": "Which carbocation is the most stable?",
+        "options": ["tert-Butyl cation", "Isopropyl cation", "Ethyl cation", "Methyl cation"],
+        "correct_index": 0,
+        "explanation": "Alkyl groups stabilize an adjacent positive charge two ways: hyperconjugation, where electron density from neighboring C-H sigma bonds leaks into the empty p orbital, and simple inductive donation. More alkyl substituents means more of both, giving 3 degrees > 2 degrees > 1 degrees > methyl. Resonance is the other route to stability — allylic and benzylic cations delocalize the charge into a pi system, which puts a primary benzylic cation roughly on par with a secondary one."
+      }
+    },
+    {
+      "external_id": "ochem/carbocation-hydride-shift",
+      "kind": "quiz",
+      "title": "When the cation moves",
+      "difficulty": 4,
+      "concepts": [
+        { "slug": "carbocation-stability", "primary": true },
+        { "slug": "sn1-mechanism" }
+      ],
+      "body": {
+        "prompt": "3-methyl-2-butanol is treated with HBr. The major product is 2-bromo-2-methylbutane rather than 2-bromo-3-methylbutane. What explains this?",
+        "options": [
+          "A 1,2-hydride shift converts the secondary cation into a tertiary one",
+          "A 1,2-methyl shift converts the secondary cation into a primary one",
+          "The reaction proceeds by SN2 with inversion",
+          "Bromide attacks the least hindered carbon"
+        ],
+        "correct_index": 0,
+        "explanation": "The initial secondary carbocation sits next to a tertiary C-H. A hydride migrates with its electron pair to the cationic carbon, and the positive charge lands on the more substituted carbon — a tertiary cation, which is more stable. Bromide then traps the rearranged cation. Any time an SN1 or E1 product looks like the skeleton moved, suspect a shift."
+      }
+    },
+    {
+      "external_id": "ochem/e2-anti-periplanar",
+      "kind": "quiz",
+      "title": "The E2 geometry requirement",
+      "difficulty": 4,
+      "concepts": [{ "slug": "e2-mechanism", "primary": true }],
+      "body": {
+        "prompt": "In an E2 reaction on a substituted cyclohexane, what must be true of the leaving group and the beta-hydrogen?",
+        "options": [
+          "Both must be axial on adjacent carbons",
+          "Both must be equatorial on adjacent carbons",
+          "The leaving group axial, the beta-hydrogen equatorial",
+          "Their relative orientation does not matter"
+        ],
+        "correct_index": 0,
+        "explanation": "E2 needs the C-H and C-LG bonds anti-periplanar — 180 degrees apart — so the developing pi bond can form from properly aligned orbitals. On a chair, that alignment only exists when both groups are axial (trans-diaxial). This is why a substrate locked with its leaving group equatorial has to ring-flip before it can eliminate, and why some substrates eliminate far slower than their stereoisomers."
+      }
+    },
+    {
+      "external_id": "ochem/e2-zaitsev-hofmann",
+      "kind": "quiz",
+      "title": "Changing the base, changing the alkene",
+      "difficulty": 4,
+      "concepts": [{ "slug": "e2-mechanism", "primary": true }],
+      "body": {
+        "prompt": "2-bromo-2-methylbutane is treated with potassium tert-butoxide instead of ethoxide. How does this change the major product?",
+        "options": [
+          "The less substituted alkene now dominates, because the bulky base cannot reach the hindered proton",
+          "The more substituted alkene dominates even more strongly",
+          "Substitution replaces elimination entirely",
+          "The product distribution is unchanged; base size does not matter"
+        ],
+        "correct_index": 0,
+        "explanation": "Zaitsev's rule — elimination favors the more substituted, more stable alkene — is a default, not a law. It holds when the base is small enough to pick whichever proton it likes. A bulky base like tert-butoxide cannot squeeze in to the crowded internal position, so it takes the accessible proton on the less hindered carbon and gives the Hofmann product instead. Sterics of the base override thermodynamics of the product."
+      }
+    },
+    {
+      "external_id": "ochem/e2-vs-sn2-competition",
+      "kind": "quiz",
+      "title": "Elimination or substitution",
+      "difficulty": 4,
+      "concepts": [{ "slug": "e2-mechanism", "primary": true }, { "slug": "sn2-mechanism" }],
+      "body": {
+        "prompt": "2-bromobutane reacts with sodium ethoxide in ethanol at elevated temperature. Which pathway dominates?",
+        "options": [
+          "E2, because ethoxide is a strong base and heat favors elimination",
+          "SN2, because ethoxide is a good nucleophile",
+          "SN1, because the secondary carbocation is stable",
+          "E1, because ethanol is a protic solvent"
+        ],
+        "correct_index": 0,
+        "explanation": "Ethoxide is both a strong base and a decent nucleophile, so a secondary substrate could go either way — heat is the tiebreaker. Elimination creates more particles from fewer, so it has a favorable entropy change, and raising the temperature amplifies the T-delta-S term until elimination wins. The general read: strong bulky base plus heat means E2; good nucleophile that is a weak base, like azide or cyanide, means SN2 even on secondary substrates."
+      }
+    },
+    {
+      "external_id": "ochem/cip-priority",
+      "kind": "quiz",
+      "title": "CIP priority",
+      "difficulty": 3,
+      "concepts": [{ "slug": "stereochemistry-cip", "primary": true }],
+      "body": {
+        "prompt": "At a stereocenter bearing -OH, -CH3, -CH2CH3, and -H, what is the correct CIP priority order (highest first)?",
+        "options": [
+          "-OH > -CH2CH3 > -CH3 > -H",
+          "-OH > -CH3 > -CH2CH3 > -H",
+          "-CH2CH3 > -OH > -CH3 > -H",
+          "-H > -OH > -CH2CH3 > -CH3"
+        ],
+        "correct_index": 0,
+        "explanation": "Rank by atomic number at the first point of difference. Oxygen (8) outranks both carbons; hydrogen (1) is always last. To break the C-vs-C tie, look at what each carbon holds: ethyl's carbon carries (C,H,H) while methyl's carries (H,H,H), so ethyl wins. Then view with -H pointing away and read 1-2-3."
+      }
+    },
+    {
+      "external_id": "ochem/enantiomer-properties",
+      "kind": "quiz",
+      "title": "How enantiomers differ",
+      "difficulty": 3,
+      "concepts": [{ "slug": "stereochemistry-cip", "primary": true }],
+      "body": {
+        "prompt": "Two enantiomers of a chiral compound will differ in which property?",
+        "options": [
+          "The direction they rotate plane-polarized light",
+          "Their boiling point",
+          "Their density",
+          "Their solubility in ethanol"
+        ],
+        "correct_index": 0,
+        "explanation": "Enantiomers are identical in every scalar physical property — boiling point, density, solubility in achiral solvents — because those do not depend on handedness. They diverge only in chiral environments: they rotate polarized light by equal amounts in opposite directions, and they behave differently toward other chiral molecules. That last point is the whole reason stereochemistry matters in pharmacology, where one enantiomer may be a drug and its mirror image inactive or toxic."
+      }
+    },
+    {
+      "external_id": "ochem/ir-carbonyl-stretch",
+      "kind": "quiz",
+      "title": "The carbonyl band",
+      "difficulty": 1,
+      "concepts": [{ "slug": "ir-spectroscopy", "primary": true }],
+      "body": {
+        "prompt": "A strong, sharp IR absorption near 1715 cm-1 indicates which functional group?",
+        "options": ["A carbonyl (C=O)", "An alcohol (O-H)", "An alkyne (C≡C)", "An amine (N-H)"],
+        "correct_index": 0,
+        "explanation": "The C=O stretch around 1700-1750 cm-1 is the most reliable signal in IR: intense, sharp, and sitting in an otherwise quiet region. Its exact position is diagnostic — ketones near 1715, aldehydes near 1725, esters near 1740, and conjugation pushes it lower while ring strain pushes it higher."
+      }
+    },
+    {
+      "external_id": "ochem/ir-oh-broad",
+      "kind": "quiz",
+      "title": "Reading a broad band",
+      "difficulty": 2,
+      "concepts": [{ "slug": "ir-spectroscopy", "primary": true }],
+      "body": {
+        "prompt": "An IR spectrum shows a very broad absorption from roughly 3200-3600 cm-1. What does this indicate?",
+        "options": [
+          "An O-H group engaged in hydrogen bonding",
+          "A terminal alkyne C-H",
+          "An aromatic C=C",
+          "A nitrile C≡N"
+        ],
+        "correct_index": 0,
+        "explanation": "The breadth is the tell. Hydrogen bonding gives each O-H a slightly different bond strength, so the absorption smears across hundreds of wavenumbers instead of appearing as a sharp line. A carboxylic acid O-H is broader still, often 2500-3300 and overlapping the C-H region. N-H also appears here but is narrower, and primary amines show two peaks."
+      }
+    },
+    {
+      "external_id": "ochem/nmr-n-plus-one",
+      "kind": "quiz",
+      "title": "The n+1 rule",
+      "difficulty": 2,
+      "concepts": [{ "slug": "nmr-spectroscopy", "primary": true }],
+      "body": {
+        "prompt": "In the 1H NMR of 1,1,2-trichloroethane, the CH2 protons appear as which multiplet?",
+        "options": ["A doublet", "A triplet", "A singlet", "A quartet"],
+        "correct_index": 0,
+        "explanation": "Splitting comes from neighboring nonequivalent protons: n neighbors give n+1 lines. The CH2 has exactly one neighbor (the CH), so n=1 and it appears as a doublet. Reciprocally, the CH sees two neighbors and appears as a triplet. Coupling is mutual — if you assign a doublet, something else in the spectrum has to be doing the splitting."
+      }
+    },
+    {
+      "external_id": "ochem/nmr-aldehyde-shift",
+      "kind": "quiz",
+      "title": "The most downfield proton",
+      "difficulty": 3,
+      "concepts": [{ "slug": "nmr-spectroscopy", "primary": true }],
+      "body": {
+        "prompt": "A 1H NMR signal appears at 9.8 ppm. Which proton is most likely responsible?",
+        "options": [
+          "An aldehyde proton (RCHO)",
+          "A vinyl proton on an alkene",
+          "A proton alpha to a ketone",
+          "A methyl on a benzene ring"
+        ],
+        "correct_index": 0,
+        "explanation": "Aldehyde protons resonate around 9-10 ppm, further downfield than almost anything else you meet in a routine spectrum. They are deshielded twice over: the carbonyl pulls electron density away inductively, and the proton sits in the deshielding region of the C=O's anisotropic field. Rough anchors worth memorizing: alkyl 0.9-1.5, alpha-to-carbonyl 2-2.5, vinyl 5-6, aromatic 7-8, aldehyde 9-10, carboxylic acid 10-12."
+      }
+    },
+    {
+      "external_id": "ochem/nmr-integration",
+      "kind": "quiz",
+      "title": "What integration tells you",
+      "difficulty": 2,
+      "concepts": [{ "slug": "nmr-spectroscopy", "primary": true }],
+      "body": {
+        "prompt": "In a 1H NMR spectrum, the integration of a signal is proportional to what?",
+        "options": [
+          "The number of protons giving rise to that signal",
+          "The number of neighboring protons",
+          "The electronegativity of the attached atom",
+          "The number of carbons in the molecule"
+        ],
+        "correct_index": 0,
+        "explanation": "Integration counts protons — the area under a peak scales with how many hydrogens sit in that environment. It gives ratios, not absolute numbers, so a 3:2 integration could be 3H:2H or 6H:4H; you settle it against the molecular formula. Neighbors control splitting, and electronegativity controls chemical shift. Three separate readouts, three separate questions to ask of every spectrum."
+      }
+    },
+    {
+      "external_id": "ochem/ms-bromine-isotope",
+      "kind": "quiz",
+      "title": "The M+2 signature",
+      "difficulty": 3,
+      "concepts": [{ "slug": "mass-spectrometry", "primary": true }],
+      "body": {
+        "prompt": "A mass spectrum shows M and M+2 peaks of nearly equal intensity. Which element is present?",
+        "options": ["Bromine", "Chlorine", "Nitrogen", "Fluorine"],
+        "correct_index": 0,
+        "explanation": "Bromine is roughly a 50:50 mix of Br-79 and Br-81 in nature, so a bromine-containing molecular ion splits into two peaks two mass units apart with nearly equal height. Chlorine also gives an M+2, but Cl-35 to Cl-37 runs about 3:1, so the M+2 is a third the height of M. Fluorine is monoisotopic and shows no M+2 at all."
+      }
+    },
+    {
+      "external_id": "ochem/ms-nitrogen-rule",
+      "kind": "quiz",
+      "title": "The nitrogen rule",
+      "difficulty": 4,
+      "concepts": [{ "slug": "mass-spectrometry", "primary": true }],
+      "body": {
+        "prompt": "A compound containing only C, H, N, and O shows a molecular ion at an odd m/z of 87. What does this tell you?",
+        "options": [
+          "The molecule contains an odd number of nitrogen atoms",
+          "The molecule contains no nitrogen",
+          "The molecule contains an even number of nitrogen atoms",
+          "The peak must be a fragment, not the molecular ion"
+        ],
+        "correct_index": 0,
+        "explanation": "Nitrogen is the oddity: it has an even mass (14) but an odd valence (3), while C, H, and O all pair mass and valence consistently. The result is that any molecule with zero or an even number of nitrogens has an even molecular weight, and an odd molecular ion means an odd number of nitrogens. It is a free structural constraint from a single number on the spectrum."
+      }
+    },
+    {
+      "external_id": "ochem/ms-chlorine-isotope",
+      "kind": "quiz",
+      "title": "Telling chlorine from bromine",
+      "difficulty": 3,
+      "concepts": [{ "slug": "mass-spectrometry", "primary": true }],
+      "body": {
+        "prompt": "A mass spectrum shows an M+2 peak roughly one third the height of the M peak. Which halogen is present?",
+        "options": ["Chlorine", "Bromine", "Iodine", "Fluorine"],
+        "correct_index": 0,
+        "explanation": "Chlorine is about 75 percent Cl-35 and 25 percent Cl-37, a 3:1 ratio that shows up directly as an M peak three times the height of M+2. Bromine's isotopes are nearly 50:50, giving two peaks of almost equal height — so the ratio, not the mere presence of an M+2, is what distinguishes them. Iodine and fluorine are both monoisotopic and produce no M+2 at all."
+      }
+    },
+    {
+      "external_id": "ochem/alcohol-oxidation-pcc",
+      "kind": "quiz",
+      "title": "Stopping at the aldehyde",
+      "difficulty": 3,
+      "concepts": [{ "slug": "alcohol-reactions", "primary": true }],
+      "body": {
+        "prompt": "Which reagent oxidizes 1-butanol to butanal without over-oxidizing it to butanoic acid?",
+        "options": [
+          "PCC in dichloromethane",
+          "Chromic acid (H2CrO4)",
+          "KMnO4 in hot aqueous base",
+          "Jones reagent"
+        ],
+        "correct_index": 0,
+        "explanation": "PCC is the anhydrous choice, and the absence of water is the point. Aqueous oxidants hydrate the aldehyde to a geminal diol, which is itself oxidizable, so the reaction runs on to the carboxylic acid. Without water there is no hydrate, and the oxidation halts at the aldehyde. Jones, chromic acid, and hot permanganate are all aqueous and all take a primary alcohol the whole way."
+      }
+    },
+    {
+      "external_id": "ochem/alcohol-oxidation-tertiary",
+      "kind": "quiz",
+      "title": "The alcohol that will not oxidize",
+      "difficulty": 2,
+      "concepts": [{ "slug": "alcohol-reactions", "primary": true }],
+      "body": {
+        "prompt": "Why is tert-butanol resistant to oxidation by chromic acid?",
+        "options": [
+          "Its carbinol carbon has no hydrogen to remove",
+          "Its hydroxyl group is too sterically hindered to react",
+          "Tertiary alcohols are not acidic enough",
+          "The tert-butyl cation is too stable"
+        ],
+        "correct_index": 0,
+        "explanation": "Oxidizing an alcohol means forming a C=O, which requires stripping a hydrogen from the carbon bearing the OH. A tertiary carbinol carbon holds three alkyl groups and no H, so there is nothing to remove and no way to make the double bond. This is why oxidation is a clean diagnostic for alcohol class: primary goes to aldehyde or acid, secondary to ketone, tertiary nowhere."
+      }
+    },
+    {
+      "external_id": "ochem/alcohol-tosylate",
+      "kind": "quiz",
+      "title": "Fixing a bad leaving group",
+      "difficulty": 3,
+      "concepts": [{ "slug": "alcohol-reactions", "primary": true }, { "slug": "sn2-mechanism" }],
+      "body": {
+        "prompt": "An alcohol is treated with TsCl and pyridine before adding a nucleophile. What does the tosylation accomplish?",
+        "options": [
+          "It converts -OH into an excellent leaving group",
+          "It protects the alcohol from the nucleophile",
+          "It makes the carbinol carbon more nucleophilic",
+          "It inverts the configuration at the carbinol carbon"
+        ],
+        "correct_index": 0,
+        "explanation": "Hydroxide is a terrible leaving group — it is a strong base, so it will not leave on its own. Tosylation swaps it for a tosylate, whose negative charge is spread across three oxygens and an aromatic ring, making it a very weak base and an excellent leaving group. The C-O bond to the carbinol carbon is untouched, so the carbon keeps its configuration during tosylation, and inversion comes later from the SN2 step."
+      }
+    },
+    {
+      "external_id": "ochem/alcohol-acidity-comparison",
+      "kind": "quiz",
+      "title": "Which O-H is most acidic",
+      "difficulty": 3,
+      "concepts": [{ "slug": "alcohol-reactions", "primary": true }],
+      "body": {
+        "prompt": "Rank by acidity, most acidic first: ethanol, 2,2,2-trifluoroethanol, tert-butanol.",
+        "options": [
+          "trifluoroethanol > ethanol > tert-butanol",
+          "ethanol > trifluoroethanol > tert-butanol",
+          "tert-butanol > ethanol > trifluoroethanol",
+          "trifluoroethanol > tert-butanol > ethanol"
+        ],
+        "correct_index": 0,
+        "explanation": "Acidity tracks how well the conjugate base handles its negative charge. Three fluorines pull electron density away inductively and stabilize the alkoxide, so trifluoroethanol is by far the most acidic (pKa about 12.4 versus 16 for ethanol). tert-Butanol is the least acidic: alkyl groups donate electron density, destabilizing the alkoxide, and the bulk also blocks solvation."
+      }
+    },
+    {
+      "external_id": "ochem/grignard-formaldehyde",
+      "kind": "quiz",
+      "title": "Grignard plus formaldehyde",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "grignard-reagents", "primary": true },
+        { "slug": "carbonyl-addition" }
+      ],
+      "body": {
+        "prompt": "Ethylmagnesium bromide reacts with formaldehyde, followed by aqueous acid workup. What is the product?",
+        "options": ["1-propanol", "Ethanol", "2-propanol", "Propanal"],
+        "correct_index": 0,
+        "explanation": "The Grignard's nucleophilic carbon attacks the carbonyl and adds the ethyl group to formaldehyde's single carbon, giving an alkoxide that the workup protonates. Two carbons plus one is 1-propanol. Formaldehyde always gives a primary alcohol, other aldehydes give secondary, and ketones give tertiary — that ladder is the fastest way to check a Grignard answer."
+      }
+    },
+    {
+      "external_id": "ochem/grignard-protic-incompatibility",
+      "kind": "quiz",
+      "title": "Why the glassware must be dry",
+      "difficulty": 3,
+      "concepts": [{ "slug": "grignard-reagents", "primary": true }],
+      "body": {
+        "prompt": "Why must a Grignard reaction be run under scrupulously anhydrous conditions?",
+        "options": [
+          "The Grignard is a strong base and is destroyed by protonation from water",
+          "Water oxidizes the magnesium metal before the reagent forms",
+          "Water catalyzes polymerization of the alkyl halide",
+          "The Grignard reagent is insoluble in water"
+        ],
+        "correct_index": 0,
+        "explanation": "The C-Mg bond is so polarized that the carbon behaves like a carbanion, making the Grignard both a potent nucleophile and a very strong base (the conjugate acid, an alkane, has a pKa around 50). Any proton source — water, an alcohol, even a carboxylic acid O-H elsewhere in the substrate — quenches it instantly to the alkane. This is also why you cannot run a Grignard on a molecule bearing an unprotected OH or NH."
+      }
+    },
+    {
+      "external_id": "ochem/williamson-substrate-choice",
+      "kind": "quiz",
+      "title": "Planning a Williamson synthesis",
+      "difficulty": 4,
+      "concepts": [{ "slug": "ethers-epoxides", "primary": true }, { "slug": "sn2-mechanism" }],
+      "body": {
+        "prompt": "To make tert-butyl methyl ether by Williamson synthesis, which combination works best?",
+        "options": [
+          "tert-butoxide + iodomethane",
+          "methoxide + 2-bromo-2-methylpropane",
+          "tert-butanol + iodomethane, no base",
+          "methanol + 2-methylpropene"
+        ],
+        "correct_index": 0,
+        "explanation": "Williamson is an SN2, so the electrophile must be methyl or primary. Pairing the bulky tert-butoxide with iodomethane puts the hindrance on the nucleophile, where SN2 tolerates it, and keeps the electrophilic carbon unhindered. The reverse pairing fails: methoxide is a strong base and a tertiary halide, so E2 wins and you get isobutylene instead of ether. When a Williamson has two possible disconnections, always attack the less hindered carbon."
+      }
+    },
+    {
+      "external_id": "ochem/epoxide-ring-opening-regiochemistry",
+      "kind": "quiz",
+      "title": "Where the epoxide opens",
+      "difficulty": 5,
+      "concepts": [
+        { "slug": "ethers-epoxides", "primary": true },
+        { "slug": "carbocation-stability" }
+      ],
+      "body": {
+        "prompt": "2,2-dimethyloxirane is opened by methanol under acidic conditions. At which carbon does the methanol attack?",
+        "options": [
+          "The more substituted carbon",
+          "The less substituted carbon",
+          "Both carbons equally",
+          "Neither — acid does not open epoxides"
+        ],
+        "correct_index": 0,
+        "explanation": "This is the classic reversal, and it is worth understanding rather than memorizing. Under acid, the epoxide oxygen is protonated first, and the C-O bond to the more substituted carbon stretches so that carbon takes on significant positive charge — it can support it, being more substituted. The weak nucleophile attacks there. Under basic conditions there is no protonation, no cationic character, and a strong nucleophile just runs a straight SN2 at the less hindered carbon. Same ring, opposite regiochemistry, decided entirely by whether a cation gets to develop."
+      }
+    },
+    {
+      "external_id": "ochem/carbonyl-relative-reactivity",
+      "kind": "quiz",
+      "title": "Aldehyde versus ketone",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbonyl-addition", "primary": true }],
+      "body": {
+        "prompt": "Why do aldehydes undergo nucleophilic addition faster than ketones?",
+        "options": [
+          "Ketones are more sterically hindered and more electronically stabilized",
+          "Aldehyde carbonyl carbons carry a formal negative charge",
+          "Ketones have stronger C=O bonds",
+          "Aldehydes are more acidic at the alpha carbon"
+        ],
+        "correct_index": 0,
+        "explanation": "Two effects push the same way. Sterically, a ketone's second alkyl group crowds the trajectory a nucleophile needs. Electronically, alkyl groups donate electron density into the carbonyl carbon, partially quenching the very positive charge the nucleophile is attracted to — so a ketone is both harder to reach and less appealing on arrival. Formaldehyde, with no alkyl groups at all, is the most reactive of the set."
+      }
+    },
+    {
+      "external_id": "ochem/acetal-formation-conditions",
+      "kind": "quiz",
+      "title": "Driving acetal formation",
+      "difficulty": 4,
+      "concepts": [{ "slug": "carbonyl-addition", "primary": true }],
+      "body": {
+        "prompt": "A ketone is treated with excess ethylene glycol and catalytic TsOH, with a Dean-Stark trap removing water. Why the trap?",
+        "options": [
+          "Acetal formation is reversible, and removing water pulls the equilibrium toward product",
+          "Water would hydrolyze the TsOH catalyst",
+          "Water makes the ketone insoluble",
+          "The trap removes the acetal product as it forms"
+        ],
+        "correct_index": 0,
+        "explanation": "Every step of acetal formation is an equilibrium, and water is a product. Le Chatelier does the rest: pull water out and the system keeps making acetal. Run it in reverse — acetal plus excess aqueous acid — and you recover the ketone. That reversibility is exactly what makes acetals such useful protecting groups: install under anhydrous acid, survive base and nucleophiles like Grignards, remove with aqueous acid when finished."
+      }
+    },
+    {
+      "external_id": "ochem/imine-vs-enamine",
+      "kind": "quiz",
+      "title": "Imine or enamine",
+      "difficulty": 4,
+      "concepts": [{ "slug": "carbonyl-addition", "primary": true }],
+      "body": {
+        "prompt": "A ketone is condensed with a secondary amine under mild acid. What is the product?",
+        "options": ["An enamine", "An imine", "A hemiaminal that does not dehydrate", "An amide"],
+        "correct_index": 0,
+        "explanation": "Both amine classes add to the carbonyl and lose water, but they differ in what is left to eliminate. A primary amine's nitrogen still has an N-H after addition, so it can expel it and form the C=N of an imine. A secondary amine's nitrogen has no N-H left, so the molecule instead removes a proton from the alpha carbon, giving the C=C-N of an enamine. Count the N-H bonds and the product follows."
+      }
+    },
+    {
+      "external_id": "ochem/nabh4-vs-lialh4",
+      "kind": "quiz",
+      "title": "Choosing a hydride",
+      "difficulty": 4,
+      "concepts": [{ "slug": "carbonyl-addition", "primary": true }],
+      "body": {
+        "prompt": "A molecule contains both a ketone and an ester. Which reagent reduces only the ketone?",
+        "options": [
+          "NaBH4",
+          "LiAlH4",
+          "Both reduce only the ketone",
+          "Neither reduces either group"
+        ],
+        "correct_index": 0,
+        "explanation": "NaBH4 is the mild hydride: the B-H bond is relatively strong and the reagent is selective for aldehydes and ketones, leaving esters, amides, and carboxylic acids alone. It is tame enough to use in methanol or even water. LiAlH4 is far more reactive, reduces essentially every carbonyl including esters and amides, and reacts violently with protic solvents. When a problem hands you two carbonyls of different classes, it is usually testing exactly this selectivity."
+      }
+    },
+    {
+      "external_id": "ochem/wittig-product",
+      "kind": "quiz",
+      "title": "What the Wittig makes",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbonyl-addition", "primary": true }],
+      "body": {
+        "prompt": "Cyclohexanone is treated with the ylide Ph3P=CH2. What is the organic product?",
+        "options": ["Methylenecyclohexane", "Cyclohexanol", "1-methylcyclohexanol", "Cyclohexene"],
+        "correct_index": 0,
+        "explanation": "The Wittig swaps a C=O for a C=C at exactly the same carbon: the ylide's carbon replaces the carbonyl oxygen, and the oxygen leaves as triphenylphosphine oxide, whose strong P=O bond drives the reaction. Here the ketone carbon picks up =CH2, giving an exocyclic alkene. The value of the Wittig is that the double bond's position is never in doubt — unlike an elimination, where Zaitsev decides for you."
+      }
+    },
+    {
+      "external_id": "ochem/keto-enol-equilibrium",
+      "kind": "quiz",
+      "title": "Which tautomer wins",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbonyl-alpha-chemistry", "primary": true }],
+      "body": {
+        "prompt": "For a simple ketone like acetone, which tautomer dominates at equilibrium, and why?",
+        "options": [
+          "The keto form, because C=O is stronger than C=C",
+          "The enol form, because it is aromatic",
+          "The enol form, because it can hydrogen bond",
+          "They are present in equal amounts"
+        ],
+        "correct_index": 0,
+        "explanation": "The keto form wins overwhelmingly — acetone's enol content sits well below a millionth of a percent — because a C=O bond is substantially stronger than a C=C. The exceptions are worth knowing: 1,3-dicarbonyls have appreciable enol because the enol is conjugated and internally hydrogen bonded, and phenol is essentially all enol because its keto tautomer would sacrifice aromaticity."
+      }
+    },
+    {
+      "external_id": "ochem/alpha-proton-acidity",
+      "kind": "quiz",
+      "title": "Why the alpha proton is special",
+      "difficulty": 4,
+      "concepts": [{ "slug": "carbonyl-alpha-chemistry", "primary": true }],
+      "body": {
+        "prompt": "The alpha proton of a ketone has a pKa near 20, while a typical alkane C-H is near 50. What accounts for the difference?",
+        "options": [
+          "The resulting enolate is resonance-stabilized onto the carbonyl oxygen",
+          "The alpha carbon is more electronegative than an alkane carbon",
+          "The alpha proton is stabilized by hydrogen bonding to the carbonyl",
+          "The alpha C-H bond is longer and therefore weaker"
+        ],
+        "correct_index": 0,
+        "explanation": "Removing the alpha proton gives a carbanion that is not stranded on carbon — it delocalizes into the adjacent C=O, putting the negative charge on the electronegative oxygen where it is far better tolerated. Thirty pKa units is a factor of 10^30, all of it bought by that one resonance structure. This single fact underwrites the whole back half of organic: aldol, Claisen, Michael, and alkylation all begin by making an enolate."
+      }
+    },
+    {
+      "external_id": "ochem/terminal-alkyne-acidity",
+      "kind": "quiz",
+      "title": "The acidic alkyne",
+      "difficulty": 3,
+      "concepts": [{ "slug": "alkyne-chemistry", "primary": true }],
+      "body": {
+        "prompt": "A terminal alkyne C-H has a pKa near 25, far more acidic than an alkene's (44) or an alkane's (50). Why?",
+        "options": [
+          "The carbanion sits in an sp orbital with high s character, close to the nucleus",
+          "The triple bond is electron withdrawing by resonance",
+          "The alkyne carbanion is aromatic",
+          "Triple bonds are longer and hold their protons more loosely"
+        ],
+        "correct_index": 0,
+        "explanation": "It comes down to hybridization. An sp orbital is 50 percent s character versus 33 percent for sp2 and 25 percent for sp3, and s orbitals hold electron density nearer the nucleus, where a lone pair is more stable. More s character means a more stable carbanion means a more acidic C-H. Practically: NaNH2 (ammonia pKa 38) deprotonates a terminal alkyne cleanly, and the resulting acetylide is a strong carbon nucleophile for SN2."
+      }
+    },
+    {
+      "external_id": "ochem/alkyne-hydration-regiochemistry",
+      "kind": "quiz",
+      "title": "Two ways to hydrate an alkyne",
+      "difficulty": 5,
+      "concepts": [{ "slug": "alkyne-chemistry", "primary": true }],
+      "body": {
+        "prompt": "1-hexyne is treated with disiamylborane, then H2O2 and NaOH. What is the product?",
+        "options": ["Hexanal", "2-hexanone", "1-hexanol", "Hexanoic acid"],
+        "correct_index": 0,
+        "explanation": "Hydroboration-oxidation puts boron, and eventually oxygen, on the less substituted carbon — anti-Markovnikov. The initial enol tautomerizes to the carbonyl, and because the oxygen landed on the terminal carbon, you get an aldehyde. The complementary route, HgSO4 in aqueous acid, is Markovnikov: oxygen goes to the internal carbon and you get 2-hexanone instead. One alkyne, two hydration methods, two different carbonyls."
+      }
+    },
+    {
+      "external_id": "ochem/extraction-acid-base",
+      "kind": "quiz",
+      "title": "Separating by extraction",
+      "difficulty": 4,
+      "concepts": [{ "slug": "separation-purification", "primary": true }],
+      "body": {
+        "prompt": "An ether solution contains benzoic acid and naphthalene. Shaking it with aqueous NaHCO3 accomplishes what?",
+        "options": [
+          "Benzoic acid moves to the aqueous layer as its sodium salt",
+          "Naphthalene moves to the aqueous layer",
+          "Both compounds move to the aqueous layer",
+          "Benzoic acid precipitates out of both layers"
+        ],
+        "correct_index": 0,
+        "explanation": "Extraction separates by manipulating solubility, and charge is the lever. Bicarbonate deprotonates benzoic acid to benzoate, an ion, which prefers water; neutral naphthalene has no acidic proton and stays in the ether. Acidifying the aqueous layer afterward reprotonates the benzoate and precipitates pure benzoic acid. The choice of base matters too: NaHCO3 is weak enough to deprotonate carboxylic acids but not phenols, so it can separate even those two."
+      }
+    },
+    {
+      "external_id": "ochem/tlc-polarity",
+      "kind": "quiz",
+      "title": "Reading a TLC plate",
+      "difficulty": 3,
+      "concepts": [{ "slug": "separation-purification", "primary": true }],
+      "body": {
+        "prompt": "On a normal-phase silica TLC plate, a more polar compound will show which Rf behavior?",
+        "options": [
+          "A lower Rf, because it binds the polar stationary phase more tightly",
+          "A higher Rf, because it dissolves better in the mobile phase",
+          "An Rf of exactly 1.0",
+          "Rf is independent of polarity"
+        ],
+        "correct_index": 0,
+        "explanation": "Silica is polar, so polar compounds stick to it and lag behind while nonpolar compounds ride along with the solvent front. Low Rf means high polarity on normal phase. Two practical corollaries: a more polar eluent raises everything's Rf by competing for the silica's binding sites, and reverse-phase chromatography flips the whole relationship because the stationary phase is nonpolar."
+      }
+    },
+    {
+      "external_id": "ochem/recrystallization-principle",
+      "kind": "quiz",
+      "title": "Picking a recrystallization solvent",
+      "difficulty": 3,
+      "concepts": [{ "slug": "separation-purification", "primary": true }],
+      "body": {
+        "prompt": "What property must a good recrystallization solvent have?",
+        "options": [
+          "It dissolves the compound well when hot and poorly when cold",
+          "It dissolves the compound well at all temperatures",
+          "It dissolves the compound poorly at all temperatures",
+          "It has a boiling point above the compound's melting point"
+        ],
+        "correct_index": 0,
+        "explanation": "The whole method rests on a steep solubility-versus-temperature curve. Dissolve everything hot, then cool slowly: the compound exceeds its cold solubility and crystallizes, while impurities — present in far smaller amounts — stay below saturation and remain in solution. A solvent that dissolves the compound cold gives no recovery; one that will not dissolve it hot never gets started. Slow cooling matters too, since fast cooling traps impurities in the lattice."
+      }
+    },
+    {
+      "external_id": "ochem/distillation-choice",
+      "kind": "quiz",
+      "title": "When to distill under vacuum",
+      "difficulty": 3,
+      "concepts": [{ "slug": "separation-purification", "primary": true }],
+      "body": {
+        "prompt": "A compound decomposes at 180 C but boils at 250 C under atmospheric pressure. How should it be purified by distillation?",
+        "options": [
+          "Vacuum distillation, which lowers the boiling point below the decomposition temperature",
+          "Simple distillation, but heated faster to outrun decomposition",
+          "Fractional distillation at atmospheric pressure",
+          "It cannot be distilled at all"
+        ],
+        "correct_index": 0,
+        "explanation": "Boiling happens when vapor pressure equals the applied pressure, so lowering the pressure lowers the boiling point — often by 100 degrees or more. Under vacuum this compound boils well under 180 C and distills intact. Fractional distillation improves separation between close-boiling components but does nothing about the absolute temperature, which is the actual problem here."
+      }
+    }
+  ]
+}
