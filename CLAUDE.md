@@ -102,7 +102,9 @@ injected. Pattern lifted from `~/src/garm`.
 - **Content pipeline**: author batches as `content/*.json`, `npm run import --
 <file>`. Validated by `lib/content/schema.ts` (zod), upserted by
   `lib/handlers/import-content.ts`. Idempotent via `external_id`. No endpoint, no
-  API key — a script the author runs. `content/neuro-sample.json` is the template.
+  API key — a script the author runs. `content/ochem-foundations.json` is the
+  template. `batch_id` is a **stable handle**, not a label — `deactivateMissing`
+  finds prior items by it, so never date it or bump it across a revision.
 - **Stack**: Next 15.5.20, Drizzle 0.45.2, PGlite 0.5.4, Vitest 4.1.10, zod 4, tsx.
 - **Brand**: Navy (#1A3C6B) / cream (#F8F8F0) / slate (#4A6E91), Montserrat
   headings, Open Sans body, book+arrow logo. Tokens in `app/globals.css`.
@@ -177,15 +179,30 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Next Steps
 
-1. **Author the real content bank** (next session, with fable). Use
-   `content/neuro-sample.json` as the format template — hand it to Claude.ai,
-   author a real batch, drop it in `content/`. `npm run import -- <file>` against
-   the dev branch to validate + preview.
+1. ~~**Author the real content bank**~~ — **done 2026-07-16**.
+   `content/ochem-foundations.json`: 39 quiz items, 15 concepts, batch
+   `ochem-foundations`, imported to the Neon **dev** branch. **The bank is
+   organic chemistry, not neuro** — Max is mid-CHEM 32 in SCU's summer
+   intensive (Session 5, Jul 6–24; CHEM 33 follows Jul 27–Aug 14). Content
+   follows his coursework, not his major. All legacy neuro sample data +
+   smoke-test deliveries were deleted from dev the same day. **Needs a
+   chemistry review before prod.** Next batch as he hits CHEM 33:
+   `ochem-carbonyls` (aldol, Claisen, EAS, amines, carbohydrates).
 2. **Ship to prod, then flip Max on.** In order: apply migration `0002` to `main`
-   (`.env.local` at prod, `npm run db:migrate`), import the real bank to prod,
-   push the branch + deploy (this replaces the old notes app so the emailed button
-   resolves), add the three env vars to Vercel **Preview**, then set Max
-   `is_active=true`.
+   (`.env.local` at prod, `npm run db:migrate`), **then clear prod's legacy
+   content** (see hazard below), import the real bank to prod, push the branch +
+   deploy (this replaces the old notes app so the emailed button resolves), add
+   the three env vars to Vercel **Preview**, then set Max `is_active=true`.
+   - **⚠️ The 0002 orphan hazard.** `0002` adds `content_items.external_id`, so
+     every pre-existing prod row gets `external_id = NULL`. Those rows stay
+     `is_active=true`, can still be selected and emailed to Max, and are
+     **invisible to every future import** — which matches on `external_id`, so a
+     re-import creates a duplicate row beside the orphan instead of updating it.
+     Observed exactly this on dev: "The rising phase" existed twice, once as a
+     NULL orphan and once properly keyed. Postgres `UNIQUE` permits multiple
+     NULLs, so the constraint does not catch it. Delete prod's legacy content
+     after migrating, before importing. Note `deliveries.content_item_id` is
+     `ON DELETE NO ACTION`, so any delivery referencing an orphan must go first.
 3. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
    `ANTHROPIC_API_KEY` needed here.
 4. **M6** — dashboard (magic link, same HMAC primitive) + landing page. Decide
