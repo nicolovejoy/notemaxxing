@@ -81,18 +81,24 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Current State
 
-- **Build**: passing. **Tests**: 271 passing, ~35s. Branch:
-  `feat/daily-learning-companion`, pushed. Last commit `b59cf87`.
-  **PR #13 open** → main: https://github.com/nicolovejoy/notemaxxing/pull/13
+- **🎉 LIVE as of 2026-07-16.** PR #13 squash-merged (`5e3890c`); prod is the
+  Daily Learning Companion, not the old notes app (verified: bad token renders
+  the DeadLink page, unknown paths 404, `/api/cron/daily` 401s without the
+  secret). **Max is `is_active=true`, send hour 10 local** — first real question
+  lands Fri 2026-07-17 ~10:00–10:15 PDT. Nico active at hour 7.
+- **Build**: passing. **Tests**: 271 passing, ~30s. Branch: `content/ochem-bank`
+  → PR open against main (the bank + docs; PR #13 merged before it was pushed,
+  so main briefly lagged).
 - **Done**: M0 (harness+schema+CI), M1 (pure core), M2 (query layer),
   M3 (email+Resend+cron), **smoke test** (first real email delivered to Nico via
   Resend 2026-07-15), **M4** (answer page + respond handler), **content import**
-  (git JSON → zod → idempotent upsert).
-- **⚠️ Max is `is_active=false`** — still. Flip only after the real content bank
-  is authored + imported to prod. Re-activate deliberately.
-- **⚠️ Migration `0002` (content_items.external_id) is on the Neon `dev` branch
-  ONLY, not prod (`main`).** So is the sample content. Apply to prod deliberately
-  before Max: `npm run db:migrate` with `.env.local` pointed at prod, then import.
+  (git JSON → zod → idempotent upsert), **content bank + prod cutover**
+  (2026-07-16).
+- **Prod DB state**: migrations `0000`–`0002` applied to `main`. 39 active
+  content_items (all `ochem/`-prefixed, batch `ochem-foundations`), 15 concepts,
+  all `chem/organic`. Zero NULL `external_id`. Legacy neuro sample + the one
+  smoke-test delivery/response were deleted at cutover. Cleared **before**
+  migrating `0002`, so the orphan state never existed.
 - **M4 shape**: `/learn/r/[token]` (page.tsx + quiz-form.tsx) + `POST
 /api/learn/respond` → `lib/handlers/respond.ts`. Idempotent on
   `responses.delivery_id` UNIQUE; response time server-derived from the
@@ -118,9 +124,13 @@ injected. Pattern lifted from `~/src/garm`.
   (learner_id) is not environment isolation** — before this, all local testing
   hit prod. Local `.env.local` now points at `dev` (repoint via the scratchpad
   `point-local-at-dev.js` pattern, or `neonctl connection-string dev --pooled`).
-  Migrations `0000`+`0001` on both branches; **`0002` on `dev` only**.
+  Migrations `0000`–`0002` on **both** branches as of 2026-07-16.
   `drizzle-kit migrate` prints nothing on success — verify against
-  `drizzle.__drizzle_migrations`, don't trust the silence.
+  `drizzle.__drizzle_migrations`, don't trust the silence. Endpoints:
+  `main` = `ep-wild-river-at89syk6`, `dev` = `ep-bold-cake-atru59l4` (the
+  endpoint id does not contain the branch name — check it, don't eyeball it).
+  To target a branch for one command, pass `DATABASE_URL` inline: an inline var
+  wins, because dotenv does not override what is already set.
 - **Resend**: `send.notemaxxing.net` verified via DKIM (Resend's Cloudflare
   auto-config). DNS is on Cloudflare. DMARC is `p=reject` — strict, so a bad SPF
   won't degrade gracefully. No MX record, so **bounce/complaint feedback doesn't
@@ -136,12 +146,16 @@ injected. Pattern lifted from `~/src/garm`.
   Enter at `? Git branch?` = all preview branches). 1Password items
   (`dev-secrets`): `notemaxxing-token-secret`, `notemaxxing-cron-secret`,
   `resend-notemaxxing`. `ANTHROPIC_API_KEY` not needed until M5 ("Anthropic -
-  notemaxxing API key" in 1Password). `NEXT_PUBLIC_SITE_URL` = notemaxxing.net, but
-  **prod still runs the pre-repurpose notes app** (unknown paths 302 to home, not 404) until this branch deploys.
-- **⚠️ Preview `DATABASE_URL` still points at prod `main`** (Neon integration
-  default). A preview deploy that touches the DB writes to production. Decision
-  deferred: point Preview at the `dev` branch (quick, matches local), or enable
-  Neon per-preview auto-branching (cleaner, a toggle in the integration).
+  notemaxxing API key" in 1Password). `NEXT_PUBLIC_SITE_URL` = notemaxxing.net,
+  which as of 2026-07-16 **serves the Daily Learning Companion** — the old notes
+  app is gone from prod.
+- **⚠️⚠️ Preview `DATABASE_URL` still points at prod `main`** (Neon integration
+  default). A preview deploy that touches the DB writes to production. **This got
+  sharper on 2026-07-16**: prod is no longer a sandbox with throwaway rows — it
+  holds the real bank and a live learner, so a preview deploy can now corrupt
+  Max's actual mastery state or burn a delivery. Fix before the next PR: point
+  Preview at the `dev` branch (quick, matches local), or enable Neon per-preview
+  auto-branching (cleaner, a toggle in the integration).
 - **Vercel plan is Pro** — confirmed via `ibuild4you`'s `*/5` cron, which Hobby
   would reject. This matters: Hobby caps cron at once-per-day, and on a
   once-daily cron the per-learner local-hour gate would match in summer and
