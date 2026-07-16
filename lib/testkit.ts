@@ -13,6 +13,7 @@ import {
   deliveries,
   engagementEvents,
   learners,
+  responseConceptOutcomes,
   responses,
 } from './db/schema'
 
@@ -159,5 +160,6 @@ export {
   deliveries,
   engagementEvents,
   learners,
+  responseConceptOutcomes,
   responses,
 }

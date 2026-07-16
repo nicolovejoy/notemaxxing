@@ -15,6 +15,13 @@
       "when": 1784144586276,
       "tag": "0001_overrated_leech",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784216222592,
+      "tag": "0002_careful_zemo",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,83 @@
+{
+  "batch_id": "neuro-sample-2026-07",
+  "concepts": [
+    {
+      "slug": "action-potential",
+      "name": "Action potential",
+      "domain": "neuro/cellular",
+      "description": "The all-or-none electrical impulse that travels along a neuron.",
+      "intro_priority": 1
+    },
+    {
+      "slug": "resting-potential",
+      "name": "Resting membrane potential",
+      "domain": "neuro/cellular",
+      "description": "The voltage across a neuron's membrane at rest, near -70 mV.",
+      "intro_priority": 0
+    },
+    {
+      "slug": "synaptic-transmission",
+      "name": "Synaptic transmission",
+      "domain": "neuro/cellular",
+      "description": "How a signal crosses the synapse from one neuron to the next.",
+      "intro_priority": 2
+    }
+  ],
+  "items": [
+    {
+      "external_id": "neuro/ap-rising-phase",
+      "kind": "quiz",
+      "title": "The rising phase",
+      "difficulty": 2,
+      "concepts": [{ "slug": "action-potential", "primary": true }],
+      "body": {
+        "prompt": "Which ion influx drives the rising phase of an action potential?",
+        "options": ["Sodium (Na+)", "Potassium (K+)", "Chloride (Cl-)", "Calcium (Ca2+)"],
+        "correct_index": 0,
+        "explanation": "Voltage-gated Na+ channels open first; Na+ rushes in down its electrochemical gradient, depolarizing the membrane. K+ efflux comes later and drives repolarization."
+      }
+    },
+    {
+      "external_id": "neuro/resting-potential-pump",
+      "kind": "quiz",
+      "title": "Holding the resting potential",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "resting-potential", "primary": true },
+        { "slug": "action-potential" }
+      ],
+      "body": {
+        "prompt": "The Na+/K+ pump maintains the resting potential by moving ions in which ratio?",
+        "options": [
+          "3 Na+ out, 2 K+ in",
+          "2 Na+ out, 3 K+ in",
+          "3 Na+ in, 2 K+ out",
+          "1 Na+ out, 1 K+ in"
+        ],
+        "correct_index": 0,
+        "explanation": "The pump exports 3 Na+ for every 2 K+ it imports, using ATP. The net export of positive charge helps keep the inside negative relative to the outside."
+      }
+    },
+    {
+      "external_id": "neuro/synapse-neurotransmitter-release",
+      "kind": "quiz",
+      "title": "Triggering release",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "synaptic-transmission", "primary": true },
+        { "slug": "action-potential" }
+      ],
+      "body": {
+        "prompt": "Arrival of an action potential at the axon terminal triggers neurotransmitter release by opening which channels?",
+        "options": [
+          "Voltage-gated Ca2+ channels",
+          "Ligand-gated Na+ channels",
+          "Voltage-gated K+ channels",
+          "Mechanically-gated Cl- channels"
+        ],
+        "correct_index": 0,
+        "explanation": "Depolarization opens voltage-gated Ca2+ channels; the Ca2+ influx makes synaptic vesicles fuse with the presynaptic membrane and release their neurotransmitter into the cleft."
+      }
+    }
+  ]
+}

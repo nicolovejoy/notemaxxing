@@ -91,6 +91,14 @@ export const contentItems = pgTable(
   'content_items',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    /**
+     * Stable author-assigned key, e.g. 'neuro/action-potential-rising-phase'.
+     * The idempotency anchor for import: re-running a batch upserts on this
+     * rather than inserting duplicates. Nullable+unique — the smoke-test rows
+     * predate it and stay null (Postgres allows many nulls under UNIQUE);
+     * everything imported from git carries one.
+     */
+    externalId: text('external_id').unique(),
     kind: text('kind').notNull(),
     title: text('title').notNull(),
     difficulty: smallint('difficulty').notNull().default(3),
