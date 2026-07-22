@@ -1,0 +1,931 @@
+{
+  "batch_id": "ochem-carbonyls",
+  "concepts": [
+    {
+      "slug": "aldol-mechanism",
+      "name": "Aldol mechanism",
+      "domain": "chem/organic",
+      "description": "Enolate attacks a carbonyl carbon, forming a new C-C bond and a beta-hydroxy carbonyl.",
+      "intro_priority": 0
+    },
+    {
+      "slug": "aldol-dehydration",
+      "name": "Aldol dehydration",
+      "domain": "chem/organic",
+      "description": "Loss of water from the aldol addition product to form a conjugated, more stable enone.",
+      "intro_priority": 1
+    },
+    {
+      "slug": "crossed-aldol-selectivity",
+      "name": "Crossed aldol selectivity",
+      "domain": "chem/organic",
+      "description": "Controlling which partner enolizes and which gets attacked when both carbonyls have alpha hydrogens.",
+      "intro_priority": 2
+    },
+    {
+      "slug": "claisen-condensation",
+      "name": "Claisen condensation",
+      "domain": "chem/organic",
+      "description": "Ester enolate attacks a second ester, expelling alkoxide to form a beta-ketoester.",
+      "intro_priority": 3
+    },
+    {
+      "slug": "claisen-driving-force",
+      "name": "Claisen driving force",
+      "domain": "chem/organic",
+      "description": "Why Claisen needs stoichiometric base and a matched alkoxide, unlike a catalytic aldol.",
+      "intro_priority": 4
+    },
+    {
+      "slug": "eas-mechanism",
+      "name": "EAS mechanism",
+      "domain": "chem/organic",
+      "description": "Electrophile addition to the ring forms an arenium ion; loss of a proton restores aromaticity.",
+      "intro_priority": 5
+    },
+    {
+      "slug": "eas-activating-deactivating",
+      "name": "EAS activating and deactivating groups",
+      "domain": "chem/organic",
+      "description": "How ring substituents speed up or slow down the rate of electrophilic attack.",
+      "intro_priority": 6
+    },
+    {
+      "slug": "eas-directing-effects",
+      "name": "EAS ortho/para vs meta direction",
+      "domain": "chem/organic",
+      "description": "Why some substituents send the next electrophile ortho/para, and others meta.",
+      "intro_priority": 7
+    },
+    {
+      "slug": "eas-halogen-special-case",
+      "name": "EAS halogen special case",
+      "domain": "chem/organic",
+      "description": "Halogens: deactivating by induction, ortho/para-directing by resonance.",
+      "intro_priority": 8
+    },
+    {
+      "slug": "amine-basicity",
+      "name": "Amine basicity",
+      "domain": "chem/organic",
+      "description": "Why alkyl amines, anilines, and amides differ so sharply in how available their nitrogen lone pair is.",
+      "intro_priority": 9
+    },
+    {
+      "slug": "amine-synthesis",
+      "name": "Amine synthesis",
+      "domain": "chem/organic",
+      "description": "Gabriel synthesis and reductive amination as routes to a clean, specific amine.",
+      "intro_priority": 10
+    },
+    {
+      "slug": "amine-reactions",
+      "name": "Amine reactions",
+      "domain": "chem/organic",
+      "description": "Hofmann elimination and diazonium chemistry as amine-specific transformations.",
+      "intro_priority": 11
+    },
+    {
+      "slug": "carbohydrate-classification",
+      "name": "Carbohydrate classification",
+      "domain": "chem/organic",
+      "description": "Sorting sugars by carbonyl type, carbon count, and how many monosaccharide units they contain.",
+      "intro_priority": 12
+    },
+    {
+      "slug": "carbohydrate-anomers",
+      "name": "Carbohydrate anomers",
+      "domain": "chem/organic",
+      "description": "The new stereocenter created on ring closure, and why its configuration equilibrates in solution.",
+      "intro_priority": 13
+    },
+    {
+      "slug": "carbohydrate-fischer-haworth",
+      "name": "Fischer and Haworth projections",
+      "domain": "chem/organic",
+      "description": "Reading D/L configuration and translating between Fischer and Haworth projections.",
+      "intro_priority": 14
+    },
+    {
+      "slug": "carbohydrate-reducing-sugars",
+      "name": "Reducing sugars",
+      "domain": "chem/organic",
+      "description": "Why some sugars have a free aldehyde available to reduce Tollens' or Benedict's reagent, and some don't.",
+      "intro_priority": 15
+    },
+    {
+      "slug": "carbohydrate-glycosidic-bonds",
+      "name": "Glycosidic bonds",
+      "domain": "chem/organic",
+      "description": "The acetal linkage joining monosaccharides, and what happens when it hydrolyzes.",
+      "intro_priority": 16
+    },
+    {
+      "slug": "amino-acid-structure",
+      "name": "Amino acid structure",
+      "domain": "chem/organic",
+      "description": "The zwitterionic alpha-amino acid skeleton at physiological pH.",
+      "intro_priority": 17
+    },
+    {
+      "slug": "amino-acid-isoelectric-point",
+      "name": "Amino acid isoelectric point",
+      "domain": "chem/organic",
+      "description": "The pH at which an amino acid's net charge is zero.",
+      "intro_priority": 18
+    },
+    {
+      "slug": "amino-acid-classification",
+      "name": "Amino acid side-chain classification",
+      "domain": "chem/organic",
+      "description": "Sorting side chains by acid-base character and special reactivity like cysteine's thiol.",
+      "intro_priority": 19
+    }
+  ],
+  "items": [
+    {
+      "external_id": "ochem/aldol-mechanism-steps",
+      "kind": "quiz",
+      "title": "The aldol mechanism, step by step",
+      "difficulty": 3,
+      "concepts": [{ "slug": "aldol-mechanism", "primary": true }],
+      "body": {
+        "prompt": "Under basic conditions, acetaldehyde undergoes a self-aldol reaction. What is the correct order of mechanistic events?",
+        "options": [
+          "Base removes an alpha proton to form an enolate; the enolate carbon attacks the carbonyl carbon of a second acetaldehyde; the resulting alkoxide is protonated on workup",
+          "The carbonyl oxygen is protonated first; then the alpha carbon attacks another carbonyl",
+          "Two acetaldehyde molecules combine directly without deprotonation",
+          "Base attacks the carbonyl carbon directly, displacing no leaving group"
+        ],
+        "correct_index": 0,
+        "explanation": "Base-catalyzed aldol has three moves: deprotonate the alpha carbon to make a resonance-stabilized enolate, let that enolate's carbon attack the electrophilic carbonyl carbon of a second molecule to form the new C-C bond, then protonate the resulting alkoxide on workup to give the beta-hydroxy carbonyl. Nothing here needs acid activation of the carbonyl."
+      }
+    },
+    {
+      "external_id": "ochem/aldol-self-condensation-product",
+      "kind": "quiz",
+      "title": "Identifying the aldol product",
+      "difficulty": 4,
+      "concepts": [{ "slug": "aldol-mechanism", "primary": true }],
+      "body": {
+        "prompt": "Acetaldehyde (CH3CHO) is treated with dilute NaOH, then neutralized before dehydration can occur. What is the product?",
+        "options": [
+          "Butanal",
+          "3-hydroxybutanal",
+          "2-hydroxybutanal",
+          "2-butenal (crotonaldehyde)"
+        ],
+        "correct_index": 1,
+        "explanation": "Deprotonating the methyl group gives the enolate CH2=CH-O-. Its carbon attacks the carbonyl carbon of a second, un-enolized acetaldehyde molecule, forming a new C-C bond and an alkoxide there. Protonation gives CH3-CH(OH)-CH2-CHO. Numbering from the aldehyde carbon, the OH sits on C3: 3-hydroxybutanal. It only becomes crotonaldehyde (2-butenal) after a subsequent dehydration step, which this question stops before."
+      }
+    },
+    {
+      "external_id": "ochem/aldol-dehydration-driving-force",
+      "kind": "quiz",
+      "title": "Why the aldol product dehydrates",
+      "difficulty": 3,
+      "concepts": [{ "slug": "aldol-dehydration", "primary": true }],
+      "body": {
+        "prompt": "The initial aldol addition product (a beta-hydroxy aldehyde or ketone) often loses water to form an alpha,beta-unsaturated carbonyl compound. What makes this dehydration so favorable compared to dehydrating a simple, isolated alcohol?",
+        "options": [
+          "Water is a stronger acid than the starting aldol product",
+          "The resulting C=C is conjugated with the carbonyl, extending pi conjugation and lowering the product's energy",
+          "The beta-hydroxyl is a better leaving group than a normal hydroxyl",
+          "The reaction is entropically unfavorable, which drives it forward under thermodynamic control"
+        ],
+        "correct_index": 1,
+        "explanation": "Losing water from the beta-hydroxy carbonyl creates a C=C directly conjugated with the C=O, an enone. That conjugation is a real thermodynamic stabilization the starting material didn't have, so the equilibrium is pulled toward the unsaturated product even though the leaving group itself is an ordinary hydroxyl, nothing special."
+      }
+    },
+    {
+      "external_id": "ochem/aldol-dehydration-mechanism-base",
+      "kind": "quiz",
+      "title": "How dehydration happens under base",
+      "difficulty": 4,
+      "concepts": [{ "slug": "aldol-dehydration", "primary": true }, { "slug": "aldol-mechanism" }],
+      "body": {
+        "prompt": "In base-catalyzed aldol condensation, elimination of water from the beta-hydroxy carbonyl proceeds by which mechanism?",
+        "options": [
+          "E2: hydroxide and the alpha proton are removed in a single concerted step requiring anti-periplanar geometry",
+          "SN2: hydroxide is directly displaced by the incoming base",
+          "E1cb: deprotonation at the alpha carbon forms an enolate, which expels the beta-hydroxide as the pi bond forms",
+          "E1: the beta-hydroxyl leaves first to form a carbocation, which then loses a proton"
+        ],
+        "correct_index": 2,
+        "explanation": "Under base, hydroxide is a poor leaving group and never departs on its own, ruling out E1. Instead the alpha proton (acidified by the adjacent carbonyl) is removed first to give an enolate, and that enolate pushes the beta-hydroxide out as the new pi bond forms: E1cb, conjugate-base elimination, stepwise rather than concerted."
+      }
+    },
+    {
+      "external_id": "ochem/crossed-aldol-problem",
+      "kind": "quiz",
+      "title": "Why a crossed aldol needs planning",
+      "difficulty": 3,
+      "concepts": [{ "slug": "crossed-aldol-selectivity", "primary": true }],
+      "body": {
+        "prompt": "Acetone and 3-pentanone are mixed with NaOH. Why does this crossed aldol reaction give a messy mixture of products rather than one clean compound?",
+        "options": [
+          "NaOH is too weak a base to deprotonate either ketone",
+          "The two ketones are immiscible and never react together",
+          "Ketones cannot undergo aldol reactions at all, only aldehydes can",
+          "Both ketones have alpha hydrogens, so each can act as either the nucleophile (enolate) or the electrophile, giving up to four possible aldol products"
+        ],
+        "correct_index": 3,
+        "explanation": "Both partners are enolizable, so both can form an enolate and both can also sit still and get attacked. That's four combinations: acetone-on-acetone, pentanone-on-pentanone, and the two crossed pairings, all forming under the same reaction conditions with no way to favor one."
+      }
+    },
+    {
+      "external_id": "ochem/crossed-aldol-control-strategy",
+      "kind": "quiz",
+      "title": "Getting one clean crossed-aldol product",
+      "difficulty": 4,
+      "concepts": [
+        { "slug": "crossed-aldol-selectivity", "primary": true },
+        { "slug": "aldol-mechanism" }
+      ],
+      "body": {
+        "prompt": "To force a clean crossed aldol between cyclohexanone and benzaldehyde, which strategy is used, and why does it work?",
+        "options": [
+          "Benzaldehyde has no alpha hydrogens, so it can only act as the nucleophile",
+          "Both compounds are treated with LDA at once, forming a stable mixed enolate",
+          "Excess NaOH is added so both compounds fully enolize and react at the same rate",
+          "Benzaldehyde has no alpha hydrogens, so it can only act as the electrophile; treating cyclohexanone with a strong, hindered base like LDA first forms its enolate cleanly before benzaldehyde is added"
+        ],
+        "correct_index": 3,
+        "explanation": "Benzaldehyde's carbonyl carbon has only an aromatic ring and H attached — no alpha C-H to remove, so it can never self-condense or serve as the nucleophile. Pre-forming cyclohexanone's lithium enolate with LDA (a strong, non-nucleophilic, hindered base, typically at low temperature) converts essentially all of it to enolate before benzaldehyde is introduced, so the enolate has only benzaldehyde available to attack as electrophile."
+      }
+    },
+    {
+      "external_id": "ochem/claisen-basic-mechanism",
+      "kind": "quiz",
+      "title": "What Claisen condensation makes",
+      "difficulty": 2,
+      "concepts": [{ "slug": "claisen-condensation", "primary": true }],
+      "body": {
+        "prompt": "Ethyl acetate is treated with a full equivalent of sodium ethoxide, then given an acidic workup. What is the product?",
+        "options": [
+          "Diethyl malonate",
+          "2-butanone",
+          "Ethyl acetoacetate (a beta-ketoester)",
+          "Acetic acid"
+        ],
+        "correct_index": 2,
+        "explanation": "Ethoxide deprotonates one ethyl acetate's alpha carbon; that enolate attacks the carbonyl carbon of a second ethyl acetate; the tetrahedral intermediate collapses by expelling ethoxide, reforming a carbonyl. The result, after the product's acidic alpha proton is deprotonated and then reprotonated on workup, is ethyl acetoacetate, CH3COCH2CO2Et."
+      }
+    },
+    {
+      "external_id": "ochem/claisen-vs-aldol-product",
+      "kind": "quiz",
+      "title": "Claisen versus aldol: what's different about the product",
+      "difficulty": 4,
+      "concepts": [
+        { "slug": "claisen-condensation", "primary": true },
+        { "slug": "aldol-mechanism" }
+      ],
+      "body": {
+        "prompt": "Both aldol and Claisen condensations join two carbonyl-containing molecules through their alpha carbons. What structurally distinguishes a Claisen product from an aldol addition product?",
+        "options": [
+          "There is no structural difference; they are the same reaction with different names",
+          "The Claisen product has no carbonyl groups at all",
+          "The Claisen product always has a hydroxyl group where the aldol product has a carbonyl",
+          "The Claisen product retains a carbonyl (as a beta-ketoester) at the position where a leaving group was expelled, rather than gaining a new hydroxyl or alkene"
+        ],
+        "correct_index": 3,
+        "explanation": "An aldehyde or ketone electrophile has no leaving group on its carbonyl carbon, so the tetrahedral alkoxide intermediate just gets protonated: net addition, a new C-OH. An ester electrophile does have a leaving group, alkoxide, so its tetrahedral intermediate collapses by ejecting it and regenerating a C=O: net substitution. That's why the Claisen product is a beta-ketoester rather than a beta-hydroxy compound."
+      }
+    },
+    {
+      "external_id": "ochem/claisen-full-equivalent-base",
+      "kind": "quiz",
+      "title": "Why Claisen needs a full equivalent of base",
+      "difficulty": 4,
+      "concepts": [{ "slug": "claisen-driving-force", "primary": true }],
+      "body": {
+        "prompt": "Aldol condensations typically run with catalytic base, but Claisen condensations require a full stoichiometric equivalent of alkoxide base. Why?",
+        "options": [
+          "The ester starting material is not acidic enough to ever form an enolate",
+          "A full equivalent of base is needed to hydrolyze the ester before the reaction can start",
+          "Excess base is only needed to neutralize ethanol released as a byproduct",
+          "The final, irreversible step is deprotonation of the acidic beta-ketoester product (flanked by two carbonyls), which consumes one equivalent of base and pulls the whole equilibrium forward"
+        ],
+        "correct_index": 3,
+        "explanation": "Every step up through ejection of ethoxide is individually reversible. What actually drives the reaction to completion is the last step: the beta-ketoester product, sitting between two carbonyls, has a pKa near 11 — far more acidic than ethanol's 16 — so ethoxide deprotonates it essentially completely. That deprotonation consumes a full equivalent of base per equivalent of ester, and only acidic aqueous workup regenerates the neutral beta-ketoester."
+      }
+    },
+    {
+      "external_id": "ochem/claisen-base-matching",
+      "kind": "quiz",
+      "title": "Matching the base to the ester",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "claisen-driving-force", "primary": true },
+        { "slug": "claisen-condensation" }
+      ],
+      "body": {
+        "prompt": "In a Claisen condensation, why is sodium ethoxide (NaOEt) specifically used as the base for ethyl esters, rather than, say, sodium methoxide?",
+        "options": [
+          "NaOEt is required because it is the only base soluble in ethanol",
+          "Ethoxide is a stronger base than methoxide by several pKa units",
+          "Sodium methoxide cannot deprotonate an ester's alpha proton",
+          "Using the same alkoxide as the ester's leaving group avoids transesterification side products"
+        ],
+        "correct_index": 3,
+        "explanation": "If methoxide were used with an ethyl ester, it could attack the carbonyl and swap in -OMe for -OEt (transesterification), scrambling the substrate before the condensation even runs. Matching the alkoxide base to the ester's own alkyl group means any such exchange just swaps identical groups, so it's invisible."
+      }
+    },
+    {
+      "external_id": "ochem/eas-arenium-intermediate",
+      "kind": "quiz",
+      "title": "The key EAS intermediate",
+      "difficulty": 2,
+      "concepts": [{ "slug": "eas-mechanism", "primary": true }],
+      "body": {
+        "prompt": "In electrophilic aromatic substitution, what is the resonance-stabilized intermediate formed after the electrophile bonds to the ring, and what happens to the ring's aromaticity at that point?",
+        "options": [
+          "A benzyne intermediate; the ring is permanently broken",
+          "An arenium ion (sigma complex); aromaticity is temporarily lost because one ring carbon becomes sp3",
+          "An aryl carbanion; aromaticity is retained",
+          "A pi complex; aromaticity is fully retained throughout"
+        ],
+        "correct_index": 1,
+        "explanation": "Once the electrophile forms a sigma bond to a ring carbon, that carbon becomes sp3 and can no longer contribute to the ring's continuous pi system, so aromaticity is briefly interrupted in this arenium ion (Wheland intermediate). It's restored the moment a proton leaves that same carbon, regenerating the sp2, fully conjugated ring."
+      }
+    },
+    {
+      "external_id": "ochem/eas-rate-determining-step",
+      "kind": "quiz",
+      "title": "The slow step of EAS",
+      "difficulty": 3,
+      "concepts": [{ "slug": "eas-mechanism", "primary": true }],
+      "body": {
+        "prompt": "Which step of the electrophilic aromatic substitution mechanism is rate-determining?",
+        "options": [
+          "Diffusion of the electrophile to the ring",
+          "Generation of the electrophile itself (e.g., forming NO2+ from HNO3/H2SO4)",
+          "Formation of the arenium ion (the electrophile attacking the aromatic ring)",
+          "Loss of the proton to restore aromaticity"
+        ],
+        "correct_index": 2,
+        "explanation": "Attack of the electrophile on the ring is rate-determining because it costs aromatic stabilization energy to form the arenium ion — a real, substantial barrier. Kicking the proton back out to rearomatize is fast and downhill by comparison, since it restores that stabilization rather than destroying it."
+      }
+    },
+    {
+      "external_id": "ochem/eas-methyl-activation",
+      "kind": "quiz",
+      "title": "Why methyl groups speed up EAS",
+      "difficulty": 3,
+      "concepts": [{ "slug": "eas-activating-deactivating", "primary": true }],
+      "body": {
+        "prompt": "Toluene reacts with an EAS electrophile faster than benzene does. What accounts for the methyl group's activating effect?",
+        "options": [
+          "The methyl group withdraws electron density, making the ring a better nucleophile",
+          "Methyl groups activate only the ipso carbon, with no effect elsewhere on the ring",
+          "The methyl group increases the ring's aromaticity",
+          "The methyl group donates electron density into the ring inductively and through hyperconjugation, stabilizing the arenium ion intermediate"
+        ],
+        "correct_index": 3,
+        "explanation": "Alkyl groups are weak electron donors, both by simple induction and by hyperconjugation of their C-H bonds into the ring pi system. That extra electron density stabilizes the positively charged arenium ion, especially when the positive charge is closest to the methyl-bearing carbon, which is exactly what happens for ortho and para attack."
+      }
+    },
+    {
+      "external_id": "ochem/eas-nitro-deactivation",
+      "kind": "quiz",
+      "title": "Why nitro groups slow down EAS",
+      "difficulty": 3,
+      "concepts": [{ "slug": "eas-activating-deactivating", "primary": true }],
+      "body": {
+        "prompt": "Nitrobenzene undergoes EAS roughly a million times slower than benzene. What accounts for this strong deactivation?",
+        "options": [
+          "Nitrobenzene is not aromatic",
+          "The nitro group sterically blocks the electrophile from approaching the ring",
+          "The nitro group is a strong base that consumes the electrophile before it reaches the ring",
+          "The nitro group withdraws electron density from the ring both inductively and by resonance, destabilizing the positively charged arenium ion intermediate"
+        ],
+        "correct_index": 3,
+        "explanation": "The nitro group's nitrogen is electronegative and formally positively charged, so it pulls electron density out of the ring inductively; it also has no lone pair available to donate back by resonance, and can instead pull ring density toward itself through the pi system. Both effects leave the ring electron-poor and make the already-unstable arenium ion even less able to bear a nearby positive charge."
+      }
+    },
+    {
+      "external_id": "ochem/eas-toluene-nitration",
+      "kind": "quiz",
+      "title": "Where nitration hits toluene",
+      "difficulty": 2,
+      "concepts": [
+        { "slug": "eas-directing-effects", "primary": true },
+        { "slug": "eas-activating-deactivating" }
+      ],
+      "body": {
+        "prompt": "Toluene is nitrated with HNO3/H2SO4. What is the major product distribution?",
+        "options": [
+          "Exclusively para-nitrotoluene, with no ortho product at all",
+          "Predominantly meta-nitrotoluene",
+          "An equal statistical mixture of ortho, meta, and para",
+          "Predominantly ortho- and para-nitrotoluene, with little meta"
+        ],
+        "correct_index": 3,
+        "explanation": "Methyl is an ortho/para director: attack at those positions lets the arenium ion's resonance structures put the positive charge on (or adjacent to) the electron-donating methyl-bearing carbon, which is stabilizing. Meta attack never gets that benefit, so it's a minor pathway. Steric crowding trims the ortho fraction somewhat relative to para, but both dominate over meta."
+      }
+    },
+    {
+      "external_id": "ochem/eas-nitrobenzene-bromination",
+      "kind": "quiz",
+      "title": "Where bromination hits nitrobenzene",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "eas-directing-effects", "primary": true },
+        { "slug": "eas-activating-deactivating" }
+      ],
+      "body": {
+        "prompt": "Nitrobenzene is treated with Br2/FeBr3. Where does the bromine end up, and why?",
+        "options": [
+          "Exclusively ipso, replacing the nitro group",
+          "Predominantly ortho and para, because nitro groups are always ortho/para directors",
+          "Statistically distributed evenly across all ring positions",
+          "Predominantly meta, because ortho/para attack would place positive charge directly on the carbon bearing the electron-withdrawing nitro group in the resonance structures, which is highly destabilizing"
+        ],
+        "correct_index": 3,
+        "explanation": "Draw out the arenium ion resonance structures for ortho or para attack and one of them puts the ring's positive charge on the very carbon the nitro group sits on — doubling up positive character right next to an electron-withdrawing group. Meta attack's resonance structures never do that, so it's the comparatively least-bad option and dominates, even though the whole reaction is slow relative to benzene."
+      }
+    },
+    {
+      "external_id": "ochem/eas-why-meta-directors-direct-meta",
+      "kind": "quiz",
+      "title": "The resonance logic behind meta-directors",
+      "difficulty": 4,
+      "concepts": [
+        { "slug": "eas-directing-effects", "primary": true },
+        { "slug": "eas-mechanism" }
+      ],
+      "body": {
+        "prompt": "For a deactivating group that lacks a lone pair to donate (like -CF3 or -NO2), why does the arenium ion resulting from meta attack end up more stable than the ones from ortho or para attack?",
+        "options": [
+          "Meta-substituted products are simply less sterically hindered",
+          "Meta attack does not go through an arenium ion at all",
+          "Meta attack places the positive charge furthest from the ring, off the pi system entirely",
+          "Meta attack is the only position where none of the three resonance structures place the positive charge on the ring carbon directly bonded to the electron-withdrawing group"
+        ],
+        "correct_index": 3,
+        "explanation": "The arenium ion from any attack has three resonance structures spreading the positive charge over three ring carbons. For ortho or para attack, one of those three lands the charge on the carbon already attached to the electron-withdrawing group — a bad place for positive charge to sit next to more positive character. Meta attack's three resonance structures avoid that carbon entirely, so it's the least destabilized option, even though it's still slower overall than benzene."
+      }
+    },
+    {
+      "external_id": "ochem/eas-halogen-deactivating-op-director",
+      "kind": "quiz",
+      "title": "The halogen exception",
+      "difficulty": 5,
+      "concepts": [
+        { "slug": "eas-halogen-special-case", "primary": true },
+        { "slug": "eas-activating-deactivating" }
+      ],
+      "body": {
+        "prompt": "Chlorobenzene undergoes EAS more slowly than benzene, yet the chlorine directs new substituents to the ortho and para positions rather than meta. How can a deactivating group also be an ortho/para director?",
+        "options": [
+          "The inductive and resonance effects of chlorine both point the same direction, both deactivating and meta-directing",
+          "Chlorine is actually activating, and the deactivation is a common misconception",
+          "Chlorine directs meta, not ortho/para",
+          "Chlorine withdraws electron density inductively (deactivating the ring overall) but can still donate a lone pair by resonance into the ring at ortho/para positions, which is enough to make those positions relatively better than meta even though the whole ring reacts slower than benzene"
+        ],
+        "correct_index": 3,
+        "explanation": "Chlorine has two competing effects that don't cancel evenly. Its high electronegativity withdraws electron density through the sigma framework, which dominates the overall rate and makes every position slower than benzene. But chlorine still has lone pairs it can donate into the ring pi system by resonance, and that donation stabilizes the arenium ion best when it lands ortho or para to the halogen — so among the ring's now-slower positions, ortho and para are still the relatively fastest, and that's where substitution happens."
+      }
+    },
+    {
+      "external_id": "ochem/eas-chlorobenzene-bromination-product",
+      "kind": "quiz",
+      "title": "Predicting the product on a deactivated ring",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "eas-halogen-special-case", "primary": true },
+        { "slug": "eas-directing-effects" }
+      ],
+      "body": {
+        "prompt": "Chlorobenzene reacts with Br2/FeBr3. What is the major organic product, and how does the reaction rate compare to benzene under the same conditions?",
+        "options": [
+          "An equal mixture of all three isomers, at the same rate as benzene",
+          "Mostly 1-bromo-3-chlorobenzene, formed more slowly than with benzene",
+          "Mostly para-bromochlorobenzene, formed faster than with benzene",
+          "Mostly 1-bromo-4-chlorobenzene (and some 1-bromo-2-chlorobenzene), formed more slowly than the analogous reaction with benzene"
+        ],
+        "correct_index": 3,
+        "explanation": "Chlorine's resonance donation still favors ortho/para attack, so the product mixture is mostly the para isomer with some ortho (steric crowding trims the ortho fraction). But chlorine's inductive withdrawal dominates the overall reactivity, so the whole reaction runs slower than the same bromination on unsubstituted benzene."
+      }
+    },
+    {
+      "external_id": "ochem/amine-basicity-ranking",
+      "kind": "quiz",
+      "title": "Ranking three nitrogen bases",
+      "difficulty": 3,
+      "concepts": [{ "slug": "amine-basicity", "primary": true }],
+      "body": {
+        "prompt": "Rank these by basicity, most basic first: cyclohexylamine, aniline, acetamide.",
+        "options": [
+          "Aniline > cyclohexylamine > acetamide",
+          "Cyclohexylamine > aniline > acetamide",
+          "Acetamide > cyclohexylamine > aniline",
+          "Aniline > acetamide > cyclohexylamine"
+        ],
+        "correct_index": 1,
+        "explanation": "Cyclohexylamine's nitrogen lone pair is fully available and even inductively boosted by the alkyl group, making it the most basic. Aniline's lone pair is partly delocalized into the aromatic ring by resonance, cutting its basicity by roughly six orders of magnitude versus an alkylamine. Acetamide's lone pair is even more heavily delocalized into the carbonyl, which is what gives amides their planar, resonance-locked structure — amides are the weakest base of the three, barely basic at all."
+      }
+    },
+    {
+      "external_id": "ochem/amine-basicity-aniline-resonance",
+      "kind": "quiz",
+      "title": "Why aniline is a weak base",
+      "difficulty": 3,
+      "concepts": [{ "slug": "amine-basicity", "primary": true }],
+      "body": {
+        "prompt": "Aniline (pKaH about 4.6) is roughly a million times less basic than cyclohexylamine (pKaH about 10.6). What is the primary reason?",
+        "options": [
+          "The aromatic ring inductively donates electron density to nitrogen, over-stabilizing the free amine",
+          "Aniline is a stronger acid than cyclohexylamine, so it cannot also act as a base",
+          "Aniline's nitrogen is sp3 hybridized while cyclohexylamine's is sp2",
+          "Aniline's nitrogen lone pair is delocalized into the aromatic ring by resonance, making it less available to accept a proton"
+        ],
+        "correct_index": 3,
+        "explanation": "In aniline, the nitrogen lone pair conjugates into the benzene ring, spreading electron density around the ring rather than concentrating it on nitrogen. That resonance stabilization of the neutral amine is lost upon protonation, so protonating aniline costs more energy than protonating an amine whose lone pair had nowhere else to go — hence the much weaker basicity."
+      }
+    },
+    {
+      "external_id": "ochem/amine-gabriel-synthesis",
+      "kind": "quiz",
+      "title": "Why Gabriel synthesis avoids a common amine problem",
+      "difficulty": 3,
+      "concepts": [{ "slug": "amine-synthesis", "primary": true }],
+      "body": {
+        "prompt": "Direct SN2 alkylation of ammonia with an alkyl halide tends to give a messy mixture of primary, secondary, and tertiary amines plus quaternary ammonium salt. What does the Gabriel synthesis do differently to cleanly produce a primary amine?",
+        "options": [
+          "It brominates the amine after synthesis to selectively remove secondary and tertiary products",
+          "It reduces a nitrile directly to a primary amine using LiAlH4",
+          "It uses a huge excess of ammonia to statistically favor primary amine formation",
+          "It alkylates a nitrogen that is 'protected' as a phthalimide, which can only be alkylated once (no remaining N-H after the first alkylation) and is then hydrolyzed to release the primary amine"
+        ],
+        "correct_index": 3,
+        "explanation": "Potassium phthalimide's nitrogen is deprotonated and alkylated once by SN2. After that first alkylation, the nitrogen has no acidic N-H left and is tied up in the imide ring, so it cannot react again — over-alkylation is structurally impossible. Hydrolysis (or hydrazinolysis) at the end cleaves the phthalimide and releases the primary amine cleanly."
+      }
+    },
+    {
+      "external_id": "ochem/amine-reductive-amination",
+      "kind": "quiz",
+      "title": "Making an amine from a ketone",
+      "difficulty": 4,
+      "concepts": [{ "slug": "amine-synthesis", "primary": true }],
+      "body": {
+        "prompt": "Cyclohexanone is treated with methylamine and NaBH3CN under mildly acidic conditions. What is the product, and what intermediate forms along the way?",
+        "options": [
+          "An enamine, since methylamine is a secondary amine",
+          "Cyclohexanol, because NaBH3CN reduces the ketone directly without involving the amine",
+          "N-methylcyclohexylamine, via direct SN2 substitution at the carbonyl carbon",
+          "N-methylcyclohexylamine, via an iminium ion intermediate that is reduced by the hydride"
+        ],
+        "correct_index": 3,
+        "explanation": "Methylamine is a primary amine (one N-H remaining after condensation), so it condenses with the ketone and loses water to form an iminium ion rather than an enamine. NaBH3CN is mild and selective for iminium ions over ketones at the mildly acidic pH used, so it delivers hydride to the iminium carbon, giving the secondary amine N-methylcyclohexylamine."
+      }
+    },
+    {
+      "external_id": "ochem/amine-hofmann-elimination",
+      "kind": "quiz",
+      "title": "Hofmann elimination gives the odd alkene",
+      "difficulty": 4,
+      "concepts": [{ "slug": "amine-reactions", "primary": true }],
+      "body": {
+        "prompt": "An amine is exhaustively methylated with excess CH3I, then treated with moist Ag2O and heated (Hofmann elimination). Which alkene regiochemistry dominates, and why?",
+        "options": [
+          "No alkene forms; the product is an ether",
+          "Equal amounts of every possible alkene, since the mechanism is non-selective",
+          "The most substituted (Zaitsev) alkene, because the ammonium leaving group is small",
+          "The least substituted (Hofmann) alkene, because the bulky trimethylammonium leaving group forces the base to remove the most accessible, least hindered proton"
+        ],
+        "correct_index": 3,
+        "explanation": "The leaving group here is a bulky, positively charged trimethylammonium, not a small halide. In the E2-like elimination, hydroxide has to approach a beta proton past that bulk, so it preferentially grabs whichever proton is most sterically accessible — usually the one on the least substituted carbon, giving the less-substituted Hofmann alkene instead of the usual Zaitsev product."
+      }
+    },
+    {
+      "external_id": "ochem/amine-diazonium-sandmeyer",
+      "kind": "quiz",
+      "title": "From aniline to aryl nitrile",
+      "difficulty": 4,
+      "concepts": [{ "slug": "amine-reactions", "primary": true }],
+      "body": {
+        "prompt": "Aniline is treated with NaNO2/HCl at 0-5 C to form a diazonium salt, which is then treated with CuCN. What is the product, and why is the initial diazotization done at cold temperature?",
+        "options": [
+          "Aniline is unreactive toward NaNO2, so no diazonium salt forms",
+          "Benzyl cyanide; the diazonium nitrogen is retained in the product",
+          "Benzamide; cold temperature prevents hydrolysis of the amide",
+          "Benzonitrile; aryl diazonium salts decompose readily above about 5 C, releasing N2 before the desired substitution can occur"
+        ],
+        "correct_index": 3,
+        "explanation": "Aryl diazonium salts are stable enough to handle around 0-5 C, but warm them and they lose N2 spontaneously, generating a reactive aryl species that gives side products instead of the clean substitution you want. Kept cold and then treated with CuCN, the diazonium nitrogen is displaced and replaced by the nitrile group in a Sandmeyer reaction, giving benzonitrile."
+      }
+    },
+    {
+      "external_id": "ochem/carb-classification-glucose",
+      "kind": "quiz",
+      "title": "Classifying glucose",
+      "difficulty": 2,
+      "concepts": [{ "slug": "carbohydrate-classification", "primary": true }],
+      "body": {
+        "prompt": "Glucose has the formula C6H12O6 with an aldehyde at C1 in its open-chain form. How is it classified?",
+        "options": ["A ketopentose", "A ketohexose", "An aldopentose", "An aldohexose"],
+        "correct_index": 3,
+        "explanation": "Classification combines the carbonyl type and carbon count: an aldehyde-bearing sugar is an 'aldo-' sugar, and six carbons makes it a 'hexose.' Glucose is an aldohexose. Fructose, with a ketone at C2 instead, is the classic ketohexose by contrast."
+      }
+    },
+    {
+      "external_id": "ochem/carb-mono-di-polysaccharide",
+      "kind": "quiz",
+      "title": "Mono-, di-, and polysaccharides",
+      "difficulty": 1,
+      "concepts": [
+        { "slug": "carbohydrate-classification", "primary": true },
+        { "slug": "carbohydrate-glycosidic-bonds" }
+      ],
+      "body": {
+        "prompt": "What structurally distinguishes a disaccharide like sucrose from a polysaccharide like starch?",
+        "options": [
+          "Disaccharides have no glycosidic bonds, only polysaccharides do",
+          "Polysaccharides are not carbohydrates; they are a separate class of biomolecule",
+          "A disaccharide contains two different types of sugar, while a polysaccharide always contains only one",
+          "A disaccharide is two monosaccharides joined by one glycosidic bond; a polysaccharide is many monosaccharides joined by many glycosidic bonds into a long chain"
+        ],
+        "correct_index": 3,
+        "explanation": "It's purely a matter of how many monosaccharide units are strung together by glycosidic bonds: two units for a disaccharide, dozens to thousands for a polysaccharide. Neither classification depends on whether the units are identical (sucrose is glucose + fructose, two different sugars; cellulose is all glucose)."
+      }
+    },
+    {
+      "external_id": "ochem/carb-anomeric-carbon",
+      "kind": "quiz",
+      "title": "What makes a carbon 'anomeric'",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbohydrate-anomers", "primary": true }],
+      "body": {
+        "prompt": "When glucose cyclizes from its open-chain form to a six-membered ring, a new stereocenter is created. What is this carbon called, and what makes it special?",
+        "options": [
+          "The anomeric carbon; it is the ring oxygen itself",
+          "The anomeric carbon; it is simply any newly formed stereocenter in the ring",
+          "The anomeric carbon; it is the carbon farthest from the carbonyl, used to assign D/L configuration",
+          "The anomeric carbon; it is the former carbonyl carbon, now bonded to two oxygens (a hemiacetal carbon)"
+        ],
+        "correct_index": 3,
+        "explanation": "Ring closure is an intramolecular hemiacetal formation: the C5 hydroxyl attacks the C1 carbonyl carbon. That former carbonyl carbon ends up bonded to both the new ring oxygen and a hydroxyl, making it the anomeric carbon and a fresh stereocenter — the source of the alpha and beta anomers."
+      }
+    },
+    {
+      "external_id": "ochem/carb-alpha-beta-definition",
+      "kind": "quiz",
+      "title": "Alpha versus beta anomer",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbohydrate-anomers", "primary": true }],
+      "body": {
+        "prompt": "In the Haworth projection of D-glucopyranose, what distinguishes the alpha anomer from the beta anomer?",
+        "options": [
+          "Alpha and beta anomers differ in molecular formula",
+          "The alpha anomer is always the open-chain form, and beta is always the cyclic form",
+          "The alpha anomer has the ring oxygen replaced by a carbon",
+          "In the alpha anomer, the anomeric -OH points down (trans to the reference CH2OH at C5); in the beta anomer, it points up (cis to the CH2OH)"
+        ],
+        "correct_index": 3,
+        "explanation": "For a D-sugar drawn in the standard Haworth orientation, the C5 substituent (CH2OH for glucopyranose) points up by convention. The anomeric OH at C1 either points down, opposite that reference group (alpha), or up, on the same side (beta). Same molecular formula, same ring, just a different spatial arrangement at one carbon."
+      }
+    },
+    {
+      "external_id": "ochem/carb-mutarotation",
+      "kind": "quiz",
+      "title": "What mutarotation is",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbohydrate-anomers", "primary": true }],
+      "body": {
+        "prompt": "A freshly prepared solution of pure alpha-D-glucopyranose gradually changes its optical rotation over time until it reaches a constant value. What is happening?",
+        "options": [
+          "The alpha anomer is converting into a completely different monosaccharide, fructose",
+          "The solvent is chemically reacting with the sugar to form a new compound",
+          "The glucose is undergoing irreversible oxidation by dissolved oxygen",
+          "The ring opens back to the open-chain aldehyde form and recloses, forming an equilibrium mixture of alpha and beta anomers (mutarotation)"
+        ],
+        "correct_index": 3,
+        "explanation": "The cyclic hemiacetal is in equilibrium with the open-chain aldehyde, which can reclose as either anomer. Starting from pure alpha, the ring keeps opening and reclosing until the alpha:beta ratio settles at its equilibrium value (roughly 36:64 for glucose), and the solution's optical rotation drifts to match that mixture — this drift is mutarotation."
+      }
+    },
+    {
+      "external_id": "ochem/carb-d-l-designation",
+      "kind": "quiz",
+      "title": "D or L: what decides it",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbohydrate-fischer-haworth", "primary": true }],
+      "body": {
+        "prompt": "In a Fischer projection of a monosaccharide, what determines whether it is designated D or L?",
+        "options": [
+          "The total number of stereocenters in the molecule",
+          "The direction the molecule rotates plane-polarized light",
+          "Whether the carbonyl is an aldehyde (D) or a ketone (L)",
+          "The configuration (left or right) of the -OH on the stereocenter farthest from the carbonyl carbon: right = D, left = L"
+        ],
+        "correct_index": 3,
+        "explanation": "D/L is a configurational label read off one specific stereocenter, the one farthest from the carbonyl: -OH on the right in the Fischer projection means D, on the left means L. It is a separate property from the molecule's measured (+) or (-) optical rotation — a D-sugar can rotate light in either direction, and the two labels shouldn't be conflated."
+      }
+    },
+    {
+      "external_id": "ochem/carb-fischer-to-haworth",
+      "kind": "quiz",
+      "title": "Converting Fischer to Haworth",
+      "difficulty": 4,
+      "concepts": [{ "slug": "carbohydrate-fischer-haworth", "primary": true }],
+      "body": {
+        "prompt": "When converting a D-aldohexose from a Fischer projection into a Haworth ring projection, a hydroxyl drawn on the right side of the Fischer projection ends up pointing which way on the corresponding ring carbon in the Haworth projection?",
+        "options": [
+          "Left",
+          "Up",
+          "Fischer groups don't translate to Haworth in any consistent way",
+          "Down"
+        ],
+        "correct_index": 3,
+        "explanation": "The standard conversion rule for the ring carbons is 'right goes down': a substituent on the right in the Fischer projection points down (below the ring plane) in the Haworth projection, and left goes up. The one exception is the terminal CH2OH group at the D/L-determining carbon, which is placed up for a D-sugar by a separate convention, not by this right/left rule."
+      }
+    },
+    {
+      "external_id": "ochem/carb-reducing-sugar-mechanism",
+      "kind": "quiz",
+      "title": "Why glucose is a reducing sugar",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "carbohydrate-reducing-sugars", "primary": true },
+        { "slug": "carbohydrate-anomers" }
+      ],
+      "body": {
+        "prompt": "Glucose gives a positive Tollens' test (silver mirror), identifying it as a reducing sugar. What structural feature makes this possible, even though glucose exists predominantly in its cyclic hemiacetal form?",
+        "options": [
+          "Glucose must first be hydrolyzed into two smaller sugars before it can reduce Tollens' reagent",
+          "Every hydroxyl group on the sugar is independently oxidized",
+          "The ring oxygen itself is directly oxidized by Tollens' reagent",
+          "The cyclic hemiacetal is in equilibrium with a small amount of open-chain form bearing a free aldehyde, which Tollens' reagent oxidizes"
+        ],
+        "correct_index": 3,
+        "explanation": "Even though the ring form dominates at equilibrium, the same ring-opening equilibrium responsible for mutarotation keeps a small, continuously replenished amount of open-chain aldehyde present. That trace aldehyde is what Tollens' reagent oxidizes, and as it's consumed the equilibrium replenishes it, so the whole sample eventually reacts."
+      }
+    },
+    {
+      "external_id": "ochem/carb-sucrose-nonreducing",
+      "kind": "quiz",
+      "title": "Why sucrose does not reduce Tollens' reagent",
+      "difficulty": 3,
+      "concepts": [
+        { "slug": "carbohydrate-reducing-sugars", "primary": true },
+        { "slug": "carbohydrate-glycosidic-bonds" }
+      ],
+      "body": {
+        "prompt": "Sucrose (glucose + fructose) gives a negative Tollens' test, unlike maltose. What structural difference explains this?",
+        "options": [
+          "Fructose cannot be oxidized under any circumstances",
+          "Sucrose is not a carbohydrate",
+          "Sucrose contains no anomeric carbons at all",
+          "In sucrose, the glycosidic bond forms between the anomeric carbons of both glucose and fructose, leaving no free hemiacetal on either ring to open to an aldehyde"
+        ],
+        "correct_index": 3,
+        "explanation": "Sucrose's glycosidic linkage joins glucose's anomeric carbon (C1) directly to fructose's anomeric carbon (C2). With both anomeric centers locked into that acetal bond, neither ring has a hemiacetal left that can open back to a free carbonyl — so there's nothing for Tollens' reagent to oxidize. Maltose, by contrast, leaves one anomeric carbon free and gives a positive test."
+      }
+    },
+    {
+      "external_id": "ochem/carb-maltose-linkage",
+      "kind": "quiz",
+      "title": "The bond in maltose",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbohydrate-glycosidic-bonds", "primary": true }],
+      "body": {
+        "prompt": "Maltose is composed of two D-glucose units joined by which glycosidic linkage?",
+        "options": [
+          "Beta-1,2-glycosidic bond",
+          "Alpha-1,6-glycosidic bond",
+          "Beta-1,4-glycosidic bond",
+          "Alpha-1,4-glycosidic bond"
+        ],
+        "correct_index": 3,
+        "explanation": "Maltose links C1 of one glucose to C4 of the other through the alpha-configured anomeric oxygen: an alpha-1,4 bond, the same linkage found throughout starch and amylose. Don't confuse it with cellobiose, glucose-glucose joined beta-1,4 — same atoms connected, different anomeric configuration, and the enzymes (and organisms) that can digest one often can't touch the other."
+      }
+    },
+    {
+      "external_id": "ochem/carb-glycosidic-hydrolysis",
+      "kind": "quiz",
+      "title": "Hydrolyzing a glycosidic bond",
+      "difficulty": 3,
+      "concepts": [{ "slug": "carbohydrate-glycosidic-bonds", "primary": true }],
+      "body": {
+        "prompt": "Maltose is treated with aqueous acid and heat. What happens to the glycosidic bond, and what is the product?",
+        "options": [
+          "The bond is cleaved to give a single molecule of maltotriose",
+          "Hydrolysis gives one glucose and one fructose molecule",
+          "The glycosidic bond is stable to acid and nothing happens",
+          "The glycosidic bond is hydrolyzed (the acetal is cleaved through an oxocarbenium intermediate), giving two molecules of D-glucose"
+        ],
+        "correct_index": 3,
+        "explanation": "A glycosidic bond is a cyclic acetal, and unlike an ether, acetals are readily cleaved under aqueous acid: protonation of the ring oxygen, loss of the alcohol leaving group to form a stabilized oxocarbenium ion, then attack by water. Since maltose is two glucose units, hydrolysis returns two glucose molecules — not fructose, which belongs to sucrose."
+      }
+    },
+    {
+      "external_id": "ochem/aminoacid-zwitterion",
+      "kind": "quiz",
+      "title": "The zwitterion form",
+      "difficulty": 2,
+      "concepts": [{ "slug": "amino-acid-structure", "primary": true }],
+      "body": {
+        "prompt": "At physiological pH (about 7.4), how does a simple amino acid like alanine predominantly exist?",
+        "options": [
+          "As a fully deprotonated anion, with both -NH2 and -COO-",
+          "As a zwitterion, with a protonated ammonium group (-NH3+) and a deprotonated carboxylate (-COO-)",
+          "As a fully protonated cation, with both -NH3+ and -COOH",
+          "As a fully neutral molecule with -NH2 and -COOH intact"
+        ],
+        "correct_index": 1,
+        "explanation": "The carboxylic acid's pKa (around 2) is well below physiological pH, so it's essentially fully deprotonated to -COO-. The ammonium's pKa (around 9-10) is well above it, so it's essentially fully protonated to -NH3+. Both groups are charged at once, and the molecule carries no net charge overall — a zwitterion, not a neutral molecule in the usual sense."
+      }
+    },
+    {
+      "external_id": "ochem/aminoacid-general-structure",
+      "kind": "quiz",
+      "title": "The general amino acid skeleton",
+      "difficulty": 1,
+      "concepts": [{ "slug": "amino-acid-structure", "primary": true }],
+      "body": {
+        "prompt": "In a standard alpha-amino acid, what four groups are attached to the central (alpha) carbon?",
+        "options": [
+          "A carboxylic acid group, a side chain, and two hydrogens (no amino group)",
+          "An amino group, a hydroxyl group, and two hydrogens",
+          "Two amino groups and two carboxylic acid groups",
+          "An amino group, a carboxylic acid group, a hydrogen, and a variable side chain (R group)"
+        ],
+        "correct_index": 3,
+        "explanation": "The alpha carbon is the hub: amino group, carboxylic acid group, one hydrogen, and whatever side chain (R group) distinguishes that particular amino acid. The side chain is the only variable piece — everything else is the same across all twenty standard amino acids (glycine is the exception, where R is simply another H)."
+      }
+    },
+    {
+      "external_id": "ochem/aminoacid-pi-definition",
+      "kind": "quiz",
+      "title": "What the isoelectric point means",
+      "difficulty": 2,
+      "concepts": [{ "slug": "amino-acid-isoelectric-point", "primary": true }],
+      "body": {
+        "prompt": "What is the isoelectric point (pI) of an amino acid?",
+        "options": [
+          "The pH at which the amino acid precipitates out of any solution",
+          "The pKa of the carboxylic acid group only",
+          "The pH at which the amino acid is fully protonated",
+          "The pH at which the amino acid carries no net charge (exists predominantly as the neutral zwitterion)"
+        ],
+        "correct_index": 3,
+        "explanation": "At the pI, the amino acid's positive and negative charges balance exactly, giving zero net charge — the population is centered on the zwitterion, not fully protonated (net positive) or fully deprotonated (net negative). This is also the pH at which the molecule won't migrate in an electric field, which is how pI is measured experimentally."
+      }
+    },
+    {
+      "external_id": "ochem/aminoacid-pi-calculation-glycine",
+      "kind": "quiz",
+      "title": "Calculating pI for a simple amino acid",
+      "difficulty": 3,
+      "concepts": [{ "slug": "amino-acid-isoelectric-point", "primary": true }],
+      "body": {
+        "prompt": "Glycine has pKa1 (alpha-carboxyl) = 2.3 and pKa2 (alpha-ammonium) = 9.6, with no ionizable side chain. How is its isoelectric point calculated?",
+        "options": [
+          "Add the two pKa values together without dividing: pI = 11.9",
+          "Use only pKa2: pI = 9.6",
+          "Use only pKa1: pI = 2.3",
+          "Average the two pKa values that flank the neutral zwitterion form: pI = (2.3 + 9.6)/2 = 5.95"
+        ],
+        "correct_index": 3,
+        "explanation": "For an amino acid with no ionizable side chain, the neutral zwitterion is the species that exists between the two ionization events, so its pI is the midpoint of the two flanking pKa values: (2.3 + 9.6)/2 = 5.95, close to glycine's real pI of about 5.97. When a side chain is also ionizable, you instead average the two pKa's that flank the zwitterion specifically, which may not be pKa1 and pKa2."
+      }
+    },
+    {
+      "external_id": "ochem/aminoacid-side-chain-classification",
+      "kind": "quiz",
+      "title": "Classifying amino acid side chains",
+      "difficulty": 2,
+      "concepts": [{ "slug": "amino-acid-classification", "primary": true }],
+      "body": {
+        "prompt": "Aspartate has a side chain ending in a second carboxylic acid group, while lysine has a side chain ending in a primary amine. How are these two side chains classified?",
+        "options": [
+          "Both are classified as neutral polar",
+          "Both are classified as nonpolar",
+          "Aspartate is basic; lysine is acidic",
+          "Aspartate is acidic; lysine is basic"
+        ],
+        "correct_index": 3,
+        "explanation": "The classification tracks the side chain's acid-base chemistry: a side-chain carboxylic acid (aspartate, glutamate) is acidic and negatively charged at physiological pH; a side-chain amine (lysine) or guanidinium (arginine) or imidazole (histidine) is basic and positively charged. It's the opposite pairing of what the names might suggest if you only think about the amino acid's own alpha-amino/alpha-carboxyl backbone."
+      }
+    },
+    {
+      "external_id": "ochem/aminoacid-cysteine-special",
+      "kind": "quiz",
+      "title": "What makes cysteine's side chain distinctive",
+      "difficulty": 3,
+      "concepts": [{ "slug": "amino-acid-classification", "primary": true }],
+      "body": {
+        "prompt": "Cysteine's side chain contains a thiol (-SH) group. What distinctive reaction can this group undergo that most other amino acid side chains cannot?",
+        "options": [
+          "Direct alpha-helix formation independent of other residues",
+          "Formation of an ester linkage with the backbone carbonyl",
+          "Spontaneous decarboxylation of the side chain",
+          "Oxidative coupling with another cysteine thiol to form a covalent disulfide bond (cystine)"
+        ],
+        "correct_index": 3,
+        "explanation": "Two cysteine thiols can be oxidized together to form a covalent S-S disulfide bond, sometimes called a cystine linkage. This is one of the few ways a protein forms a covalent (not just folded) cross-link, and it's central to locking in tertiary and quaternary structure — no other standard side chain does this."
+      }
+    }
+  ]
+}

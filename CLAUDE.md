@@ -52,6 +52,28 @@ Route handlers are 2–5 lines: check auth, call a testable function, return.
 All logic lives in the function, which is tested against PGlite with fakes
 injected. Pattern lifted from `~/src/garm`.
 
+### Local secrets — `.env.tpl` + 1Password, never hand-paste
+
+- Secrets are `op://dev-secrets/…` refs in `.env.tpl`; the resolved `.env.local`
+  holds the real values. **Both are gitignored here** — `.gitignore`'s `.env*`
+  catches `.env.tpl` too, so it's a local-only reference, never committed (add a
+  `!.env.tpl` negation if you ever want to share it). **Never tell Nico to paste
+  a secret into `.env.local`.** If a script needs one, add the `op://` ref to
+  `.env.tpl` and let the existing `op inject` flow populate it. `LEARN_TOKEN_SECRET`,
+  `RESEND_API_KEY`, `CRON_SECRET`, `ANTHROPIC_API_KEY` are already refs → already
+  present locally. 1Password items (vault `dev-secrets`):
+  `notemaxxing-token-secret`, `resend-notemaxxing`, `notemaxxing-cron-secret`,
+  `anthropic-notemaxxing`.
+- `DATABASE_URL` / `DATABASE_URL_UNPOOLED` come from `vercel env pull`, not op,
+  and `.env.local`'s `DATABASE_URL` has been hand-pointed at the Neon `dev`
+  branch — so **never `op inject` a full regen of `.env.local`** (it drops the
+  DB vars and reverts dev→prod). Append single vars instead.
+- New PII/secret (e.g. `MAX_IMESSAGE_HANDLE`): create a `dev-secrets` 1Password
+  item, ref it from `.env.tpl`, keep the literal out of `.env.tpl` (so it stays
+  clean if the template is ever un-ignored and shared).
+- The block-secrets hook stops _me_ from reading `.env*` or running `op read`/
+  `op inject`/`op item get`. Hand Nico those commands to run; I may edit `.env.tpl`.
+
 ## Testing — TDD is the rule here
 
 - `npm test` — Vitest, runs **fully offline**, no credentials, no network, no
