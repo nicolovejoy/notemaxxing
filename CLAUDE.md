@@ -222,24 +222,34 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Next Steps
 
-1. **Watch the first real sends** (Fri 2026-07-17). Nico 7am, Max 10am PDT. The
-   cron has never run against real content with an active learner — Nico's send
-   is the dress rehearsal three hours ahead of Max's. Check: mail arrives, the
-   `/learn/r/<token>` link renders the question, an answer records a `response`
-   and moves `concept_state`. Failure here is invisible — Resend has no MX, so
-   bounces don't route back.
-2. **⚠️ Point Preview away from prod** — do this before the next PR merges. The
-   Neon integration still gives Preview the prod `DATABASE_URL`, and prod is no
-   longer a sandbox: it holds the real bank and a live learner, so a preview
-   deploy that touches the DB can corrupt Max's mastery state or burn a
-   delivery. Either point Preview at the `dev` branch or enable Neon per-preview
-   auto-branching (a toggle in the integration).
-3. **Author `ochem-carbonyls`** as Max hits CHEM 33 (assume Jul 27 — don't ask
-   him, see "Engagement before friction"). Aldol, Claisen, EAS, amines,
-   carbohydrates, amino acids. Use `content/ochem-foundations.json` as the
-   template; `npm run import -- <file>` against dev first. Fact-check the answer
-   keys with a subagent before importing to prod — the first pass caught a real
-   error a non-chemist could not have.
+1. **Max engagement — the live problem.** Verified 2026-07-22: 5 sends (7/17–21),
+   **Max opened zero**. Pipeline is fine end-to-end — only Nico has clicked
+   (2×) and answered (1×, wrong, `ir-spectroscopy` ease moved). So it's not a
+   code bug; the gap is Gmail-side (spam / Promotions / not opening). Texted Max
+   to opt into **iMessage delivery** instead. **If he says yes:** wrap
+   `scripts/imessage-probe.mjs` in a launchd job that fires each morning after
+   the 10am cron. The probe is read-only (reconstructs the existing delivery's
+   7-day HMAC link — no new rows), dry-run by default, `--send` texts from Nico's
+   Messages. Needs `MAX_IMESSAGE_HANDLE` (1Password `notemaxxing-max-imessage` →
+   `.env.local`). A texted-link click still fires `link_clicked`, so engagement
+   is measured the same way.
+2. **⚠️ Point Preview away from prod** — still open; steps ready. Enable Neon
+   per-preview branching: https://vercel.com/nico-lovejoys-projects/notemaxxing
+   → **Storage** → `neon-charcoal-ocean` → **Connect Project → Advanced Options
+   → Deployments Configuration** → toggle **Preview** on. Verify a
+   `preview/<branch>` row appears in `neonctl branches list --project-id
+misty-flower-84487821`. Fallback: point Preview's `DATABASE_URL` at the `dev`
+   branch. Prod holds the real bank + live learner, so a preview DB write can
+   corrupt Max's state.
+3. **Import `ochem-carbonyls` to prod** (~Jul 27, as Max hits CHEM 33). Authored
+   - **independently fact-checked 42/42 correct** and imported to **dev**
+     2026-07-22 (`ef20798`). Held from prod so 42 carbonyls items don't enter
+     Max's selection pool before he's covered the material. When ready:
+     `DATABASE_URL="$(neonctl connection-string main --project-id
+misty-flower-84487821 --pooled)" npm run import -- content/ochem-carbonyls.json`
+     — Nico runs it; the classifier blocks Claude from prod writes. Batch varies
+     `correct_index` (foundations was all-0, a live "pick A" shortcut — worth
+     fixing there too).
 4. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
    `ANTHROPIC_API_KEY` needed here. Note the bank is **quiz-only** on purpose:
    an `adventure` item would be selected and emailed, then dead-end on a page
