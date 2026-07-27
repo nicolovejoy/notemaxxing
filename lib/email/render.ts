@@ -15,10 +15,16 @@ export type RenderableItem = {
   body: Record<string, unknown>
 }
 
+export type ScoreboardInput = {
+  entries: ReadonlyArray<{ name: string; points: number; self: boolean }>
+  leaderName: string | null // null = tied
+}
+
 export type RenderInput = {
   learnerName: string
   item: RenderableItem
   answerUrl: string
+  scoreboard?: ScoreboardInput
 }
 
 export type RenderedEmail = {
@@ -51,6 +57,14 @@ function teaser(item: RenderableItem): string {
     : str(item.body.opening_scenario)
 }
 
+/** One line, everyone's actual name — the self entry is never "You". */
+function scoreboardLine(sb: ScoreboardInput): string {
+  if (sb.entries.every((e) => e.points === 0)) return 'New week — first answer takes the lead.'
+  const tally = sb.entries.map((e) => `${firstName(e.name)} ${e.points}`).join(' · ')
+  const verdict = sb.leaderName === null ? 'tied' : `${firstName(sb.leaderName)} leads`
+  return `This week: ${tally} — ${verdict}.`
+}
+
 const NAVY = '#1A3C6B'
 const CREAM = '#F8F8F0'
 const SLATE = '#4A6E91'
@@ -66,13 +80,23 @@ export function renderDailyEmail(input: RenderInput): RenderedEmail {
   const cta = isQuiz ? 'Answer' : 'Start'
   const kicker = isQuiz ? 'One question' : 'A situation'
 
+  const board = input.scoreboard ? scoreboardLine(input.scoreboard) : null
+
   const text = [
     `${name},`,
     '',
     prompt || item.title,
     '',
+    ...(board ? [board, ''] : []),
     `${cta}: ${answerUrl}`,
   ].join('\n')
+
+  const boardRow = board
+    ? `      <tr><td style="padding-bottom:20px;">
+        <div style="font-size:13px;color:${NAVY};background:${CREAM};">${escapeHtml(board)}</div>
+      </td></tr>
+`
+    : ''
 
   // Inline styles and a table shell — email clients strip <style> and don't do flexbox.
   const html = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${CREAM};padding:32px 16px;font-family:'Open Sans',Helvetica,Arial,sans-serif;">
@@ -84,7 +108,7 @@ export function renderDailyEmail(input: RenderInput): RenderedEmail {
       <tr><td style="padding-bottom:28px;">
         <div style="font-size:20px;line-height:1.5;color:${CHARCOAL};">${escapeHtml(prompt || item.title)}</div>
       </td></tr>
-      <tr><td style="padding-bottom:28px;">
+${boardRow}      <tr><td style="padding-bottom:28px;">
         <a href="${escapeHtml(answerUrl)}" style="display:inline-block;background:${NAVY};color:#ffffff;text-decoration:none;padding:12px 28px;border-radius:6px;font-weight:600;font-size:15px;">${escapeHtml(cta)}</a>
       </td></tr>
       <tr><td style="border-top:1px solid #e2e2d8;padding-top:16px;">

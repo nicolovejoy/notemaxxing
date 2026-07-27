@@ -12,6 +12,7 @@ import {
   learners,
   seedConcept,
   seedDelivery,
+  responses,
   seedDueConcept,
   seedItem,
   seedLearner,
@@ -325,6 +326,82 @@ describe('failure', () => {
     const retry = await runDailySend(db, makeDeps(send))
 
     expect(retry.outcomes[0].status).toBe('skipped_already')
+  })
+})
+
+describe('scoreboard', () => {
+  // NOW is Wed 2026-07-15; the local week runs Mon 2026-07-13 – Sun 2026-07-19.
+
+  async function seedAnswered(
+    learnerId: string,
+    itemId: string,
+    deliveryDate: string,
+    isCorrect: boolean
+  ) {
+    const d = await seedDelivery(db, learnerId, itemId, { deliveryDate, status: 'sent' })
+    await db.insert(responses).values({
+      deliveryId: d.id,
+      answerPayload: { selected_index: 0 },
+      isCorrect,
+      submittedAt: NOW,
+    })
+  }
+
+  it('the sent email carries this week\'s tally: 2 points per answer, +1 per correct', async () => {
+    const nico = await seedLearner(db, { email: 'nico@example.com', name: 'Nico' })
+    const c = await seedDueConcept(db, learner.id, 'shared-concept', -3)
+    const item = await seedItem(db, [c.id])
+    // Max: 2 answered, both correct → 6. Nico: 2 answered, none correct → 4.
+    await seedAnswered(learner.id, item.id, '2026-07-13', true)
+    await seedAnswered(learner.id, item.id, '2026-07-14', true)
+    await seedAnswered(nico.id, item.id, '2026-07-13', false)
+    await seedAnswered(nico.id, item.id, '2026-07-14', false)
+    const { send, sent } = makeFakeSender()
+
+    await runDailySend(db, makeDeps(send))
+
+    expect(sent).toHaveLength(2)
+    for (const email of sent) {
+      expect(email.text).toContain('This week: Max 6 · Nico 4 — Max leads.')
+      expect(email.html).toContain('This week: Max 6 · Nico 4 — Max leads.')
+    }
+  })
+
+  it('renders tie copy when points are level', async () => {
+    const nico = await seedLearner(db, { email: 'nico@example.com', name: 'Nico' })
+    const c = await seedDueConcept(db, learner.id, 'shared-concept', -3)
+    const item = await seedItem(db, [c.id])
+    await seedAnswered(learner.id, item.id, '2026-07-13', true)
+    await seedAnswered(nico.id, item.id, '2026-07-13', true)
+    const { send, sent } = makeFakeSender()
+
+    await runDailySend(db, makeDeps(send))
+
+    expect(sent[0].text).toContain('This week: Max 3 · Nico 3 — tied.')
+  })
+
+  it('a learner\'s own unanswered today-delivery does not score', async () => {
+    const c = await seedDueConcept(db, learner.id, 'action-potential', -3)
+    const item = await seedItem(db, [c.id])
+    // One answered correct earlier in the week → 3 points. Today's fresh
+    // delivery (claimed by this very run, unanswered) must not add 2 more.
+    await seedAnswered(learner.id, item.id, '2026-07-13', true)
+    const { send, sent } = makeFakeSender()
+
+    await runDailySend(db, makeDeps(send))
+
+    expect(sent[0].text).toContain('This week: Max 3 — Max leads.')
+    expect(sent[0].text).not.toContain('Max 5')
+  })
+
+  it('an all-zero week renders the fresh-week line', async () => {
+    const c = await seedDueConcept(db, learner.id, 'action-potential', -3)
+    await seedItem(db, [c.id])
+    const { send, sent } = makeFakeSender()
+
+    await runDailySend(db, makeDeps(send))
+
+    expect(sent[0].text).toContain('New week — first answer takes the lead.')
   })
 })
 

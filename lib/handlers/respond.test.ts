@@ -182,6 +182,8 @@ describe('recordResponse — grading', () => {
         correct: true,
         explanation: QUIZ_BODY.explanation,
       },
+      scoreboard: { entries: [{ name: 'Nico', points: 3, self: true }], leaderName: 'Nico' },
+      progress: [{ name: 'action-potential', repetitions: 1, intervalDays: 1 }],
     })
   })
 
@@ -431,6 +433,107 @@ describe('recordResponse — concept state', () => {
       .where(eq(conceptState.learnerId, max.id))
     expect(maxState.repetitions).toBe(2)
     expect(maxState.intervalDays).toBe(6)
+  })
+})
+
+describe('recordResponse — scoreboard and progress', () => {
+  it('reflects post-update progress and counts the new points on a fresh correct answer', async () => {
+    const { token } = await seedLoop()
+
+    const result = await recordResponse(db, { token, secret: SECRET, now: NOW, chosenIndex: 0 })
+
+    if (!result.ok) throw new Error('expected success')
+    // Cold-start correct answer: repetitions 0 -> 1, one-day interval.
+    expect(result.progress).toEqual([{ name: 'action-potential', repetitions: 1, intervalDays: 1 }])
+    // 2 for answering + 1 for correct, and the just-inserted response is counted.
+    expect(result.scoreboard.entries).toEqual([{ name: 'Nico', points: 3, self: true }])
+    expect(result.scoreboard.leaderName).toBe('Nico')
+  })
+
+  it('scores 2 points for a wrong answer and shows the repetition reset', async () => {
+    const concept = await seedConcept(db, 'action-potential')
+    await seedConceptState(db, learner.id, concept.id, {
+      repetitions: 4,
+      intervalDays: 30,
+      introducedAt: daysFromNow(-60),
+    })
+    const item = await seedItem(db, [concept.id], { body: QUIZ_BODY })
+    const delivery = await seedDelivery(db, learner.id, item.id, { status: 'sent', sentAt: NOW })
+
+    const result = await recordResponse(db, { token: tokenFor(delivery.id), secret: SECRET, now: NOW, chosenIndex: 3 })
+
+    if (!result.ok) throw new Error('expected success')
+    expect(result.scoreboard.entries).toEqual([{ name: 'Nico', points: 2, self: true }])
+    expect(result.progress).toEqual([{ name: 'action-potential', repetitions: 0, intervalDays: 1 }])
+  })
+
+  it('returns the same scoreboard on a resubmit without double-counting', async () => {
+    const { token } = await seedLoop()
+
+    const first = await recordResponse(db, { token, secret: SECRET, now: NOW, chosenIndex: 0 })
+    const second = await recordResponse(db, { token, secret: SECRET, now: NOW, chosenIndex: 0 })
+
+    if (!first.ok || !second.ok) throw new Error('expected success')
+    expect(second.alreadyAnswered).toBe(true)
+    expect(second.scoreboard).toEqual(first.scoreboard)
+    expect(second.scoreboard.entries).toEqual([{ name: 'Nico', points: 3, self: true }])
+  })
+
+  it('lists both learners with the self flag and leader from the answering POV', async () => {
+    const max = await seedLearner(db, { email: 'max2@example.com', name: 'Max' })
+    const maxItem = await seedItem(db, [], { body: QUIZ_BODY })
+    const maxDelivery = await seedDelivery(db, max.id, maxItem.id, { status: 'sent', sentAt: NOW })
+    // Max answers wrong: 2 points.
+    await recordResponse(db, { token: tokenFor(maxDelivery.id), secret: SECRET, now: NOW, chosenIndex: 3 })
+
+    // Nico answers correct: 3 points, so Nico leads.
+    const { token } = await seedLoop()
+    const result = await recordResponse(db, { token, secret: SECRET, now: NOW, chosenIndex: 0 })
+
+    if (!result.ok) throw new Error('expected success')
+    expect(result.scoreboard.entries).toEqual([
+      { name: 'Nico', points: 3, self: true },
+      { name: 'Max', points: 2, self: false },
+    ])
+    expect(result.scoreboard.leaderName).toBe('Nico')
+  })
+
+  it('reports a null leader when the two learners are tied', async () => {
+    const max = await seedLearner(db, { email: 'max2@example.com', name: 'Max' })
+    const maxItem = await seedItem(db, [], { body: QUIZ_BODY })
+    const maxDelivery = await seedDelivery(db, max.id, maxItem.id, { status: 'sent', sentAt: NOW })
+    // Max answers correct: 3 points.
+    await recordResponse(db, { token: tokenFor(maxDelivery.id), secret: SECRET, now: NOW, chosenIndex: 0 })
+
+    // Nico answers correct: 3 points too — a tie.
+    const { token } = await seedLoop()
+    const result = await recordResponse(db, { token, secret: SECRET, now: NOW, chosenIndex: 0 })
+
+    if (!result.ok) throw new Error('expected success')
+    expect(result.scoreboard.leaderName).toBeNull()
+    expect(result.scoreboard.entries.find((e) => e.self)?.name).toBe('Nico')
+  })
+
+  it('surfaces scoreboard and progress from loadDelivery on an answered delivery', async () => {
+    const { token } = await seedLoop()
+    await loadDelivery(db, { token, secret: SECRET, now: NOW })
+    await recordResponse(db, { token, secret: SECRET, now: NOW, chosenIndex: 0 })
+
+    const result = await loadDelivery(db, { token, secret: SECRET, now: NOW })
+
+    if (!result.ok || result.kind !== 'quiz') throw new Error('expected a quiz')
+    expect(result.progress).toEqual([{ name: 'action-potential', repetitions: 1, intervalDays: 1 }])
+    expect(result.scoreboard?.entries).toEqual([{ name: 'Nico', points: 3, self: true }])
+  })
+
+  it('omits scoreboard and progress from loadDelivery before answering', async () => {
+    const { token } = await seedLoop()
+
+    const result = await loadDelivery(db, { token, secret: SECRET, now: NOW })
+
+    if (!result.ok || result.kind !== 'quiz') throw new Error('expected a quiz')
+    expect(result.scoreboard).toBeUndefined()
+    expect(result.progress).toBeUndefined()
   })
 })
 

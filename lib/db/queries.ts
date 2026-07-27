@@ -4,7 +4,7 @@
  * Everything here touches the DB and therefore lives OUTSIDE lib/learning/**.
  * Keep the split — these functions load and shape, they never decide.
  */
-import { and, eq, gte, inArray } from 'drizzle-orm'
+import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm'
 import type { Db } from './index'
 import {
   appConfig,
@@ -14,6 +14,7 @@ import {
   contentItems,
   deliveries,
   learners,
+  responses,
 } from './schema'
 import type { ConceptCandidate, ContentCandidate, RecentDelivery, SelectionInput } from '../learning/types'
 
@@ -148,6 +149,53 @@ async function loadRecentDeliveries(
     itemId: r.itemId,
     conceptIds: conceptsByItem.get(r.itemId) ?? [],
   }))
+}
+
+export interface WeekDeliveryOutcome {
+  learnerId: string
+  deliveryDate: string
+  answered: boolean
+  correct: boolean | null
+}
+
+/**
+ * All sent deliveries in [weekStart, weekEnd] (inclusive, 'YYYY-MM-DD',
+ * learner-local delivery_date), across ALL learners, left-joined to responses.
+ * An abandoned response counts as unanswered.
+ */
+export async function loadWeekOutcomes(
+  db: Db,
+  weekStart: string,
+  weekEnd: string
+): Promise<WeekDeliveryOutcome[]> {
+  const rows = await db
+    .select({
+      learnerId: deliveries.learnerId,
+      deliveryDate: deliveries.deliveryDate,
+      responseId: responses.id,
+      isCorrect: responses.isCorrect,
+      abandoned: responses.abandoned,
+    })
+    .from(deliveries)
+    .leftJoin(responses, eq(responses.deliveryId, deliveries.id))
+    .where(
+      and(
+        eq(deliveries.status, 'sent'),
+        gte(deliveries.deliveryDate, weekStart),
+        lte(deliveries.deliveryDate, weekEnd)
+      )
+    )
+    .orderBy(asc(deliveries.learnerId), asc(deliveries.deliveryDate))
+
+  return rows.map((r) => {
+    const answered = r.responseId !== null && r.abandoned === false
+    return {
+      learnerId: r.learnerId,
+      deliveryDate: r.deliveryDate,
+      answered,
+      correct: answered ? r.isCorrect : null,
+    }
+  })
 }
 
 // --- config ---

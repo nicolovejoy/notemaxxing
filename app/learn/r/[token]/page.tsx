@@ -73,7 +73,13 @@ export default async function AnswerPage({ params }: { params: Promise<{ token: 
     <Shell>
       <Kicker>One question</Kicker>
       <p className="text-xl leading-relaxed text-[#1F2933] mb-8">{result.prompt}</p>
-      <QuizForm token={token} options={result.options} initialReveal={result.reveal} />
+      <QuizForm
+        token={token}
+        options={result.options}
+        initialReveal={result.reveal}
+        initialScoreboard={result.scoreboard}
+        initialProgress={result.progress}
+      />
     </Shell>
   )
 }

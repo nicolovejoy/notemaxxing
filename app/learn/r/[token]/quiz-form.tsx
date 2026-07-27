@@ -1,18 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import type { Reveal } from '@/lib/handlers/respond'
+import type { ConceptProgress, Reveal, ScoreboardView } from '@/lib/handlers/respond'
+import { formatProgress, formatScoreboard } from './format'
 
 type Props = {
   token: string
   options: string[]
   /** Non-null when they've already answered — the form renders read-only. */
   initialReveal: Reveal | null
+  /** Present on a revisit to an already-answered link. */
+  initialScoreboard?: ScoreboardView
+  initialProgress?: ConceptProgress[]
 }
 
-export function QuizForm({ token, options, initialReveal }: Props) {
+export function QuizForm({
+  token,
+  options,
+  initialReveal,
+  initialScoreboard,
+  initialProgress,
+}: Props) {
   const [selected, setSelected] = useState<number | null>(null)
   const [reveal, setReveal] = useState<Reveal | null>(initialReveal)
+  const [scoreboard, setScoreboard] = useState<ScoreboardView | null>(initialScoreboard ?? null)
+  const [progress, setProgress] = useState<ConceptProgress[] | null>(initialProgress ?? null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,6 +46,8 @@ export function QuizForm({ token, options, initialReveal }: Props) {
       }
       const data = await res.json()
       setReveal(data.reveal)
+      setScoreboard(data.scoreboard ?? null)
+      setProgress(data.progress ?? null)
     } catch {
       setError("That didn't go through. Try again?")
     } finally {
@@ -124,6 +138,23 @@ export function QuizForm({ token, options, initialReveal }: Props) {
           {reveal!.explanation && (
             <p className="mt-2 leading-relaxed text-[#374151]">{reveal!.explanation}</p>
           )}
+
+          {progress && progress.length > 0 && (
+            <div className="mt-6">
+              {progress.map((p) => (
+                <p key={p.name} className="text-sm text-[#374151] leading-relaxed">
+                  {formatProgress(p)}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {scoreboard && scoreboard.entries.length > 0 && (
+            <p className="mt-6 text-sm font-semibold text-[#1A3C6B]">
+              {formatScoreboard(scoreboard)}
+            </p>
+          )}
+
           <p className="mt-6 text-sm text-[#4A6E91]">That&rsquo;s it for today.</p>
         </div>
       )}

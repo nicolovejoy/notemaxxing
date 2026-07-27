@@ -7,8 +7,9 @@
 import { eq } from 'drizzle-orm'
 import type { Db } from '../db'
 import { deliveries, engagementEvents, learners } from '../db/schema'
-import { activeLearners, hasDeliveryFor, loadSelectionInput } from '../db/queries'
+import { activeLearners, hasDeliveryFor, loadSelectionInput, loadWeekOutcomes } from '../db/queries'
 import { selectNextItem } from '../learning/selection'
+import { computeScoreboard, endOfWeek, startOfWeek } from '../learning/scoreboard'
 import { localDayAndHour, shouldSendNow } from '../learning/send-window'
 import { signToken } from '../learning/token'
 import { renderDailyEmail, type RenderableItem } from '../email/render'
@@ -47,7 +48,7 @@ export async function runDailySend(db: Db, deps: DailySendDeps): Promise<DailySe
   const outcomes: LearnerOutcome[] = []
 
   for (const learner of people) {
-    outcomes.push(await sendForLearner(db, learner, deps))
+    outcomes.push(await sendForLearner(db, learner, people, deps))
   }
 
   return { ran: true, outcomes }
@@ -56,6 +57,7 @@ export async function runDailySend(db: Db, deps: DailySendDeps): Promise<DailySe
 async function sendForLearner(
   db: Db,
   learner: typeof learners.$inferSelect,
+  allActive: (typeof learners.$inferSelect)[],
   deps: DailySendDeps
 ): Promise<LearnerOutcome> {
   const { now, send, tokenSecret, baseUrl, from, force } = deps
@@ -132,10 +134,30 @@ async function sendForLearner(
     tokenSecret
   )
 
+  // Week on the recipient's local calendar — each learner's week can differ.
+  // Today's just-claimed delivery is still 'scheduled', so it can't score here.
+  const weekStart = startOfWeek(day)
+  const board = computeScoreboard(
+    allActive.map((l) => ({ id: l.id, name: l.name })),
+    await loadWeekOutcomes(db, weekStart, endOfWeek(weekStart)),
+    weekStart
+  )
+
   const email = renderDailyEmail({
     learnerName: learner.name,
     item: renderable,
     answerUrl: `${baseUrl.replace(/\/$/, '')}/learn/r/${token}`,
+    scoreboard: {
+      entries: board.entries.map((e) => ({
+        name: e.name,
+        points: e.points,
+        self: e.learnerId === learner.id,
+      })),
+      leaderName:
+        board.leaderId === null
+          ? null
+          : (board.entries.find((e) => e.learnerId === board.leaderId)?.name ?? null),
+    },
   })
 
   const result = await send({ from, to: learner.email, ...email })

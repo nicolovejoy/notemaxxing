@@ -122,3 +122,78 @@ describe('renderDailyEmail', () => {
     expect(e.html).toContain(URL)
   })
 })
+
+describe('scoreboard', () => {
+  const base = { learnerName: 'Max', item: QUIZ, answerUrl: URL }
+
+  it('renders the weekly line in text and html, before the CTA', () => {
+    const e = renderDailyEmail({
+      ...base,
+      scoreboard: {
+        entries: [
+          { name: 'Max', points: 6, self: true },
+          { name: 'Nico', points: 4, self: false },
+        ],
+        leaderName: 'Max',
+      },
+    })
+    expect(e.text).toContain('This week: Max 6 · Nico 4 — Max leads.')
+    expect(e.text.indexOf('This week:')).toBeLessThan(e.text.indexOf('Answer:'))
+    expect(e.html).toContain('This week: Max 6 · Nico 4 — Max leads.')
+    expect(e.html.indexOf('This week:')).toBeLessThan(e.html.indexOf(URL))
+  })
+
+  it('uses the learner actual name for the self entry, never "You"', () => {
+    const e = renderDailyEmail({
+      ...base,
+      scoreboard: {
+        entries: [
+          { name: 'Max', points: 6, self: true },
+          { name: 'Nico', points: 4, self: false },
+        ],
+        leaderName: 'Max',
+      },
+    })
+    expect(e.text).not.toContain('You')
+    expect(e.text).toContain('Max 6')
+  })
+
+  it('renders tie copy when leaderName is null', () => {
+    const e = renderDailyEmail({
+      ...base,
+      scoreboard: {
+        entries: [
+          { name: 'Max', points: 4, self: true },
+          { name: 'Nico', points: 4, self: false },
+        ],
+        leaderName: null,
+      },
+    })
+    expect(e.text).toContain('This week: Max 4 · Nico 4 — tied.')
+    expect(e.html).toContain('This week: Max 4 · Nico 4 — tied.')
+  })
+
+  it('renders the fresh-week line when nobody has points', () => {
+    const e = renderDailyEmail({
+      ...base,
+      scoreboard: {
+        entries: [
+          { name: 'Max', points: 0, self: true },
+          { name: 'Nico', points: 0, self: false },
+        ],
+        leaderName: null,
+      },
+    })
+    expect(e.text).toContain('New week — first answer takes the lead.')
+    expect(e.html).toContain('New week — first answer takes the lead.')
+    expect(e.text).not.toContain('This week:')
+  })
+
+  it('absent scoreboard leaves output byte-identical', () => {
+    const without = renderDailyEmail(base)
+    const explicit = renderDailyEmail({ ...base, scoreboard: undefined })
+    expect(explicit).toEqual(without)
+    expect(without.text).not.toContain('This week:')
+    expect(without.html).not.toContain('This week:')
+  })
+})

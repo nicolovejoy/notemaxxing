@@ -14,6 +14,7 @@ import { and, asc, eq } from 'drizzle-orm'
 import type { Db } from '../db'
 import {
   conceptState,
+  concepts,
   contentItemConcepts,
   contentItems,
   deliveries,
@@ -22,8 +23,10 @@ import {
   responseConceptOutcomes,
   responses,
 } from '../db/schema'
+import { activeLearners, loadWeekOutcomes } from '../db/queries'
 import { computeSkipStreakDelta, updateEngagement } from '../learning/engagement'
 import { scoreToQuality, smUpdate } from '../learning/scheduling'
+import { computeScoreboard, endOfWeek, startOfWeek } from '../learning/scoreboard'
 import { verifyToken } from '../learning/token'
 import type { SchedulingState } from '../learning/types'
 
@@ -44,6 +47,19 @@ export type Reveal = {
   explanation: string
 }
 
+/** The weekly two-learner scoreboard, rendered from the answering learner's POV. */
+export interface ScoreboardView {
+  entries: ReadonlyArray<{ name: string; points: number; self: boolean }>
+  leaderName: string | null // null = tied
+}
+
+/** One tagged concept's post-answer scheduling state, for the "you're learning" line. */
+export interface ConceptProgress {
+  name: string // concept display name
+  repetitions: number // post-update SM-2 repetitions
+  intervalDays: number // post-update interval (round to whole days for display upstream)
+}
+
 export type LoadedQuiz = {
   ok: true
   kind: 'quiz'
@@ -54,6 +70,9 @@ export type LoadedQuiz = {
   /** Deliberately excludes correct_index and explanation — see stripAnswerKey. */
   options: string[]
   reveal: Reveal | null
+  /** Present only alongside a non-null reveal — never leaked before answering. */
+  scoreboard?: ScoreboardView
+  progress?: ConceptProgress[]
 }
 
 export type LoadedAdventure = {
@@ -68,7 +87,13 @@ export type LoadedAdventure = {
 export type LoadResult = LoadedQuiz | LoadedAdventure | LoadFailure
 
 export type RespondResult =
-  | { ok: true; reveal: Reveal; alreadyAnswered: boolean }
+  | {
+      ok: true
+      reveal: Reveal
+      alreadyAnswered: boolean
+      scoreboard: ScoreboardView
+      progress: ConceptProgress[]
+    }
   | { ok: false; reason: LoadFailure['reason'] | 'unsupported_kind' | 'bad_choice' }
 
 type QuizBody = {
@@ -142,6 +167,74 @@ async function existingReveal(db: Db, deliveryId: string, item: typeof contentIt
 }
 
 /**
+ * Post-answer scheduling state for each concept the item is tagged to, ordered
+ * by name. LEFT JOIN so a concept with no state row still renders (repetitions
+ * and interval fall back to their zero defaults).
+ */
+async function buildProgress(
+  db: Db,
+  itemId: string,
+  learnerId: string
+): Promise<ConceptProgress[]> {
+  const rows = await db
+    .select({
+      name: concepts.name,
+      repetitions: conceptState.repetitions,
+      intervalDays: conceptState.intervalDays,
+    })
+    .from(contentItemConcepts)
+    .innerJoin(concepts, eq(concepts.id, contentItemConcepts.conceptId))
+    .leftJoin(
+      conceptState,
+      and(eq(conceptState.conceptId, concepts.id), eq(conceptState.learnerId, learnerId))
+    )
+    .where(eq(contentItemConcepts.itemId, itemId))
+    .orderBy(asc(concepts.name))
+
+  return rows.map((r) => ({
+    name: r.name,
+    repetitions: r.repetitions ?? 0,
+    intervalDays: r.intervalDays ?? 0,
+  }))
+}
+
+/**
+ * The live weekly scoreboard from this delivery's learner's POV. weekStart is
+ * derived from the stored learner-local delivery_date, so the week boundary
+ * matches how loadWeekOutcomes filters. Compute AFTER the response insert or the
+ * just-answered delivery won't be counted yet.
+ */
+async function buildScoreboard(
+  db: Db,
+  delivery: typeof deliveries.$inferSelect
+): Promise<ScoreboardView> {
+  const weekStart = startOfWeek(delivery.deliveryDate)
+  const weekEnd = endOfWeek(weekStart)
+  const [outcomes, learnerRows] = await Promise.all([
+    loadWeekOutcomes(db, weekStart, weekEnd),
+    activeLearners(db),
+  ])
+
+  const board = computeScoreboard(
+    learnerRows.map((l) => ({ id: l.id, name: l.name })),
+    outcomes,
+    weekStart
+  )
+
+  return {
+    entries: board.entries.map((e) => ({
+      name: e.name,
+      points: e.points,
+      self: e.learnerId === delivery.learnerId,
+    })),
+    leaderName:
+      board.leaderId === null
+        ? null
+        : (board.entries.find((e) => e.learnerId === board.leaderId)?.name ?? null),
+  }
+}
+
+/**
  * Render payload for the answer page.
  *
  * Writes a `link_clicked` engagement event as a side effect — this is also what
@@ -171,6 +264,17 @@ export async function loadDelivery(
   }
 
   const quiz = parseQuizBody(item.body)
+  const reveal = await existingReveal(db, delivery.id, item)
+
+  // Scoreboard + progress ride along only once they've answered — keep the
+  // pre-answer payload lean and leak nothing.
+  const extras = reveal
+    ? {
+        scoreboard: await buildScoreboard(db, delivery),
+        progress: await buildProgress(db, item.id, delivery.learnerId),
+      }
+    : {}
+
   return {
     ok: true,
     kind: 'quiz',
@@ -180,7 +284,8 @@ export async function loadDelivery(
     prompt: quiz?.prompt ?? '',
     // The answer key never leaves the server until they've answered.
     options: quiz?.options ?? [],
-    reveal: await existingReveal(db, delivery.id, item),
+    reveal,
+    ...extras,
   }
 }
 
@@ -264,9 +369,16 @@ export async function recordResponse(
   }
 
   if (inserted.length === 0) {
-    // Already answered. Show them what they did, change nothing.
+    // Already answered. Show them what they did, change nothing — the scoreboard
+    // and progress reflect current state, so a resubmit never double-counts.
     const prior = await existingReveal(db, delivery.id, item)
-    return { ok: true, reveal: prior ?? reveal, alreadyAnswered: true }
+    return {
+      ok: true,
+      reveal: prior ?? reveal,
+      alreadyAnswered: true,
+      scoreboard: await buildScoreboard(db, delivery),
+      progress: await buildProgress(db, item.id, delivery.learnerId),
+    }
   }
   const response = inserted[0]
 
@@ -304,7 +416,13 @@ export async function recordResponse(
     occurredAt: args.now,
   })
 
-  return { ok: true, reveal, alreadyAnswered: false }
+  return {
+    ok: true,
+    reveal,
+    alreadyAnswered: false,
+    scoreboard: await buildScoreboard(db, delivery),
+    progress: await buildProgress(db, item.id, delivery.learnerId),
+  }
 }
 
 /**
