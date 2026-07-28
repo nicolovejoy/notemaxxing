@@ -108,14 +108,21 @@ injected. Pattern lifted from `~/src/garm`.
   the DeadLink page, unknown paths 404, `/api/cron/daily` 401s without the
   secret). **Max is `is_active=true`, send hour 10 local** — first real question
   lands Fri 2026-07-17 ~10:00–10:15 PDT. Nico active at hour 7.
-- **Build**: passing. **Tests**: 271 passing, ~30s. Branch: `content/ochem-bank`
-  → PR open against main (the bank + docs; PR #13 merged before it was pushed,
-  so main briefly lagged).
+- **Build**: passing. **Tests**: 321 passing, ~50s. Branch: main, pushed.
 - **Done**: M0 (harness+schema+CI), M1 (pure core), M2 (query layer),
   M3 (email+Resend+cron), **smoke test** (first real email delivered to Nico via
   Resend 2026-07-15), **M4** (answer page + respond handler), **content import**
   (git JSON → zod → idempotent upsert), **content bank + prod cutover**
-  (2026-07-16).
+  (2026-07-16), **gamification v1** (2026-07-27, `dfa3f86`, deployed to prod).
+- **Gamification v1**: weekly two-learner scoreboard — 2 pts/answer +1 correct
+  (participation dominates by design), Monday-start weeks on each learner's
+  local calendar (`startOfWeek`/`endOfWeek`/`computeScoreboard` in
+  `lib/learning/scoreboard.ts`, pure; `loadWeekOutcomes` in queries). Daily
+  email shows the tally line per-recipient; answer page shows post-answer
+  concept progress (repetitions/interval) + live scoreboard ("You" POV,
+  `app/learn/r/[token]/format.ts`). No scoreboard leak before answering;
+  abandoned = unanswered. No schema change. Max chose to stay on **email** —
+  iMessage probe shelved (`scripts/imessage-probe.mjs` remains if needed).
 - **Prod DB state**: migrations `0000`–`0002` applied to `main`. 39 active
   content_items (all `ochem/`-prefixed, batch `ochem-foundations`), 15 concepts,
   all `chem/organic`. Zero NULL `external_id`. Legacy neuro sample + the one
@@ -160,8 +167,8 @@ injected. Pattern lifted from `~/src/garm`.
 - **Resend account**: one paid account ($20/mo) shared across projects, same as
   garm. Reputation is per-domain, so no isolation problem.
 - **Learners**: Max Lovejoy <lovejoymaximillion@gmail.com>, Nico
-  <nlovejoy@me.com>. Both are customers — Nico plays along too, and gamifying
-  the pair is a someday idea.
+  <nlovejoy@me.com>. Both are customers — Nico plays along too; the pair is
+  gamified as of 2026-07-27 (weekly scoreboard, see Gamification v1).
 - **Vercel env set**: `LEARN_TOKEN_SECRET`, `CRON_SECRET`, `RESEND_API_KEY` now in
   **all three** envs — Production + Development (2026-07-16), Preview (added with
   `vercel env add ... --value` so the branch prompt no longer eats the value; press
@@ -222,17 +229,15 @@ injected. Pattern lifted from `~/src/garm`.
 
 ## Next Steps
 
-1. **Max engagement — the live problem.** Verified 2026-07-22: 5 sends (7/17–21),
-   **Max opened zero**. Pipeline is fine end-to-end — only Nico has clicked
-   (2×) and answered (1×, wrong, `ir-spectroscopy` ease moved). So it's not a
-   code bug; the gap is Gmail-side (spam / Promotions / not opening). Texted Max
-   to opt into **iMessage delivery** instead. **If he says yes:** wrap
-   `scripts/imessage-probe.mjs` in a launchd job that fires each morning after
-   the 10am cron. The probe is read-only (reconstructs the existing delivery's
-   7-day HMAC link — no new rows), dry-run by default, `--send` texts from Nico's
-   Messages. Needs `MAX_IMESSAGE_HANDLE` (1Password `notemaxxing-max-imessage` →
-   `.env.local`). A texted-link click still fires `link_clicked`, so engagement
-   is measured the same way.
+1. **Verify gamification live + tell Max.** Deployed 2026-07-27 (`dfa3f86`,
+   Monday = fresh week). Smoke test: Nico answers his daily email → answer page
+   shows concept progress + "This week: You N · Max 0". First email with the
+   scoreboard line lands Tue 7/28 ~7am. Then Nico texts Max the pitch (draft in
+   session log 2026-07-27). Background: Max opened zero of the first 5 sends
+   (pipeline verified fine; Gmail-side gap), chose to **stay on email** over
+   iMessage — the scoreboard/rivalry is the engagement play now. Watch
+   `engagement_events` for his first `link_clicked`. Gamification backlog:
+   streaks (forgiving, days-answered), Sunday recap email, real-world stakes.
 2. **⚠️ Point Preview away from prod** — still open; steps ready. Enable Neon
    per-preview branching: https://vercel.com/nico-lovejoys-projects/notemaxxing
    → **Storage** → `neon-charcoal-ocean` → **Connect Project → Advanced Options
