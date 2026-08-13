@@ -227,42 +227,43 @@ injected. Pattern lifted from `~/src/garm`.
   inheriting OS dark mode. shadcn/ui decision deferred to the M6 dashboard, where
   the real component surface lives; not worth it for one form.
 
+## Status: Daily sends OFF (2026-08-13)
+
+Max never opened or clicked a single delivery — not the first 5 (noted
+2026-07-22), not after the 2026-07-27 gamification/scoreboard pivot meant to
+re-engage him. Zero `link_clicked` events for him, ever. Nico decided to turn
+it off rather than keep iterating on an audience of one uninterested learner.
+
+`is_active = false` set on Max's `learners` row (SQL, via Neon console —
+prod writes are blocked for Claude). The Vercel cron trigger for
+`/api/cron/daily` was then removed entirely in `f940b63` (both learners were
+still wired to the same cron, so leaving it running would have kept emailing
+Nico solo). Site, routes, DB, and content pipeline are all otherwise intact —
+this is a schedule removal, not a teardown. `/api/cron/daily` still works via
+manual `?force=1` if needed.
+
+**To revive:** re-add the `crons` block to `vercel.json`
+(`{"crons": [{"path": "/api/cron/daily", "schedule": "*/15 * * * *"}]}`,
+or `git revert f940b63`) and flip `is_active` back for any learner who should
+receive it.
+
 ## Next Steps
 
-1. **Verify gamification live + tell Max.** Deployed 2026-07-27 (`dfa3f86`,
-   Monday = fresh week). Smoke test: Nico answers his daily email → answer page
-   shows concept progress + "This week: You N · Max 0". First email with the
-   scoreboard line lands Tue 7/28 ~7am. Then Nico texts Max the pitch (draft in
-   session log 2026-07-27). Background: Max opened zero of the first 5 sends
-   (pipeline verified fine; Gmail-side gap), chose to **stay on email** over
-   iMessage — the scoreboard/rivalry is the engagement play now. Watch
-   `engagement_events` for his first `link_clicked`. Gamification backlog:
-   streaks (forgiving, days-answered), Sunday recap email, real-world stakes.
-2. **⚠️ Point Preview away from prod** — still open; steps ready. Enable Neon
-   per-preview branching: https://vercel.com/nico-lovejoys-projects/notemaxxing
-   → **Storage** → `neon-charcoal-ocean` → **Connect Project → Advanced Options
-   → Deployments Configuration** → toggle **Preview** on. Verify a
-   `preview/<branch>` row appears in `neonctl branches list --project-id
-misty-flower-84487821`. Fallback: point Preview's `DATABASE_URL` at the `dev`
-   branch. Prod holds the real bank + live learner, so a preview DB write can
-   corrupt Max's state.
-3. **Import `ochem-carbonyls` to prod** (~Jul 27, as Max hits CHEM 33). Authored
-   - **independently fact-checked 42/42 correct** and imported to **dev**
-     2026-07-22 (`ef20798`). Held from prod so 42 carbonyls items don't enter
-     Max's selection pool before he's covered the material. When ready:
-     `DATABASE_URL="$(neonctl connection-string main --project-id
-misty-flower-84487821 --pooled)" npm run import -- content/ochem-carbonyls.json`
-     — Nico runs it; the classifier blocks Claude from prod writes. Batch varies
-     `correct_index` (foundations was all-0, a live "pick A" shortcut — worth
-     fixing there too).
-4. **M5** — live adventure chat (SSE, turn cap, LLM-as-judge grading).
-   `ANTHROPIC_API_KEY` needed here. Note the bank is **quiz-only** on purpose:
-   an `adventure` item would be selected and emailed, then dead-end on a page
-   that cannot run the chat.
-5. **M6** — dashboard (magic link, same HMAC primitive) + landing page. Decide
-   shadcn/ui here. This is also where "what did Max actually get?" gets
-   answered — there is no cc on the daily mail by design (`SendFn` has no cc
-   field; Nico is a separate learner, not an observer).
+1. Decide whether to fully retire (delete Firebase remnants, `infra/`
+   Terraform cruft, dead Vercel env vars — see Known/deferred) or leave it
+   dormant as-is in case of a future audience.
+2. If reviving for anyone: **point Preview away from prod first** — still
+   open, steps ready. Enable Neon per-preview branching:
+   https://vercel.com/nico-lovejoys-projects/notemaxxing → **Storage** →
+   `neon-charcoal-ocean` → **Connect Project → Advanced Options → Deployments
+   Configuration** → toggle **Preview** on. Verify a `preview/<branch>` row
+   appears in `neonctl branches list --project-id misty-flower-84487821`.
+   Fallback: point Preview's `DATABASE_URL` at the `dev` branch. Prod holds
+   the real bank, so a preview DB write can still corrupt it even with no
+   active learners.
+3. `ochem-carbonyls` batch (42/42 fact-checked) is imported to **dev** only
+   (`ef20798`), never reached prod — moot unless revived.
+4. M5 (live adventure chat) and M6 (dashboard) — moot unless revived.
 
 ### Known / deferred
 
